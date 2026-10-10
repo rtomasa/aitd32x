@@ -1,6 +1,6 @@
 # Reported opening, occlusion and saber faults
 
-Working-tree fixes after `v15-baseline`; no new release tag or commit.
+Fixes committed as `a0fd040` after `v15-baseline`; no new release tag.
 
 The original furniture opening/offer/automatic-closing scripts are retained.
 The user confirmed that automatic closing also occurs in MS-DOS. No LIFE or
@@ -82,9 +82,9 @@ duplicate requests in NTSC/PAL and completes all 15,241 samples; effect 4 remain
 monotonic through 120/100 requests and completes all 21,803 samples. Both can
 play again afterward. STOP_SAMPLE, other effect overlap, and explicit repeat
 and chaining commands pass. The pre-guard mixer previously reset a voice on
-19 of 20 effect-4 burst frames. These are local emulator checks; the expanded
-effect-3 fix still awaits confirmation on the user's Pi and is not physical
-32X hardware validation.
+19 of 20 effect-4 burst frames. The user subsequently confirmed the expanded
+effect-3 fix on their Pi. These emulator results are not physical 32X hardware
+validation.
 
 ```sh
 make -j2 host all

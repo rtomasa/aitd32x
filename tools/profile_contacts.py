@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Reported first-floor bugs on the actual SH2 cartridge. Placement/offer setup is diagnostic; controller input executes gameplay."""
+"""Measure contact and interaction scenes on the SH2 cartridge. Placement/offer setup is diagnostic; controller input executes gameplay."""
 import argparse,ctypes as C,json,re,subprocess,hashlib
 from pathlib import Path
 import emulator_check as ec
-p=argparse.ArgumentParser();p.add_argument('core',type=Path);p.add_argument('--mars',type=Path,required=True);p.add_argument('--character',choices=['edward','emily'],default='edward');p.add_argument('--region',choices=['NTSC','PAL'],default='NTSC');p.add_argument('--project',type=Path,default=ec.ROOT);p.add_argument('--scene',choices=['chest','hall2','hall3','bowopen','chair','window'],default='chest');p.add_argument('--label',default='v8');p.add_argument('--music',type=int,default=-1);a=p.parse_args();ec.ROOT=a.project.resolve();root=ec.ROOT
+p=argparse.ArgumentParser();p.add_argument('core',type=Path);p.add_argument('--mars',type=Path,required=True);p.add_argument('--character',choices=['edward','emily'],default='edward');p.add_argument('--region',choices=['NTSC','PAL'],default='NTSC');p.add_argument('--project',type=Path,default=ec.ROOT);p.add_argument('--scene',choices=['chest','hall2','hall3','bowopen','chair','window','chestopen'],default='chest');p.add_argument('--label',default='v8');p.add_argument('--music',type=int,default=-1);a=p.parse_args();ec.ROOT=a.project.resolve();root=ec.ROOT
 fields={n:'offsetof('+t+','+f+')' for n,t,f in [('player','Game','player'),('world','Game','world'),('pos','Actor','pos'),('beta','Actor','beta'),('pending','ActiveObject','pending_anim'),('pt','ActiveObject','pending_type'),('pn','ActiveObject','pending_next'),('floor','Actor','floor'),('room','Actor','room'),('dirty','Game','dirty'),('camera','Game','camera'),('sig','Game','static_signature'),('objects','World','objects'),('active','World','active'),('value','ActiveObject','value'),('poses','World','poses'),('vars','World','vars'),('inventory','World','inventory'),('invcnt','World','inventory_count'),('prompt','World','prompt'),('held','Game','held'),('edges','Game','pending_edges'),('effects','World','effects'),('serial','World','effect_serial'),('ecount','Effect','count')]};fields['music']='offsetof(World,music)';fields.update(dynamic=('offsetof(Game,dynamic_slots)' if 'dynamic_slots' in (root/'src/engine/game.hpp').read_text() else '0'),bounds='offsetof(Game,static_bounds)',spancount='offsetof(Game,static_span_count)',view='offsetof(World,view_changed)',wcam='offsetof(World,camera)',static_size='sizeof(Game)',active_size='sizeof(ActiveObject)',actor_size='sizeof(Actor)',effect_size='sizeof(Effect)')
 f=root/'build'/('contact-layout-'+a.label+'-'+a.scene+'-'+a.region+'-'+a.character+'.cpp');f.write_text('#include "src/engine/game.hpp"\nextern "C" const unsigned bug_layout[]={'+','.join(fields.values())+'};\n');assembly=f.with_suffix('.s')
 subprocess.run([str(a.mars/'sh-elf/bin/sh-elf-g++'),'-m2','-mb','-std=c++17','-Wno-invalid-offsetof','-I'+str(root),'-S',str(f),'-o',str(assembly)],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
@@ -62,7 +62,7 @@ def effects():return sum(byte(wbase+o['effects']+i*o['effect_size']+o['ecount'])
 
 if a.character=='emily':press(32)
 press(128);run(hz*2);pause()
-scenes={'chest':(0,0,-4000,0,1200,0,3),'hall2':(1,1,2700,0,400,0,2),'hall3':(1,1,-800,0,-1000,0,3),'chair':(1,5,-1800,0,-200,256,5),'window':(1,4,-1250,0,1700,512,7),'bowopen':(1,1,-800,0,-1000,0,3)}
+scenes={'chest':(0,0,-4000,0,1200,0,3),'hall2':(1,1,2700,0,400,0,2),'hall3':(1,1,-800,0,-1000,0,3),'chair':(1,5,-1800,0,-200,256,5),'window':(1,4,-1250,0,1700,512,7),'bowopen':(1,1,-800,0,-1000,0,3),'chestopen':(1,2,1800,0,1400,256,9)}
 floor,room,x,y,z,beta,cam=scenes[a.scene];pose(1,floor,room,x,y,z,beta)
 variable(33,1)
 if a.music>=0:write32(wbase+o['music'],a.music)
@@ -74,11 +74,15 @@ pause();write32(wbase+o['wcam'],cam);byte(wbase+o['view'],1)
 if a.scene=='bowopen':
  s=slot(22);assert s>=0;write32(wbase+o['poses']+s*o['actor_size']+o['beta'],512);setobject(22,12,512)
 if a.scene=='chair':pose(59,1,5,-2690,0,-2080,256)
+if a.scene=='chestopen':
+ variable(32,1) # Already unlocked, so Search can exercise repeated lid cycles.
+ setobject(38,6,object(38,6)|0x8000) # Suppress the saber pickup pause in this fixture.
 resume();run(hz)
 # Select Push using the real controller UI.
 if a.scene in ('chest','chair'):
  press(32);press(64);press(2);press(2);press(2);press(64)
-pad=65 if a.scene in ('chest','chair') else 0
+if a.scene=='chestopen':press(32);press(64);press(2);press(64)
+pad=65 if a.scene in ('chest','chair') else 64 if a.scene=='chestopen' else 0
 try:profile_address=ec.symbol_address('_profile_state')&0x3ffff
 except RuntimeError:profile_address=None
 def profile():

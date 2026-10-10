@@ -6,12 +6,13 @@
 #include <stdlib.h>
 static Game game;
 static uint16_t pixels[SCREEN_WIDTH*SCREEN_HEIGHT/2];
+static uint16_t alternate_pixels[SCREEN_WIDTH*SCREEN_HEIGHT/2];
 extern "C" void Platform_Fatal() { abort(); }
 extern "C" void host_init(const uint8_t *bank,unsigned size) {
-    Platform_SetAssetBank(bank,size);game.Init();game.renderer.target=pixels+GAME_Y_OFFSET*160;
+    Platform_SetAssetBank(bank,size);game.renderer.buffer_index=0;game.Init();game.renderer.target=pixels+GAME_Y_OFFSET*160;
 }
 extern "C" void host_tick(unsigned pad) { game.Input(pad);game.Update();game.Draw(); }
-extern "C" const void *host_pixels() { return pixels; }
+extern "C" const void *host_pixels() { return game.renderer.buffer_index?alternate_pixels:pixels; }
 extern "C" const void *host_palette() { return game.renderer.palette; }
 // Diagnostic scene placement; never linked into the cartridge.
 extern "C" void host_pose(int x,int z,int beta) {
@@ -80,6 +81,38 @@ extern "C" int host_bounds_value(int id,int field) {
 }
 
 extern "C" void host_draw_cached() { game.Draw(); }
+// Exercise the same independent framebuffer damage histories as the cartridge.
+extern "C" void host_buffer(unsigned bank) {
+    game.renderer.buffer_index=bank&1;
+    game.renderer.target=(bank&1?alternate_pixels:pixels)+GAME_Y_OFFSET*160;
+}
+extern "C" const void *host_background() { return game.renderer.background; }
+extern "C" unsigned host_cache(unsigned field,unsigned slot) {
+    if(field==0) return game.static_signature;
+    if(field==1) return game.static_slots;
+    if(field==2) return game.dynamic_slots;
+    if(field==3) return game.renderer.full_restore[slot&1];
+    if(slot>=MAX_ACTIVE) return 0;
+    if(field==4) return game.static_hash[slot];
+    if(field==5) return (unsigned)game.static_owner[slot];
+    if(field==6) return game.static_rank[slot];
+    return 0;
+}
+// Construct a valid prior bake with the opposite painter order. Geometry and
+// masks stay identical, isolating the partial-order repair from gameplay.
+extern "C" void host_reverse_static_cache() {
+    int order[MAX_ACTIVE],count=game.world.DrawList(order);
+    game.renderer.SetCamera(game.camera,game.world.floor,game.world.room);
+    game.renderer.Restore();
+    uint32_t signature=2166136261u;
+    for(int i=count-1;i>=0;--i) {
+        int slot=order[i];if(game.Dynamic(slot)) continue;
+        game.renderer.DrawActor(game.world.Pose(slot));
+        game.static_rank[slot]=(uint8_t)(count-1-i);
+        signature=(signature^game.static_hash[slot])*16777619u;
+    }
+    game.renderer.BakeBackground();game.static_signature=signature;
+}
 extern "C" void host_draw_painter() {
     game.renderer.SetCamera(game.camera,game.world.floor,game.world.room);
     game.renderer.Restore();

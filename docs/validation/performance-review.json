@@ -1,0 +1,439 @@
+{
+  "reference_commit": "a0fd040",
+  "emulator": "PicoDrive libretro 2.04aitd32x, default clocks",
+  "hardware_validation": false,
+  "region": "NTSC",
+  "character": "Edward",
+  "seconds_per_scene": 5,
+  "music": 0,
+  "scenes": {
+    "hall2": {
+      "reference": {
+        "fps": 8.6,
+        "ticks": 125,
+        "completed_frame_seconds": 5.0,
+        "simulation_hz": 25.0,
+        "static_rebuilds": 0,
+        "rom_sha256": "d010ddede10c54f1eb507d0acd76b73e38f6d76320572ddd207c6e2d696892d6"
+      },
+      "current": {
+        "fps": 10.0,
+        "ticks": 127,
+        "completed_frame_seconds": 5.05,
+        "simulation_hz": 25.14851485148515,
+        "static_rebuilds": 0,
+        "rom_sha256": "d34e42d3a1dccae02a3572c071dc0e231a7721b84c52becefa13e409615b69ea"
+      }
+    },
+    "chest": {
+      "reference": {
+        "fps": 11.8,
+        "ticks": 125,
+        "completed_frame_seconds": 4.983333333333333,
+        "simulation_hz": 25.08361204013378,
+        "static_rebuilds": 2,
+        "rom_sha256": "d010ddede10c54f1eb507d0acd76b73e38f6d76320572ddd207c6e2d696892d6"
+      },
+      "current": {
+        "fps": 13.0,
+        "ticks": 125,
+        "completed_frame_seconds": 4.983333333333333,
+        "simulation_hz": 25.08361204013378,
+        "static_rebuilds": 2,
+        "rom_sha256": "d34e42d3a1dccae02a3572c071dc0e231a7721b84c52becefa13e409615b69ea"
+      }
+    },
+    "chestopen": {
+      "reference": {
+        "fps": 11.4,
+        "ticks": 125,
+        "completed_frame_seconds": 5.016666666666667,
+        "simulation_hz": 24.916943521594686,
+        "static_rebuilds": 1,
+        "rom_sha256": "d010ddede10c54f1eb507d0acd76b73e38f6d76320572ddd207c6e2d696892d6"
+      },
+      "current": {
+        "fps": 11.6,
+        "ticks": 124,
+        "completed_frame_seconds": 4.933333333333334,
+        "simulation_hz": 25.135135135135133,
+        "static_rebuilds": 1,
+        "rom_sha256": "d34e42d3a1dccae02a3572c071dc0e231a7721b84c52becefa13e409615b69ea"
+      }
+    }
+  },
+  "transition": {
+    "reference": {
+      "first_three_gaps_ms": [
+        316.6666666666667,
+        150.0,
+        133.33333333333334
+      ],
+      "first_three_total_ms": 600.0,
+      "first_world_tick": 247,
+      "first_player_position": [
+        2800,
+        0,
+        -1255
+      ],
+      "signatures": [
+        3953669369,
+        3953669369,
+        3953669369
+      ]
+    },
+    "current": {
+      "first_three_gaps_ms": [
+        300.0,
+        300.0,
+        133.33333333333334
+      ],
+      "first_three_total_ms": 733.3333333333334,
+      "first_world_tick": 246,
+      "first_player_position": [
+        2800,
+        0,
+        -1297
+      ],
+      "signatures": [
+        547776375,
+        3953669369,
+        3953669369
+      ]
+    },
+    "interpretation": "No overall improvement: faster draw scheduling exposes an additional required static order rebuild (objects 33/63, 706 changed pixels)."
+  },
+  "pal_opening_smoke": {
+    "fps": 12.0,
+    "ticks": 123,
+    "completed_frame_seconds": 4.92,
+    "simulation_hz": 25.0,
+    "rom_sha256": "d34e42d3a1dccae02a3572c071dc0e231a7721b84c52becefa13e409615b69ea"
+  },
+  "validation": {
+    "transition_pixel_parity": [
+      {
+        "character": 0,
+        "exact_frames": 345,
+        "world_state_equal": true
+      },
+      {
+        "character": 1,
+        "exact_frames": 345,
+        "world_state_equal": true
+      }
+    ],
+    "scene_pixel_parity": {
+      "libraries": [
+        {
+          "path": "build/perf-reference/build/libaitd32x.so",
+          "sha256": "826ae8fcb4557c10fdffc957110f0c8955f37f22468f4d92de39cb173f967dcc"
+        },
+        {
+          "path": "build/libaitd32x.so",
+          "sha256": "7e89cee4e1a3cb65fc92172aa6d011d3f3482cae79924e9daf9e94ceb7e5f7f6"
+        }
+      ],
+      "scenes": [
+        {
+          "character": 0,
+          "scene": "bedroom-chest-open",
+          "exact_tick_frames": 255,
+          "exact_extra_draws": 3,
+          "world_variables_active_state_equal_every_tick": true,
+          "all_objects_equal_at_initial_final_and_cache_draws": true,
+          "distinct_prop_states": 7,
+          "positions_before": [
+            [
+              1800,
+              0,
+              1400
+            ],
+            [
+              2300,
+              0,
+              1400
+            ]
+          ],
+          "positions_after": [
+            [
+              1800,
+              0,
+              1400
+            ],
+            [
+              2300,
+              0,
+              1400
+            ]
+          ]
+        },
+        {
+          "character": 0,
+          "scene": "attic-chest-push",
+          "exact_tick_frames": 155,
+          "exact_extra_draws": 3,
+          "world_variables_active_state_equal_every_tick": true,
+          "all_objects_equal_at_initial_final_and_cache_draws": true,
+          "distinct_prop_states": 1,
+          "positions_before": [
+            [
+              -4000,
+              0,
+              1200
+            ],
+            [
+              -4000,
+              0,
+              300
+            ]
+          ],
+          "positions_after": [
+            [
+              -4000,
+              0,
+              -300
+            ],
+            [
+              -4000,
+              0,
+              -1196
+            ]
+          ]
+        },
+        {
+          "character": 0,
+          "scene": "glass-window-front",
+          "exact_tick_frames": 65,
+          "exact_extra_draws": 5,
+          "world_variables_active_state_equal_every_tick": true,
+          "all_objects_equal_at_initial_final_and_cache_draws": true,
+          "distinct_prop_states": 1,
+          "positions_before": [
+            [
+              -1250,
+              0,
+              1700
+            ],
+            [
+              -750,
+              -2000,
+              2140
+            ]
+          ],
+          "positions_after": [
+            [
+              -1250,
+              0,
+              1700
+            ],
+            [
+              -750,
+              -2000,
+              2140
+            ]
+          ]
+        },
+        {
+          "character": 0,
+          "scene": "glass-window-back",
+          "exact_tick_frames": 65,
+          "exact_extra_draws": 5,
+          "world_variables_active_state_equal_every_tick": true,
+          "all_objects_equal_at_initial_final_and_cache_draws": true,
+          "distinct_prop_states": 1,
+          "positions_before": [
+            [
+              -750,
+              0,
+              2450
+            ],
+            [
+              -750,
+              -2000,
+              2140
+            ]
+          ],
+          "positions_after": [
+            [
+              -750,
+              0,
+              2450
+            ],
+            [
+              -750,
+              -2000,
+              2140
+            ]
+          ]
+        },
+        {
+          "character": 1,
+          "scene": "bedroom-chest-open",
+          "exact_tick_frames": 255,
+          "exact_extra_draws": 3,
+          "world_variables_active_state_equal_every_tick": true,
+          "all_objects_equal_at_initial_final_and_cache_draws": true,
+          "distinct_prop_states": 7,
+          "positions_before": [
+            [
+              1800,
+              0,
+              1400
+            ],
+            [
+              2300,
+              0,
+              1400
+            ]
+          ],
+          "positions_after": [
+            [
+              1800,
+              0,
+              1400
+            ],
+            [
+              2300,
+              0,
+              1400
+            ]
+          ]
+        },
+        {
+          "character": 1,
+          "scene": "attic-chest-push",
+          "exact_tick_frames": 155,
+          "exact_extra_draws": 3,
+          "world_variables_active_state_equal_every_tick": true,
+          "all_objects_equal_at_initial_final_and_cache_draws": true,
+          "distinct_prop_states": 1,
+          "positions_before": [
+            [
+              -4000,
+              0,
+              1200
+            ],
+            [
+              -4000,
+              0,
+              300
+            ]
+          ],
+          "positions_after": [
+            [
+              -4000,
+              0,
+              -411
+            ],
+            [
+              -4000,
+              0,
+              -1311
+            ]
+          ]
+        },
+        {
+          "character": 1,
+          "scene": "glass-window-front",
+          "exact_tick_frames": 65,
+          "exact_extra_draws": 5,
+          "world_variables_active_state_equal_every_tick": true,
+          "all_objects_equal_at_initial_final_and_cache_draws": true,
+          "distinct_prop_states": 1,
+          "positions_before": [
+            [
+              -1250,
+              0,
+              1700
+            ],
+            [
+              -750,
+              -2000,
+              2140
+            ]
+          ],
+          "positions_after": [
+            [
+              -1250,
+              0,
+              1700
+            ],
+            [
+              -750,
+              -2000,
+              2140
+            ]
+          ]
+        },
+        {
+          "character": 1,
+          "scene": "glass-window-back",
+          "exact_tick_frames": 65,
+          "exact_extra_draws": 5,
+          "world_variables_active_state_equal_every_tick": true,
+          "all_objects_equal_at_initial_final_and_cache_draws": true,
+          "distinct_prop_states": 1,
+          "positions_before": [
+            [
+              -750,
+              0,
+              2450
+            ],
+            [
+              -750,
+              -2000,
+              2140
+            ]
+          ],
+          "positions_after": [
+            [
+              -750,
+              0,
+              2450
+            ],
+            [
+              -750,
+              -2000,
+              2140
+            ]
+          ]
+        }
+      ],
+      "pixel_mismatches": 0,
+      "palette_mismatches": 0,
+      "state_mismatches": 0
+    },
+    "wide_divide_native": {
+      "region": "NTSC",
+      "comparisons": 13871,
+      "status": 2,
+      "category": 4,
+      "signed32_overflow_cases": 3394,
+      "signed32_in_range_cases": 10477,
+      "expected_comparisons": 13871,
+      "emulator_frames": 181,
+      "diagnostic_rom_sha256": "a71d67d77a823a80f0314adc84ea4466dfe529fce5a8184aa7e277faea72d096",
+      "divide_header_sha256": "7601afd009e38de09a0df1ed0cde4ffb5dda9bc46b1636f21a41e97e07fa214f",
+      "native_reference": "libgcc signed int64 division narrowed to int32",
+      "hardware_validation": false
+    },
+    "check_render": "passed",
+    "check_animation": "passed"
+  },
+  "footprint": {
+    "rom_bytes": 4128768,
+    "bank_bytes": 3976924,
+    "bank_entries": 1969,
+    "bss_bytes": 160120,
+    "reference_module_bytes": 85060,
+    "current_module_bytes": 83044,
+    "reference_static_end": "0x0603BDC0",
+    "current_static_end": "0x0603B5E0",
+    "reference_stack_gap_bytes": 576,
+    "current_stack_gap_bytes": 2592,
+    "master_reserved_stack_bytes": 12288,
+    "slave_reserved_stack_bytes": 4096,
+    "bank_sha256": "b1a17763e20dd481337d4495c0ee32147b08a9e474c3a4e2c122164079f97dfa"
+  }
+}

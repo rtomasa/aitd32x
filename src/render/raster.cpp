@@ -40,7 +40,8 @@ void RasterCoverageSpan(volatile uint8_t *bits,int y,int left,int right,bool cle
         uint8_t mask=pattern;
         if(x==first) mask&=(uint8_t)(0xffu<<(left&7));
         if(x==last) mask&=(uint8_t)(0xffu>>(7-(right&7)));
-        if(clear) row[x]&=(uint8_t)~mask;
+        if(mask==0xff) row[x]=clear?0:0xff;
+        else if(clear) row[x]&=(uint8_t)~mask;
         else row[x]|=mask;
     }
 }
@@ -50,9 +51,10 @@ static inline void MaterialSpan(volatile uint16_t *p,int y,int left,int right,ui
     // Indexed packed pixels have no alpha unit. A fixed screen-door pattern
     // preserves the scenery through glass, without a blend table in SDRAM.
     for(int x=left+((left+y)&1);x<=right;x+=2) {
-        volatile uint16_t *word=p+x/2;uint16_t old=*word;
-        uint8_t a=(uint8_t)((volatile uint8_t*)word)[0],b=(uint8_t)((volatile uint8_t*)word)[1];
-        (void)old;*word=(x&1)?Pair(a,color):Pair(color,b);
+        volatile uint16_t *word=p+x/2;
+        volatile uint8_t *bytes=(volatile uint8_t *)word;
+        if(color) bytes[x&1]=color;
+        else *word=(x&1)?Pair(bytes[0],0):Pair(0,bytes[1]);
     }
 }
 void RasterSpan(RasterSurface &surface,int y,int x1,int x2,uint8_t color) {
@@ -181,14 +183,19 @@ void RasterPrimitive(RasterSurface &surface,unsigned type,const Point *screen,un
     }
 }
 
-void RasterDepthTriangle(RasterSurface &surface,const Point *p,const int *q,Rect tile,uint16_t *depth,uint8_t color,uint8_t material,const uint8_t *mask) {
+bool RasterPrepareDepthTriangle(DepthPrimitive &out,const Point *p,const int *q,uint8_t color,uint8_t material) {
     int area=(p[1].x-p[0].x)*(p[2].y-p[0].y)-(p[1].y-p[0].y)*(p[2].x-p[0].x);
-    if(area<=0) return;
-    int left=Min(p[0].x,Min(p[1].x,p[2].x)),right=Max(p[0].x,Max(p[1].x,p[2].x));
+    if(area<=0) return false;
+    for(unsigned i=0;i<3;++i) { out.x[i]=(int16_t)p[i].x;out.y[i]=(int16_t)p[i].y; }
+    out.q=q[0]*256;
+    out.dx=RenderDivideWide(((int64_t)(q[1]-q[0])*(p[2].y-p[0].y)-(int64_t)(q[2]-q[0])*(p[1].y-p[0].y))*256,area);
+    out.dy=RenderDivideWide(((int64_t)(p[1].x-p[0].x)*(q[2]-q[0])-(int64_t)(p[2].x-p[0].x)*(q[1]-q[0]))*256,area);
+    out.kind=1;out.color=color;out.material=material;out.pad=0;
+    return true;
+}
+
+static void DepthTriangle(RasterSurface &surface,const Point *p,int q,int dx,int dy,Rect tile,uint16_t *depth,uint8_t color,uint8_t material,const uint8_t *mask) {
     int top=Min(p[0].y,Min(p[1].y,p[2].y)),bottom=Max(p[0].y,Max(p[1].y,p[2].y));
-    if(left>tile.x2 || right<tile.x1 || top>tile.y2 || bottom<tile.y1) return;
-    int dx=(int)((((int64_t)(q[1]-q[0])*(p[2].y-p[0].y)-(int64_t)(q[2]-q[0])*(p[1].y-p[0].y))*256)/area);
-    int dy=(int)((((int64_t)(p[1].x-p[0].x)*(q[2]-q[0])-(int64_t)(p[2].x-p[0].x)*(q[1]-q[0]))*256)/area);
     RasterSurface clipped=surface;clipped.first=tile.y1;clipped.last=tile.y2+1;
     RasterEdge edges[3];unsigned count=0;
     for(unsigned i=0,k=2;i<3;k=i++) if(MakeEdge(clipped,p[k],p[i],edges[count])) ++count;
@@ -197,7 +204,7 @@ void RasterDepthTriangle(RasterSurface &surface,const Point *p,const int *q,Rect
         int a=4096,b=-4096;
         for(unsigned i=0;i<count;++i) { RasterEdge &e=edges[i];if(y>=e.first && y<e.last) { a=Min(a,e.x);b=Max(b,e.x);StepEdge(e); } }
         a=Max(a,tile.x1);b=Min(b,tile.x2);if(a>b) continue;
-        int z=q[0]*256+dx*(a-p[0].x)+dy*(y-p[0].y);
+        int z=q+dx*(a-p[0].x)+dy*(y-p[0].y);
         uint16_t *row=depth+(y-tile.y1)*64;
         int first=GAME_WIDTH,last=-1;
         for(int x=a;x<=b;++x,z+=dx) {
@@ -217,6 +224,33 @@ void RasterDepthTriangle(RasterSurface &surface,const Point *p,const int *q,Rect
         if(last>=first) { written.x1=Min(written.x1,first);written.x2=Max(written.x2,last);written.y1=Min(written.y1,y);written.y2=y; }
     }
     if(written.x1<=written.x2) { Rect &d=surface.damage;d.x1=Min(d.x1,written.x1);d.x2=Max(d.x2,written.x2);d.y1=Min(d.y1,written.y1);d.y2=Max(d.y2,written.y2); }
+}
+
+void RasterDepthTriangle(RasterSurface &surface,const Point *p,const int *q,Rect tile,uint16_t *depth,uint8_t color,uint8_t material,const uint8_t *mask) {
+    int left=Min(p[0].x,Min(p[1].x,p[2].x)),right=Max(p[0].x,Max(p[1].x,p[2].x));
+    int top=Min(p[0].y,Min(p[1].y,p[2].y)),bottom=Max(p[0].y,Max(p[1].y,p[2].y));
+    if(left>tile.x2 || right<tile.x1 || top>tile.y2 || bottom<tile.y1) return;
+    DepthPrimitive prepared;
+    if(RasterPrepareDepthTriangle(prepared,p,q,color,material))
+        DepthTriangle(surface,p,prepared.q,prepared.dx,prepared.dy,tile,depth,color,material,mask);
+}
+
+void RasterDepthPrimitive(RasterSurface &surface,const DepthPrimitive &p,Rect tile,uint16_t *depth,const uint8_t *mask) {
+    int left=p.x[0],right=left,top=p.y[0],bottom=top;
+    unsigned count=p.kind==1?3:p.kind==0?2:1;
+    for(unsigned i=1;i<count;++i) { left=Min(left,p.x[i]);right=Max(right,p.x[i]);top=Min(top,p.y[i]);bottom=Max(bottom,p.y[i]); }
+    if(p.kind==2) { left-=p.dx;right+=p.dx;top-=p.dx;bottom+=p.dx; }
+    if(left>tile.x2 || right<tile.x1 || top>tile.y2 || bottom<tile.y1) return;
+    if(p.kind==1) {
+        Point points[]={{p.x[0],p.y[0]},{p.x[1],p.y[1]},{p.x[2],p.y[2]}};
+        DepthTriangle(surface,points,p.q,p.dx,p.dy,tile,depth,p.color,p.material,mask);
+    } else if(p.kind==0) {
+        int dx=p.x[1]-p.x[0],dy=p.y[1]-p.y[0],steps=p.dy;
+        for(int t=0;t<=steps;++t) {
+            Point point={p.x[0]+(steps?dx*t/steps:0),p.y[0]+(steps?dy*t/steps:0)};
+            RasterDepthPoint(surface,point,p.q+(steps?p.dx*t/steps:0),0,tile,depth,p.color,p.material,mask);
+        }
+    } else RasterDepthPoint(surface,{p.x[0],p.y[0]},p.q,p.dx,tile,depth,p.color,p.material,mask);
 }
 
 void RasterDepthPoint(RasterSurface &surface,Point p,int q,int size,Rect tile,uint16_t *depth,uint8_t color,uint8_t material,const uint8_t *mask) {

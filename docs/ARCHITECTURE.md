@@ -1,5 +1,23 @@
 # Native architecture — revision 13
 
+This document records the inherited architecture. For current code/RAM figures,
+aligned asset reads, contact-depth arithmetic and the review of CPU allocation,
+see the [performance follow-up](validation/performance-followup.md) and
+[initial review](validation/performance-review.md).
+The [reported-bugs changes](validation/reported-bugs.md) extend contact repair
+to idle poses and moving doors/hatches and apply each actor's masks before depth.
+
+Current additions: unchanged static geometry with a changed painter order uses
+a partial repair enclosing intersecting props and mask writes. Geometry,
+membership and camera changes keep full rebuilds. Contact primitives/gradients
+are prepared in idle gameplay scratch; larger jobs use disjoint SH2 row bands
+with two 64×32 halves of the existing depth buffer and an explicit CONTACT/END
+fence. Near-clipped or oversized prepared groups retain the original depth path.
+Audio interrupts remain available. The 68000 now caches its music-bank selection;
+actor refresh caches room visibility per call. Detailed limits and current
+memory figures are in the follow-up report; revision-specific numbers below
+describe the inherited baseline.
+
 ## CPU and timing
 
 The 68000 boots the cartridge, detects PAL/NTSC and publishes coherent controller snapshots each VBlank. The master SH2 executes the 25 Hz simulation, LIFE/track, active objects, animation, collision, inventory and camera selection. It transforms and sorts geometry and presents completed frames. Shared-RAM wait reads are spaced by 24 NOPs to avoid a terminal-read polling-detector sleep in PicoDrive. Both SH2s rasterize: the master owns logical rows 0–99 and the slave owns 100–199, using the v6 cache-through eight-entry command ring.

@@ -9,6 +9,8 @@ struct Game {
     int menu,selection,action_selection,book_line;
     bool action_blocked;
     uint32_t tick,static_signature,dynamic_slots,static_hash[MAX_ACTIVE];
+    uint32_t static_slots;
+    uint8_t static_rank[MAX_ACTIVE];
     int16_t static_owner[MAX_ACTIVE];
     uint16_t static_quiet_since[MAX_ACTIVE];
     Rect static_bounds[MAX_ACTIVE];
@@ -19,6 +21,7 @@ struct Game {
     bool paused,help,dirty,resync_clock;
     bool Dynamic(int slot) const { return (dynamic_slots&(1u<<slot))!=0; }
     void ResetCache();
+    void RebuildStaticOrder(const int *order,int count);
     void Init();
     void Input(uint16_t pad);
     void InputSnapshot(uint16_t pad,uint16_t pressed) { pending_edges|=pressed;held=pad; }

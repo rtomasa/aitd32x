@@ -1,0 +1,609 @@
+{
+  "date": "2026-10-11",
+  "reference_rom_sha256": "d34e42d3a1dccae02a3572c071dc0e231a7721b84c52becefa13e409615b69ea",
+  "rom_sha256": "aa48c754bdf2ae39a25b30cb294da9222721cbdf9f02f7e091d8eb9dcc51ff6f",
+  "host_library_sha256": "d95e5f56745a3ab0329fd44cd059e1db79d87fc333e3164291e2d0f140030245",
+  "asset_bank_sha256": "b1a17763e20dd481337d4495c0ee32147b08a9e474c3a4e2c122164079f97dfa",
+  "environment": {
+    "emulator": "PicoDrive libretro 2.04aitd32x",
+    "clock": "default",
+    "build": "RELEASE",
+    "benchmark_region": "NTSC",
+    "benchmark_character": "Edward",
+    "music": 0,
+    "hardware_validated": false,
+    "replayos_validated": false
+  },
+  "fps": [
+    {
+      "scene": "hall2",
+      "seconds": 5,
+      "previous_fps": 10,
+      "current_fps": 12,
+      "improvement_percent": 20,
+      "current_simulation_hz": 24.916943521594686
+    },
+    {
+      "scene": "chest",
+      "seconds": 5,
+      "previous_fps": 13,
+      "current_fps": 14.8,
+      "improvement_percent": 13.85,
+      "current_simulation_hz": 24.93243243243243
+    },
+    {
+      "scene": "chestopen",
+      "seconds": 5,
+      "previous_fps": 11.6,
+      "current_fps": 13.4,
+      "improvement_percent": 15.52,
+      "current_simulation_hz": 25.08361204013378
+    }
+  ],
+  "transition": {
+    "previous": {
+      "first_three_gaps_ms": [
+        300,
+        300,
+        133.33333333333334
+      ],
+      "total_ms": 733.3333333333334,
+      "world_ticks": [
+        246,
+        254,
+        261
+      ],
+      "static_signatures": [
+        547776375,
+        3953669369,
+        3953669369
+      ]
+    },
+    "current": {
+      "first_three_gaps_ms": [
+        250,
+        183.33333333333334,
+        100
+      ],
+      "total_ms": 533.3333333333334,
+      "world_ticks": [
+        242,
+        248,
+        253
+      ],
+      "static_signatures": [
+        547776375,
+        3953669369,
+        3953669369
+      ]
+    },
+    "combined_gap_reduction_percent": 27.27,
+    "limitation": "Controller-driven VBlank-quantized trace; movement release tick changes with presentation cadence."
+  },
+  "validation": {
+    "partial_cache": {
+      "passed": true,
+      "library_sha256": "d95e5f56745a3ab0329fd44cd059e1db79d87fc333e3164291e2d0f140030245",
+      "oracle": "independent instance forced to rebuild its complete scenery cache",
+      "fixtures_in_memory_only": true,
+      "scenes": [
+        {
+          "character": 0,
+          "scenario": "bedroom/hall route",
+          "compared_frames": 347,
+          "partial_order_repairs": 1,
+          "pixels_background_and_world_equal": true
+        },
+        {
+          "character": 0,
+          "scenario": "reversed static order",
+          "repaired_banks": [
+            0,
+            1
+          ],
+          "partial_order_repairs": 2,
+          "repaired_pixel_changes": 5686,
+          "pixels_background_and_world_equal": true
+        },
+        {
+          "character": 0,
+          "scenario": "black/glass/masks",
+          "repaired_banks": [
+            0,
+            1
+          ],
+          "partial_order_repairs": 2,
+          "repaired_pixel_changes": 5686,
+          "pixels_background_and_world_equal": true
+        },
+        {
+          "character": 0,
+          "scenario": "geometry/camera full fallback",
+          "checked_banks": [
+            0,
+            1
+          ],
+          "pixels_background_and_world_equal": true
+        },
+        {
+          "character": 1,
+          "scenario": "bedroom/hall route",
+          "compared_frames": 347,
+          "partial_order_repairs": 1,
+          "pixels_background_and_world_equal": true
+        },
+        {
+          "character": 1,
+          "scenario": "reversed static order",
+          "repaired_banks": [
+            0,
+            1
+          ],
+          "partial_order_repairs": 2,
+          "repaired_pixel_changes": 5686,
+          "pixels_background_and_world_equal": true
+        },
+        {
+          "character": 1,
+          "scenario": "black/glass/masks",
+          "repaired_banks": [
+            0,
+            1
+          ],
+          "partial_order_repairs": 2,
+          "repaired_pixel_changes": 5686,
+          "pixels_background_and_world_equal": true
+        },
+        {
+          "character": 1,
+          "scenario": "geometry/camera full fallback",
+          "checked_banks": [
+            0,
+            1
+          ],
+          "pixels_background_and_world_equal": true
+        }
+      ]
+    },
+    "host_transition": {
+      "frames_per_character": 345,
+      "characters": 2,
+      "pixel_mismatches": 0
+    },
+    "host_interactions": {
+      "tick_frames": 1080,
+      "extra_draws": 32,
+      "pixel_mismatches": 0,
+      "palette_mismatches": 0,
+      "state_mismatches": 0,
+      "prepared_contact_groups": 1102,
+      "max_prepared_commands": 154
+    },
+    "native_contact": [
+      {
+        "region": "NTSC",
+        "passed": true,
+        "visible_characters_distinct": true,
+        "gameplay_ticks_frozen": true,
+        "pause_overlay": false,
+        "scenes": [
+          {
+            "name": "chest-push",
+            "character": 0,
+            "both_banks_match_reference": true,
+            "prepared_groups": 1,
+            "completed_slave_jobs": 2,
+            "sha256": "0d661ae13dfe1eed3f20da6d01d77aac269322fe3cfe4bc5e9794ad844d97125"
+          },
+          {
+            "name": "chest-open",
+            "character": 0,
+            "both_banks_match_reference": true,
+            "prepared_groups": 1,
+            "completed_slave_jobs": 2,
+            "sha256": "1400125c463d75e4e700ccaa25e813a190bb22921388b4c2feadc05e488f4a64"
+          },
+          {
+            "name": "hatch-opening",
+            "character": 0,
+            "both_banks_match_reference": true,
+            "prepared_groups": 1,
+            "completed_slave_jobs": 2,
+            "sha256": "52dfa09a24639734f0cddc7ce86a6128a36bec32c8d8668ea1299e0d9d932ea2"
+          },
+          {
+            "name": "hall-door",
+            "character": 0,
+            "both_banks_match_reference": true,
+            "prepared_groups": 1,
+            "completed_slave_jobs": 2,
+            "sha256": "617ea95a5e6590d873c45af39ec40100cd668455f0d8c5a56a49e64e43a33a60"
+          },
+          {
+            "name": "chest-push",
+            "character": 1,
+            "both_banks_match_reference": true,
+            "prepared_groups": 1,
+            "completed_slave_jobs": 2,
+            "sha256": "42a45ecbd67ccc85ff48819e85eb50889feab55c4b8bcf94268a8baac93f54e0"
+          },
+          {
+            "name": "chest-open",
+            "character": 1,
+            "both_banks_match_reference": true,
+            "prepared_groups": 1,
+            "completed_slave_jobs": 2,
+            "sha256": "6b3ed85a5ee758535abad8e615031d6422d86e2c1063ab18d1f56f84c555336c"
+          },
+          {
+            "name": "hatch-opening",
+            "character": 1,
+            "both_banks_match_reference": true,
+            "prepared_groups": 1,
+            "completed_slave_jobs": 2,
+            "sha256": "ace9dbe038b4767fe090bb7afa7b42e1ac39ec58d13775f995e133f73dbf108a"
+          },
+          {
+            "name": "hall-door",
+            "character": 1,
+            "both_banks_match_reference": true,
+            "prepared_groups": 1,
+            "completed_slave_jobs": 2,
+            "sha256": "0b7b973f599c0f97e793ad7ea706c38f53bce6d09d58a8e749c10fbff7981621"
+          }
+        ]
+      },
+      {
+        "region": "PAL",
+        "passed": true,
+        "visible_characters_distinct": true,
+        "gameplay_ticks_frozen": true,
+        "pause_overlay": false,
+        "scenes": [
+          {
+            "name": "chest-push",
+            "character": 0,
+            "both_banks_match_reference": true,
+            "prepared_groups": 1,
+            "completed_slave_jobs": 2,
+            "sha256": "0d661ae13dfe1eed3f20da6d01d77aac269322fe3cfe4bc5e9794ad844d97125"
+          },
+          {
+            "name": "chest-open",
+            "character": 0,
+            "both_banks_match_reference": true,
+            "prepared_groups": 1,
+            "completed_slave_jobs": 2,
+            "sha256": "1400125c463d75e4e700ccaa25e813a190bb22921388b4c2feadc05e488f4a64"
+          },
+          {
+            "name": "hatch-opening",
+            "character": 0,
+            "both_banks_match_reference": true,
+            "prepared_groups": 1,
+            "completed_slave_jobs": 2,
+            "sha256": "52dfa09a24639734f0cddc7ce86a6128a36bec32c8d8668ea1299e0d9d932ea2"
+          },
+          {
+            "name": "hall-door",
+            "character": 0,
+            "both_banks_match_reference": true,
+            "prepared_groups": 1,
+            "completed_slave_jobs": 2,
+            "sha256": "617ea95a5e6590d873c45af39ec40100cd668455f0d8c5a56a49e64e43a33a60"
+          },
+          {
+            "name": "chest-push",
+            "character": 1,
+            "both_banks_match_reference": true,
+            "prepared_groups": 1,
+            "completed_slave_jobs": 2,
+            "sha256": "42a45ecbd67ccc85ff48819e85eb50889feab55c4b8bcf94268a8baac93f54e0"
+          },
+          {
+            "name": "chest-open",
+            "character": 1,
+            "both_banks_match_reference": true,
+            "prepared_groups": 1,
+            "completed_slave_jobs": 2,
+            "sha256": "6b3ed85a5ee758535abad8e615031d6422d86e2c1063ab18d1f56f84c555336c"
+          },
+          {
+            "name": "hatch-opening",
+            "character": 1,
+            "both_banks_match_reference": true,
+            "prepared_groups": 1,
+            "completed_slave_jobs": 2,
+            "sha256": "ace9dbe038b4767fe090bb7afa7b42e1ac39ec58d13775f995e133f73dbf108a"
+          },
+          {
+            "name": "hall-door",
+            "character": 1,
+            "both_banks_match_reference": true,
+            "prepared_groups": 1,
+            "completed_slave_jobs": 2,
+            "sha256": "0b7b973f599c0f97e793ad7ea706c38f53bce6d09d58a8e749c10fbff7981621"
+          }
+        ]
+      }
+    ],
+    "host_contact_fallbacks": [
+      {
+        "character": 0,
+        "command_capacity_pixels_match": true,
+        "near_clipping_pixels_match": true
+      },
+      {
+        "character": 1,
+        "command_capacity_pixels_match": true,
+        "near_clipping_pixels_match": true
+      }
+    ],
+    "render_animation_reported_bugs": "passed",
+    "audio_save": [
+      {
+        "region": "NTSC",
+        "sram_bytes": 131072,
+        "persistent_core_restart": true,
+        "pose": [
+          3231,
+          0,
+          -3720
+        ],
+        "world_variable_restored": true,
+        "walking_sound": true,
+        "fm_nonzero": true,
+        "fm_after_sram_close": true,
+        "fm_after_reload": true,
+        "bank_after_sram_close_and_reload": true,
+        "save_wait_extra_frames": 79,
+        "rom_sha256": "aa48c754bdf2ae39a25b30cb294da9222721cbdf9f02f7e091d8eb9dcc51ff6f"
+      },
+      {
+        "region": "PAL",
+        "sram_bytes": 131072,
+        "persistent_core_restart": true,
+        "pose": [
+          3231,
+          0,
+          -3720
+        ],
+        "world_variable_restored": true,
+        "walking_sound": true,
+        "fm_nonzero": true,
+        "fm_after_sram_close": true,
+        "fm_after_reload": true,
+        "bank_after_sram_close_and_reload": true,
+        "save_wait_extra_frames": 61,
+        "rom_sha256": "aa48c754bdf2ae39a25b30cb294da9222721cbdf9f02f7e091d8eb9dcc51ff6f"
+      }
+    ],
+    "audio_streams": [
+      {
+        "region": "NTSC",
+        "rom_sha256": "7cf8c56227a16fcf6ec824030b7a7e4af1da7e2e8d9c012faca5347af86ded6e",
+        "checks": [
+          {
+            "track": 0,
+            "duration_seconds": 119.74489795918367,
+            "peak": 1416,
+            "autonomous_while_paused": true,
+            "ends_on_time": true,
+            "cached_bank": 3,
+            "asset_first_bank": 3,
+            "asset_last_bank": 3
+          },
+          {
+            "track": 1,
+            "duration_seconds": 23.69047619047619,
+            "peak": 6883,
+            "autonomous_while_paused": true,
+            "ends_on_time": true,
+            "cached_bank": 3,
+            "asset_first_bank": 3,
+            "asset_last_bank": 3
+          },
+          {
+            "track": 2,
+            "duration_seconds": 61.105442176870746,
+            "peak": 5010,
+            "autonomous_while_paused": true,
+            "ends_on_time": true,
+            "cached_bank": 3,
+            "asset_first_bank": 3,
+            "asset_last_bank": 3
+          },
+          {
+            "track": 3,
+            "duration_seconds": 159.88095238095238,
+            "peak": 2942,
+            "autonomous_while_paused": true,
+            "ends_on_time": true,
+            "cached_bank": 3,
+            "asset_first_bank": 3,
+            "asset_last_bank": 3
+          },
+          {
+            "track": 4,
+            "duration_seconds": 206.13945578231292,
+            "peak": 5844,
+            "autonomous_while_paused": true,
+            "ends_on_time": true,
+            "cached_bank": 3,
+            "asset_first_bank": 3,
+            "asset_last_bank": 3
+          },
+          {
+            "track": 5,
+            "duration_seconds": 103.8265306122449,
+            "peak": 5184,
+            "autonomous_while_paused": true,
+            "ends_on_time": true,
+            "cached_bank": 3,
+            "asset_first_bank": 3,
+            "asset_last_bank": 3
+          },
+          {
+            "track": 6,
+            "duration_seconds": 130.4251700680272,
+            "peak": 5250,
+            "autonomous_while_paused": true,
+            "ends_on_time": true,
+            "cached_bank": 3,
+            "asset_first_bank": 3,
+            "asset_last_bank": 3
+          },
+          {
+            "track": 7,
+            "duration_seconds": 144.77891156462584,
+            "peak": 4229,
+            "autonomous_while_paused": true,
+            "ends_on_time": true,
+            "cached_bank": 3,
+            "asset_first_bank": 3,
+            "asset_last_bank": 3
+          },
+          {
+            "effect": 0,
+            "pcm_samples": 6600,
+            "duration_seconds": 0.825,
+            "completed": true,
+            "sample_clock_verified": true
+          }
+        ]
+      },
+      {
+        "region": "PAL",
+        "rom_sha256": "7cf8c56227a16fcf6ec824030b7a7e4af1da7e2e8d9c012faca5347af86ded6e",
+        "checks": [
+          {
+            "track": 0,
+            "duration_seconds": 119.74489795918367,
+            "peak": 1411,
+            "autonomous_while_paused": true,
+            "ends_on_time": true,
+            "cached_bank": 3,
+            "asset_first_bank": 3,
+            "asset_last_bank": 3
+          },
+          {
+            "track": 1,
+            "duration_seconds": 23.69047619047619,
+            "peak": 6062,
+            "autonomous_while_paused": true,
+            "ends_on_time": true,
+            "cached_bank": 3,
+            "asset_first_bank": 3,
+            "asset_last_bank": 3
+          },
+          {
+            "track": 2,
+            "duration_seconds": 61.105442176870746,
+            "peak": 4900,
+            "autonomous_while_paused": true,
+            "ends_on_time": true,
+            "cached_bank": 3,
+            "asset_first_bank": 3,
+            "asset_last_bank": 3
+          },
+          {
+            "track": 3,
+            "duration_seconds": 159.88095238095238,
+            "peak": 2847,
+            "autonomous_while_paused": true,
+            "ends_on_time": true,
+            "cached_bank": 3,
+            "asset_first_bank": 3,
+            "asset_last_bank": 3
+          },
+          {
+            "track": 4,
+            "duration_seconds": 206.13945578231292,
+            "peak": 5566,
+            "autonomous_while_paused": true,
+            "ends_on_time": true,
+            "cached_bank": 3,
+            "asset_first_bank": 3,
+            "asset_last_bank": 3
+          },
+          {
+            "track": 5,
+            "duration_seconds": 103.8265306122449,
+            "peak": 5222,
+            "autonomous_while_paused": true,
+            "ends_on_time": true,
+            "cached_bank": 3,
+            "asset_first_bank": 3,
+            "asset_last_bank": 3
+          },
+          {
+            "track": 6,
+            "duration_seconds": 130.4251700680272,
+            "peak": 5787,
+            "autonomous_while_paused": true,
+            "ends_on_time": true,
+            "cached_bank": 3,
+            "asset_first_bank": 3,
+            "asset_last_bank": 3
+          },
+          {
+            "track": 7,
+            "duration_seconds": 144.77891156462584,
+            "peak": 4177,
+            "autonomous_while_paused": true,
+            "ends_on_time": true,
+            "cached_bank": 3,
+            "asset_first_bank": 3,
+            "asset_last_bank": 3
+          },
+          {
+            "effect": 0,
+            "pcm_samples": 6600,
+            "duration_seconds": 0.825,
+            "completed": true,
+            "sample_clock_verified": true
+          }
+        ]
+      }
+    ],
+    "audio_scope": {
+      "final_rom_sha256": "aa48c754bdf2ae39a25b30cb294da9222721cbdf9f02f7e091d8eb9dcc51ff6f",
+      "final_save_and_post_sram_music_checks": [
+        "NTSC",
+        "PAL"
+      ],
+      "prior_stream_timing_rom_sha256": {
+        "NTSC": "7cf8c56227a16fcf6ec824030b7a7e4af1da7e2e8d9c012faca5347af86ded6e",
+        "PAL": "7cf8c56227a16fcf6ec824030b7a7e4af1da7e2e8d9c012faca5347af86ded6e"
+      },
+      "stream_timing_not_repeated_reason": "Final change adds a may_alias annotation to SH2 render scratch access. No audio code, 68000 code, or assets changed from the tested stream candidate.",
+      "final_md_elf_sha256": "61ca9d0a767c768c39977206e2c465694ec3e9af2f2e5f262247c3462556af8d"
+    }
+  },
+  "memory": {
+    "previous": {
+      "rom_bytes": 4128768,
+      "module_bytes": 83044,
+      "sh2_bss_bytes": 160120,
+      "static_end": "0x0603B5E0",
+      "gap_below_stacks_bytes": 2592
+    },
+    "current": {
+      "rom_bytes": 4128768,
+      "module_bytes": 84532,
+      "sh2_bss_bytes": 160144,
+      "static_end": "0x0603BBC8",
+      "gap_below_stacks_bytes": 1080
+    },
+    "m68k_bss_growth_bytes": 2,
+    "master_stack_bytes": 12288,
+    "slave_stack_bytes": 4096,
+    "new_contact_persistent_buffer_bytes": 0
+  },
+  "limitations": [
+    "Physical hardware and RePlayOS not tested.",
+    "Cross-bank music playback not exercised: all current tracks occupy bank 3.",
+    "Stack usage inspected from compiler prologues, not runtime high-water marks.",
+    "Near clipping and command overflow preserve the original slower contact path."
+  ]
+}

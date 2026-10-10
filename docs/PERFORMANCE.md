@@ -1,3 +1,24 @@
+# Partial cache and contact rendering — 2026-10-11
+
+The [follow-up implementation and validation](validation/performance-followup.md)
+adds partial scenery repairs, prepared contact geometry and parallel depth fill
+on both SH2s, plus visibility/movement and music-bank optimizations. Against the
+previous pass below, focused NTSC PicoDrive measurements improve hallway
+10.0 → 12.0 FPS, chest pushing 13.0 → 14.8 FPS and opening 11.6 → 13.4 FPS.
+The first three room-transition presentation gaps total 533.3 ms instead of
+733.3 ms. Pixel/state comparisons preserve the rendering fixes; hardware
+performance remains unverified.
+
+# Performance review — 2026-10-10
+
+See [the initial performance review](validation/performance-review.md) for the
+optimizations and CPU/memory/banking findings against `a0fd040`. Focused NTSC
+PicoDrive results: hallway 8.6 → 10.0 FPS, attic chest pushing 11.8 → 13.0 FPS,
+bedroom opening 11.4 → 11.6 FPS. These preserve exact host scene output and use
+2,016 fewer bytes of loaded code with unchanged BSS/assets. Opening remains
+slow; the transition trace exposes an extra required scenery rebuild and is
+not an overall improvement. Hardware performance remains unverified.
+
 # Revision 15
 
 See [revision 15 validation](validation/v15-validation.md) for sound-command fixes, original music-cue mapping, native sound levels, document rendering and save compatibility. No new gameplay FPS benchmark is claimed for this revision. Historical measurements below remain version-specific.

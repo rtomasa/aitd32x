@@ -113,17 +113,31 @@ void World::Deactivate(int s) {
     o.v[O_X]=p.pos.x;o.v[O_Y]=p.pos.y;o.v[O_Z]=p.pos.z;o.v[O_SLOT]=-1;a.id=-1;
 }
 void World::RefreshActors() {
+    // Room visibility is fixed throughout this refresh. Read the camera and
+    // adjoining-room lists once, retaining the original object/slot scan order.
+    uint32_t visible_rooms=0;
+    auto include=[&](int r) { if((unsigned)r<32) visible_rooms|=1u<<r; };
+    include(room);
+    Asset cam=Platform_ReadAsset(floor_cameras[floor][camera]);
+    const uint8_t *views=cam.data+BE32(cam.data+20);
+    for(unsigned i=0;i<BE16(cam.data+18);++i) include(BE16(views+16*i));
+    Asset current=RoomAsset(floor,room);const uint8_t *links=current.data+BE32(current.data+20);
+    for(unsigned i=0;i<BE16(current.data+10);++i,links+=16)
+        if(BE16(links+14)==0) include(BS16(links+12));
+    // Preserve the original behavior for any future room IDs outside the
+    // compact fast path, including negative script values.
+    auto visible=[&](int r) { return (unsigned)r<32?(visible_rooms&(1u<<r))!=0:Visible(r); };
     for(int s=0;s<MAX_ACTIVE;++s) if(active[s].id>=0) {
         const int16_t *v=active[s].value.v;bool keep=false;
         if(v[O_FLOOR]==floor) {
-            if(v[O_LIFE]>=0) keep=v[O_LIFE_MODE]==0 || (v[O_LIFE_MODE]==1 && v[O_ROOM]==room) || (v[O_LIFE_MODE]==2 && Visible(v[O_ROOM]));
-            else keep=Visible(v[O_ROOM]);
+            if(v[O_LIFE]>=0) keep=v[O_LIFE_MODE]==0 || (v[O_LIFE_MODE]==1 && v[O_ROOM]==room) || (v[O_LIFE_MODE]==2 && visible(v[O_ROOM]));
+            else keep=visible(v[O_ROOM]);
         }
         if(!keep) Deactivate(s);
     }
     for(int id=0;id<A32X_OBJECT_COUNT;++id) {
         const int16_t *v=objects[id].v;if(v[O_SLOT]>=0 || v[O_FLOOR]!=floor) continue;
-        bool eligible=v[O_LIFE]>=0 ? (v[O_LIFE_MODE]==0 || (v[O_LIFE_MODE]==1 && v[O_ROOM]==room) || (v[O_LIFE_MODE]==2 && Visible(v[O_ROOM]))) : Visible(v[O_ROOM]);
+        bool eligible=v[O_LIFE]>=0 ? (v[O_LIFE_MODE]==0 || (v[O_LIFE_MODE]==1 && v[O_ROOM]==room) || (v[O_LIFE_MODE]==2 && visible(v[O_ROOM]))) : visible(v[O_ROOM]);
         if(!eligible) continue;
         int s=0;while(s<MAX_ACTIVE && active[s].id>=0) ++s;
         if(s==MAX_ACTIVE) { Error(-1,id,902);return; }Activate(id,s);
@@ -202,7 +216,8 @@ void World::MoveActor(int s,Vec3 d,bool push) {
     ActiveObject &a=active[s];Actor &p=Pose(s);
     int steps=Max(1,(Max(Abs(d.x),Abs(d.z))+31)/32);
     for(int n=1;n<=steps;++n) {
-        Vec3 change={d.x*n/steps-d.x*(n-1)/steps,d.y*n/steps-d.y*(n-1)/steps,d.z*n/steps-d.z*(n-1)/steps};
+        Vec3 change=d;
+        if(steps>1) change={d.x*n/steps-d.x*(n-1)/steps,d.y*n/steps-d.y*(n-1)/steps,d.z*n/steps-d.z*(n-1)/steps};
         Bounds candidate=Offset(Box(s),change);int h=HardCollision(candidate,p.floor,p.room);
         if(h>=0) {
             Asset r=RoomAsset(p.floor,p.room);const uint8_t *box=r.data+BE32(r.data+16)+16*h;

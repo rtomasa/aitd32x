@@ -7,6 +7,7 @@ static uint32_t music_pointer,music_commands;
 static uint16_t pal_audio;static uint8_t frequency_high[6];
 static uint16_t fade_frames,fade_length,fade_gain;static uint8_t levels[32];
 static uint16_t music_high,music_wait,music_phase,music_active,save_active;
+static uint16_t music_bank;
 RAM_CODE void FMWrite(uint16_t port,uint16_t reg,uint16_t value) {
     volatile uint8_t *ym=(volatile uint8_t *)0xA04000;
     while(ym[0]&0x80) { }
@@ -39,7 +40,10 @@ RAM_CODE void PSGWrite(uint16_t value) {
 RAM_CODE uint16_t ROMByte(void) {
     uint32_t offset=music_pointer++;
     if(offset<0x80000) return *(volatile uint8_t *)(0x880000+offset);
-    *(volatile uint16_t *)0xA15104=(uint16_t)(offset>>20);
+    uint16_t bank=(uint16_t)(offset>>20);
+    // The 68000 music reader alone owns this window. Most consecutive stream
+    // bytes share a bank; change its register only when crossing/selecting one.
+    if(bank!=music_bank) { *(volatile uint16_t *)0xA15104=bank;music_bank=bank; }
     return *(volatile uint8_t *)(0x900000+(offset&0xFFFFF));
 }
 RAM_CODE uint32_t ROMLong(void) {
@@ -104,14 +108,14 @@ RAM_CODE void ServiceSave(void) {
     case 0x5002:save_cursor=save_base+value;break;
     case 0x5003:value=*(volatile uint16_t *)(0x200000+save_cursor);save_cursor+=2;break;
     case 0x5004:*(volatile uint16_t *)(0x200000+save_cursor)=value;save_cursor+=2;break;
-    case 0x5005:*(volatile uint8_t *)0xA130F1=0;save_active=0;break;
+    case 0x5005:*(volatile uint8_t *)0xA130F1=0;music_bank=0xffff;save_active=0;break;
     }
     comm[1]=value;comm[0]=0x5FFF;
 }
 RAM_CODE void main(void) {
     volatile uint16_t *const comm=(volatile uint16_t *)MARS_COMM0;
     volatile uint16_t *const status=(volatile uint16_t *)VDP_CTRL_PORT;
-    uint16_t sequence=0;
+    uint16_t sequence=0;music_bank=0xffff;
     *(volatile uint16_t *)Z80_BUS_REQ=0x100;
     // YM2612 writes require Z80 reset released and its bus granted to 68000.
     *(volatile uint16_t *)Z80_RESET=0x100;

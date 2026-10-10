@@ -69,13 +69,21 @@ The v15 ROM is near the 4 MiB direct SH2 ROM window. SH2 RAM is 256 KiB; static 
 
 ## Next priorities
 
-The current uncommitted opening/occlusion/saber fixes and the reproduced
-key/chest audio fix are documented in
+The opening/occlusion/saber fixes and the reproduced key/chest audio fix were
+committed as `a0fd040` and are documented in
 [reported-bugs validation](validation/reported-bugs.md). Furniture automatic
 closing is original behaviour and is retained. Use its focused check instead
 of running the historical suite for these changes. The user confirmed the
-door audio guard on RePlayOS/PicoDrive; the expanded key unlock guard awaits
-confirmation on that device.
+door and key/chest audio guards on RePlayOS/PicoDrive.
+
+The [initial performance review](validation/performance-review.md) and its
+[implemented follow-up](validation/performance-followup.md) record partial
+scenery repairs, prepared/parallel contact depth, engine-update and music-bank
+optimizations. Current static SDRAM ends at `0x0603BBC8`, leaving 1,080 bytes
+below the reserved stacks; assets and save format remain unchanged. Use the
+partial-cache and native contact differential checks when editing these paths.
+Full new-camera bakes and contact work still limit FPS; preserve the documented
+mask/order dependencies, scratch ownership and worker completion fences.
 
 1. Keep the playable v15 tag available while fixing any user-reported audio, reading or save regressions.
 2. Extend original game progression beyond floors 0 and 1; plan ROM capacity/bank switching before importing the full house.

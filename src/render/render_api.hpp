@@ -3,6 +3,7 @@
 #include "../engine/actor.hpp"
 struct CachedSpan { uint16_t start,length; };
 class World;
+struct RasterSurface;
 class Renderer {
 public:
     uint8_t background[GAME_WIDTH*GAME_HEIGHT];
@@ -18,6 +19,8 @@ public:
     bool SetTitle();
     void Restore();
     void BakeBackground();
+    void RestoreOriginal(Rect area);
+    void BakeRegion(Rect area);
     unsigned DrawCachedActor(const Actor &actor,CachedSpan *spans,unsigned capacity);
     void DrawCoverage(const CachedSpan *spans,unsigned count,Rect clip={0,0,319,199});
     void DrawActor(const Actor &a);
@@ -28,6 +31,7 @@ public:
     void Box(int x,int y,int w,int h,uint8_t color);
     void Panel(int x,int y,unsigned asset);
 private:
+    struct ContactContext;
     struct CompactVertex { int16_t x,y,z,sx,sy; };
     union {
         struct { Vec3 vertices[MAX_VERTICES];Point projected[MAX_VERTICES]; } single;
@@ -43,6 +47,9 @@ private:
     void PolygonGeneral(Point *pts,unsigned count,uint8_t color);
     void Mask(const Actor &a,Rect bounds);
     bool DepthMask(const Actor &a,Rect tile,uint8_t *bits);
+    static void ContactWorker(void *,struct RasterSurface &);
+    void ContactTiles(const ContactContext &,struct RasterSurface &,uint16_t *depths);
+    A32X_COLD void ContactFallback(const Actor *const *,unsigned,Rect,const unsigned *,const bool *);
     bool DrawCompiledActor(const Actor &a);
     volatile uint8_t *CoverageBits();
     void BackgroundSpan(int y,int left,int right,bool original=false);

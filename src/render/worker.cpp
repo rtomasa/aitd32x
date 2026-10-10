@@ -10,7 +10,7 @@ extern "C" { volatile uint32_t worker_profile_state[6]; }
 #endif
 namespace {
 constexpr unsigned capacity=8;
-enum Kind { BEGIN=1,PRIMITIVE=2,END=3 };
+enum Kind { CONTACT=0,BEGIN=1,PRIMITIVE=2,END=3 };
 struct Command {
     uint32_t header,argument;
     Point points[MAX_POLY];
@@ -69,6 +69,12 @@ bool RendererWorker_Submit(unsigned type,const Point *points,unsigned count,uint
     for(unsigned i=0;i<count;++i) { c.points[i].x=points[i].x;c.points[i].y=points[i].y; }
     Publish();return first<GAME_HEIGHT/2 && last>=0;
 }
+void RendererWorker_Contact(RasterSurface &surface,void (*draw)(void *,RasterSurface &),void *context,int split) {
+    volatile Command &c=Acquire();c.header=uint32_t(CONTACT)<<30;c.argument=(uintptr_t)draw;
+    c.points[0].x=(uintptr_t)context;c.points[0].y=(uintptr_t)surface.target;
+    c.points[1].x=split;c.points[1].y=surface.last;
+    Publish();surface.last=split;
+}
 void RendererWorker_Finish(RasterSurface &surface) {
     volatile Shared &s=SharedState();volatile Command &c=Acquire();
     unsigned token=++frame_token;c.header=uint32_t(END)<<30;c.argument=token;Publish();
@@ -90,6 +96,11 @@ void RendererWorker_Poll() {
     unsigned header=c.header,argument=c.argument;
     unsigned kind=header>>30,type=(header>>16)&255,count=(header>>8)&255;
     uintptr_t coverage=kind==BEGIN?(uintptr_t)c.points[0].x:0;
+    uintptr_t context=0,target=0;int first=0,last=0;
+    if(kind==CONTACT) {
+        context=(uintptr_t)c.points[0].x;target=(uintptr_t)c.points[0].y;
+        first=c.points[1].x;last=c.points[1].y;
+    }
     uint8_t color=(uint8_t)header;
     if(kind==PRIMITIVE) for(unsigned i=0;i<count;++i) {
         slave_points[i].x=c.points[i].x;slave_points[i].y=c.points[i].y;
@@ -97,7 +108,14 @@ void RendererWorker_Poll() {
     // Release the ring entry only after its payload has been copied. It can be
     // reused while this command draws from private slave scratch.
     Barrier();s.read=read+1;
-    if(kind==BEGIN) slave_surface={(volatile uint16_t *)argument,GAME_HEIGHT/2,GAME_HEIGHT,{320,200,-1,-1},0,(volatile uint8_t *)coverage};
+    if(kind==CONTACT) {
+        slave_surface={(volatile uint16_t *)target,first,last,{320,200,-1,-1}};
+        ((void (*)(void *,RasterSurface &))argument)((void *)context,slave_surface);
+#ifdef PROFILE
+        ++worker_profile_state[5];
+#endif
+    }
+    else if(kind==BEGIN) slave_surface={(volatile uint16_t *)argument,GAME_HEIGHT/2,GAME_HEIGHT,{320,200,-1,-1},0,(volatile uint8_t *)coverage};
     else if(kind==PRIMITIVE) {
 #ifdef PROFILE
         uint16_t begin=Profile_ReadTimer();
@@ -117,5 +135,6 @@ void RendererWorker_Poll() {
 void RendererWorker_Begin(RasterSurface &) {}
 bool RendererWorker_Submit(unsigned,const Point *,unsigned,uint8_t,int,uint8_t) { return true; }
 void RendererWorker_Finish(RasterSurface &) {}
+void RendererWorker_Contact(RasterSurface &,void (*)(void *,RasterSurface &),void *,int) {}
 void RendererWorker_Poll() {}
 #endif
