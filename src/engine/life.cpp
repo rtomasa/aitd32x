@@ -20,7 +20,7 @@ struct LifeReader {
         switch(code) {
         case 1:return worldid(actor.col[0]);case 2:return actor.hard_dec;case 3:return actor.hard_col;
         case 4:return worldid(actor.hit);case 5:return worldid(actor.hit_by);case 6:return actor.value.v[O_ANIM];
-        case 7:return actor.end_anim;case 8:return p.frame;case 9:return actor.end_frame;case 10:return actor.value.v[O_BODY];
+        case 7:return actor.end_anim;case 8:return w.ScriptFrame(s);case 9:return actor.end_frame;case 10:return actor.value.v[O_BODY];
         case 11:return actor.mark;case 12:return actor.value.v[O_TRACK];case 13:return (w.now-actor.chrono)/60;case 14:return (w.now-actor.room_chrono)/60;
         case 15:return w.Distance(s,w.Slot(Object()));case 16:return worldid(actor.col_by);
         case 17: { int obj=Eval(depth+1);return obj>=0 && obj<A32X_OBJECT_COUNT && (w.objects[obj].v[O_FOUND_FLAGS]&0x8000)?1:0; }
@@ -49,9 +49,12 @@ struct LifeReader {
 void World::RunLife(int life,int caller,bool found,int depth) {
     if(life<0) return;
     if(life>=A32X_LIFE_COUNT || caller<0 || caller>=MAX_ACTIVE || depth>8) { Error(life,0,916);return; }
+    // A found-item script can drop another object and refresh the actor pool.
+    // Keep its world identity even if that refresh releases its temporary slot.
+    const int caller_id=active[caller].id;
     LifeReader r={*this,Platform_ReadAsset(life_assets[life]),life,0,caller,false};int switch_value=0;
     for(int budget=0;budget<2048 && !r.stopped && !fault_code;++budget) {
-        int start=r.pc,op=r.Raw(),target=caller,id=active[caller].id;
+        int start=r.pc,op=r.Raw(),target=caller,id=caller_id;
         if(op&0x8000) { id=r.Object();target=Slot(id);op&=0x7fff; }
         if(op<0 || op>86) { Error(life,start,3000+op);return; }
         auto set=[&](int field,int value) { Set(id,field,value); };
@@ -76,7 +79,7 @@ void World::RunLife(int life,int caller,bool found,int depth) {
         ActiveObject &a=active[target];Actor &p=Pose(target);
         switch(op) {
         case 0:Track(target);break;
-        case 1:case 2: { int anim=r.Raw(),next=r.Raw();if(anim==-1) { a.value.v[O_ANIM]=-1;a.pending_anim=-2; }else Animate(target,anim,op==2?2:0,next);break; }
+        case 1:case 2: { int anim=r.Raw(),next=r.Raw();Animate(target,anim,op==2?2:0,next);break; }
         case 3:SetBody(target,r.Eval());break;
         case 4:case 5:case 6:case 7:case 8:case 9: { int x=r.Eval(),y=r.Eval(),jump=r.Raw();bool match=op==4?x==y:op==5?x!=y:op==6?x>=y:op==7?x>y:op==8?x<=y:x<y;if(!match) r.Jump(jump);break; }
         case 10: { int jump=r.Raw();r.Jump(jump);break; }case 11:case 12:return;
@@ -99,7 +102,7 @@ void World::RunLife(int life,int caller,bool found,int depth) {
         case 30: { int obj=r.Object();if(prompt<0 && !(objects[obj].v[O_FOUND_FLAGS]&0xc000) && (objects[obj].v[O_TRACK]==0 || now-(uint16_t)objects[obj].v[O_TRACK]>=300)) prompt=obj;break; }
         case 31:a.value.v[O_LIFE]=r.Raw();break;case 32:Delete(r.Object());break;case 33:Take(r.Object(),depth);break;
         case 34:in_hand=r.Raw();break;case 35:book_type=r.Raw();book=r.Raw()+1;r.Raw();Audio_Sample(cvars[0]);break;
-        case 36: { int sound=r.Eval(),anim=r.Raw(),frame=r.Raw();if(a.end_frame && a.value.v[O_ANIM]==anim && p.frame==(unsigned)frame) Audio_Sample(sound);break; }case 37:Special(target,r.Raw());break;
+        case 36: { int sound=r.Eval(),anim=r.Raw(),frame=r.Raw();if(a.end_frame && a.value.v[O_ANIM]==anim && ScriptFrame(target)==(unsigned)frame) Audio_Sample(sound);break; }case 37:Special(target,r.Raw());break;
         case 38: {
             if(p.model.data) { Vec3 *points=Actor_GameplayScratch();Actor_Vertices(p,points);Vec3 lo={32000,32000,32000},hi={-32000,-32000,-32000};for(unsigned i=0;i<BE16(p.model.data+2);++i) { Vec3 v=points[i];lo={Min(lo.x,v.x),Min(lo.y,v.y),Min(lo.z,v.z)};hi={Max(hi.x,v.x),Max(hi.y,v.y),Max(hi.z,v.z)}; }p.collision_min=lo;p.collision_max=hi; }break;
         }

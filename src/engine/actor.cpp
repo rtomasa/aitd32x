@@ -57,6 +57,12 @@ void Actor_SetAnimation(Actor &a,unsigned asset) {
     if(!a.animation.data || a.animation.size<4 || !BE16(a.animation.data) || AnimGroups(a)>MAX_GROUPS || a.animation.size!=4+BE16(a.animation.data)*(8+AnimGroups(a)*8)) Platform_Fatal();
     a.frame=0;a.frame_phase=0;a.last_step={0,0,0};
 }
+A32X_COLD void Actor_SetFrame(Actor &a,unsigned frame) {
+    a.frame=frame%BE16(a.animation.data);a.frame_phase=0;a.last_step={0,0,0};
+    const uint8_t *key=Key(a,a.frame);
+    for(unsigned i=0;i<(unsigned)Min(Groups(a),AnimGroups(a));++i)
+        a.state[i]=a.previous[i]=ReadState(key+8+i*8);
+}
 static int Blend(int a,int b,int n,int d,bool angle) {
     int diff=b-a;
     if(angle) { diff=(diff+512)&1023; diff-=512; }

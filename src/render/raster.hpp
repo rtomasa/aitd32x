@@ -15,6 +15,6 @@ void RasterTriangle(RasterSurface &,const Point *,uint8_t);
 void RasterPolygonGeneral(RasterSurface &,const Point *,unsigned,uint8_t);
 void RasterPrimitive(RasterSurface &,unsigned,const Point *,unsigned,uint8_t,int,uint8_t material=0);
 
-void RasterDepthTriangle(RasterSurface &,const Point *,const int *,Rect,uint16_t *,uint8_t,uint8_t);
+void RasterDepthTriangle(RasterSurface &,const Point *,const int *,Rect,uint16_t *,uint8_t,uint8_t,const uint8_t *mask=nullptr);
 
-void RasterDepthPoint(RasterSurface &,Point,int,int,Rect,uint16_t *,uint8_t,uint8_t);
+void RasterDepthPoint(RasterSurface &,Point,int,int,Rect,uint16_t *,uint8_t,uint8_t,const uint8_t *mask=nullptr);

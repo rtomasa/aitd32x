@@ -49,6 +49,12 @@ public:
     Actor &Pose(int slot) { return active[slot].id==1?*player:poses[slot]; }
     int Slot(int id) const;
     int Get(int id,int word) const;
+    unsigned ScriptFrame(int slot) const {
+        const ActiveObject &a=active[slot];const Actor &p=a.id==1?*player:poses[slot];
+        // LIFE sees the original wrap to frame zero. The pose retains the
+        // final key of a one-shot across stopping and re-activation.
+        return a.end_anim && !(a.value.v[O_ANIM_TYPE]&1)?0:p.frame;
+    }
     void Set(int id,int word,int value);
     void RunLife(int life,int slot,bool found=false,int depth=0);
     void FoundLife(int object,int act,int depth=0);

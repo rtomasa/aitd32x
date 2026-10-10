@@ -386,6 +386,25 @@ void Renderer::Mask(const Actor &a,Rect bounds) {
     }
 }
 
+bool Renderer::DepthMask(const Actor &a,Rect tile,uint8_t *bits) {
+    const uint8_t *c=camera.data,*views=c+BE32(c+20);bool any=false;
+    for(unsigned i=0;i<BE16(c+18);++i) {
+        const uint8_t *view=views+16*i;if(BE16(view)!=(unsigned)a.room) continue;
+        const uint8_t *m=c+BE32(view+12);
+        for(unsigned j=0;j<BE16(view+4);++j) {
+            const uint8_t *mask=m+j*12;if(!Renderer_MaskActive(a,c,mask)) continue;
+            const uint8_t *sp=c+BE32(mask+8);
+            for(unsigned k=0;k<BE16(mask+2);++k,sp+=6) {
+                int y=BE16(sp),left=Max(tile.x1,BE16(sp+2)),right=Min(tile.x2,BE16(sp+4));
+                if(y<tile.y1 || y>tile.y2 || left>right) continue;
+                any=true;
+                for(int x=left;x<=right;++x) { unsigned bit=(y-tile.y1)*64+x-tile.x1;bits[bit/8]|=1u<<(bit&7); }
+            }
+        }
+    }
+    return any;
+}
+
 void Renderer::DrawEffects(const World &world) {
     const uint8_t *c=camera.data;
     Rotation rotation=PrepareRotation(BS16(c),BS16(c+2),BS16(c+4));
@@ -443,6 +462,10 @@ bool Renderer::ResolveOverlap(const Actor *const *actors,unsigned count,Rect are
         Rect tile={x,y,Min(x+63,area.x2),Min(y+63,area.y2)};
         for(unsigned j=0;j<64*64;++j) depths[j]=0;
         for(unsigned i=0;i<count;++i) {
+            // Clip each model before it contributes depth. Restoring a prop's
+            // mask after the whole group would erase an unmasked nearer actor.
+            uint32_t blocked[128]={};
+            const uint8_t *mask=DepthMask(*actors[i],tile,(uint8_t *)blocked)?(uint8_t *)blocked:nullptr;
             const uint8_t *m=actors[i]->model.data,*directory=m+BE32(m+32);
             for(unsigned f=0;f<BE16(m+6);++f) {
                 const uint8_t *p=m+BE32(directory+4*f);unsigned n=p[1];
@@ -453,8 +476,8 @@ bool Renderer::ResolveOverlap(const Actor *const *actors,unsigned count,Rect are
                     if(p[0]==0 && n==2) {
                         const CompactVertex &b=combined[offsets[i]+BE16(p+8)];if(b.z<51) continue;
                         int dx=b.sx-v.sx,dy=b.sy-v.sy,steps=Max(dx<0?-dx:dx,dy<0?-dy:dy),end=near[i]?RenderDivide(1<<20,b.z):b.x;
-                        for(int t=0;t<=steps;++t) { Point point={v.sx+(steps?dx*t/steps:0),v.sy+(steps?dy*t/steps:0)};RasterDepthPoint(surface,point,inv+(steps?(end-inv)*t/steps:0),0,tile,depths,p[2],p[3]); }
-                    } else RasterDepthPoint(surface,{v.sx,v.sy},inv,Clamp(size,0,120),tile,depths,p[2],p[3]);
+                        for(int t=0;t<=steps;++t) { Point point={v.sx+(steps?dx*t/steps:0),v.sy+(steps?dy*t/steps:0)};RasterDepthPoint(surface,point,inv+(steps?(end-inv)*t/steps:0),0,tile,depths,p[2],p[3],mask); }
+                    } else RasterDepthPoint(surface,{v.sx,v.sy},inv,Clamp(size,0,120),tile,depths,p[2],p[3],mask);
                     continue;
                 }
                 if(n<3) continue;
@@ -475,12 +498,14 @@ bool Renderer::ResolveOverlap(const Actor *const *actors,unsigned count,Rect are
                     size=n;
                     for(unsigned v=0;v<n;++v) { const CompactVertex &a=combined[offsets[i]+BE16(p+6+2*v)];screen[v]={a.sx,a.sy};q[v]=near[i]?RenderDivide(1<<20,a.z):a.x; }
                 }
-                for(unsigned v=1;v+1<size;++v) { Point triangle[]={screen[0],screen[v],screen[v+1]};int inv[]={q[0],q[v],q[v+1]};RasterDepthTriangle(surface,triangle,inv,tile,depths,p[2],p[3]); }
+                int winding=0;
+                for(unsigned v=1;v+1<size && !winding;++v)
+                    winding=(screen[v].x-screen[0].x)*(screen[v+1].y-screen[0].y)-(screen[v].y-screen[0].y)*(screen[v+1].x-screen[0].x);
+                if(winding<=0) continue;
+                for(unsigned v=1;v+1<size;++v) { Point triangle[]={screen[0],screen[v],screen[v+1]};int inv[]={q[0],q[v],q[v+1]};RasterDepthTriangle(surface,triangle,inv,tile,depths,p[2],p[3],mask); }
             }
         }
     }
     damage[buffer_index]=surface.damage;
-    // Architectural foreground masks retain their original actor-ZV test.
-    for(unsigned i=0;i<count;++i) if(actors[i]->animation.data) Mask(*actors[i],area);
     return true;
 }

@@ -42,6 +42,7 @@ private:
     void Triangle(Point *pts,uint8_t color);
     void PolygonGeneral(Point *pts,unsigned count,uint8_t color);
     void Mask(const Actor &a,Rect bounds);
+    bool DepthMask(const Actor &a,Rect tile,uint8_t *bits);
     bool DrawCompiledActor(const Actor &a);
     volatile uint8_t *CoverageBits();
     void BackgroundSpan(int y,int left,int right,bool original=false);

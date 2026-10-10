@@ -103,7 +103,7 @@ void World::Activate(int id,int s) {
     p.animation={0,0,0,0,0};p.frame=p.frame_phase=0;p.last_step={0,0,0};p.walking=false;p.end_frame=p.end_anim=false;
     int anim=a.value.v[O_ANIM];
     if(anim<0 && !(a.value.v[O_FLAGS]&F_DRAWABLE)) a.value.v[O_FLAGS]&=~F_ANIMATED;
-    if(anim>=0 && p.model.data) { Actor_SetAnimation(p,animation_assets[character][anim]);p.frame=(unsigned)Max(0,a.value.v[O_FRAME])%BE16(p.animation.data);a.value.v[O_FLAGS]|=F_ANIMATED; }
+    if(anim>=0 && p.model.data) { Actor_SetAnimation(p,animation_assets[character][anim]);Actor_SetFrame(p,Max(0,a.value.v[O_FRAME])); }
 }
 void World::Deactivate(int s) {
     ActiveObject &a=active[s];if(a.id<0) return;
@@ -151,9 +151,18 @@ void World::Animate(int s,int anim,int type,int next) {
     if(s<0) return;
     ActiveObject &a=active[s];
     if(anim>=A32X_ANIMATION_COUNT || anim< -1) { Error(-1,anim,903);return; }
-    if(anim==a.value.v[O_ANIM]) { a.value.v[O_ANIM_TYPE]=type;a.value.v[O_NEXT_ANIM]=next;return; }
-    if((a.value.v[O_ANIM_TYPE]&2) || (a.pending_type&2)) return;
-    a.pending_anim=anim<0?-2:anim;a.pending_type=type;a.pending_next=next;
+    if(anim==-1) { a.pending_anim=-2;return; }
+    bool animated=(a.value.v[O_FLAGS]&F_ANIMATED)!=0;
+    if(!animated) {
+        // Original static props start at a key pose, without blending from
+        // unrelated bind geometry (notably cupboard doors and chest lids).
+        Actor &p=Pose(s);
+        unsigned frame=anim==a.value.v[O_ANIM]?p.frame:0;
+        if(p.model.data) { Actor_SetAnimation(p,animation_assets[character][anim]);Actor_SetFrame(p,frame); }
+    }
+    if(anim==a.value.v[O_ANIM]) { a.value.v[O_FLAGS]|=F_ANIMATED;a.value.v[O_ANIM_TYPE]=type;a.value.v[O_NEXT_ANIM]=next;return; }
+    if(animated && ((a.value.v[O_ANIM_TYPE]&2) || (a.pending_type&2))) return;
+    a.pending_anim=anim;a.pending_type=type;a.pending_next=next;
     a.value.v[O_FLAGS]|=F_ANIMATED;
 }
 void World::MoveMode(int s,int mode,int track) {
@@ -317,14 +326,14 @@ void World::Advance(int s) {
     ActiveObject &a=active[s];Actor &p=Pose(s);
     if(a.pending_anim!=-1) {
         int next=a.pending_anim;a.pending_anim=-1;
-        if(next==-2) { a.value.v[O_ANIM]=-1;p.animation={0,0,0,0,0};a.end_anim=1;a.value.v[O_FLAGS]&=~F_ANIMATED;return; }
+        if(next==-2) { a.pending_type=0;a.pending_next=-1;a.end_frame=0;a.end_anim=1;a.value.v[O_FLAGS]=(a.value.v[O_FLAGS]|F_DRAWABLE|F_BOXIFY)&~F_ANIMATED;return; }
         a.value.v[O_ANIM]=next;a.value.v[O_ANIM_TYPE]=a.pending_type;a.value.v[O_NEXT_ANIM]=a.pending_next;
         a.pending_type=0;a.pending_next=-1;a.end_anim=0;
         if(p.model.data) Actor_SetAnimation(p,animation_assets[character][next]);
     }
     Vec3 d={0,0,0};a.end_frame=0;
     if(a.value.v[O_ANIM]>=0 && p.model.data && p.animation.data) {
-        d=Actor_Advance(p);a.end_frame=p.end_frame;a.end_anim=p.end_anim;
+        d=Actor_Advance(p,(a.value.v[O_ANIM_TYPE]&1)!=0);a.end_frame=p.end_frame;a.end_anim=p.end_anim;
         if(a.end_anim && !(a.value.v[O_ANIM_TYPE]&1)) {
             a.value.v[O_ANIM_TYPE]&=~2;Animate(s,a.value.v[O_NEXT_ANIM],1,-1);
         }
@@ -393,7 +402,7 @@ void World::Combat(int s) {
         o.v[O_X]=p.pos.x;o.v[O_Y]=p.pos.y;o.v[O_Z]=p.pos.z;return;
     }
     if(a.value.v[O_ANIM]!=a.hit_anim && a.hit_type!=8 && a.hit_type!=7) { if(a.pending_anim!=a.hit_anim) a.hit_type=0;return; }
-    if(a.hit_type==1 || a.hit_type==4) { if((int)p.frame==a.hit_frame) a.hit_type=a.hit_type==1?2:5;return; }
+    if(a.hit_type==1 || a.hit_type==4) { if((int)ScriptFrame(s)==a.hit_frame) a.hit_type=a.hit_type==1?2:5;return; }
     Vec3 point={0,0,0};
     if(p.model.data && a.hit_group>=0 && a.hit_group<BE16(p.model.data+4)) {
         // Shared scratch; avoid a 6 KiB array on the SH2 combat stack.
@@ -406,7 +415,7 @@ void World::Combat(int s) {
         Asset model=Platform_ReadAsset(model_assets[character][o.v[O_BODY]]);
         Bounds box=ReadBox(model.data+8);box=Offset(box,point);
         if(HardCollision(box,p.floor,p.room)>=0) { Drop(a.throw_object,a.id);a.hit_type=0;return; }
-        if((int)p.frame!=a.hit_frame) return;
+        if((int)ScriptFrame(s)!=a.hit_frame) return;
         for(int i=0;i<inventory_count;++i) if(inventory[i]==a.throw_object) {
             for(int j=i;j+1<inventory_count;++j) inventory[j]=inventory[j+1];
             --inventory_count;break;
@@ -447,7 +456,7 @@ void World::Update(uint16_t controller,bool acting) {
     for(auto &e:effects) if(e.count && now-e.since>=e.duration) e.count=0;
     if(in_hand>=0) FoundLife(in_hand,action);
     for(int s=0;s<MAX_ACTIVE;++s) if(active[s].id>=0) {
-        ActiveObject &a=active[s];a.col_by=a.hit=a.hit_by=a.hard_dec=a.hard_col=-1;
+        ActiveObject &a=active[s];a.end_frame=0;a.col_by=a.hit=a.hit_by=a.hard_dec=a.hard_col=-1;
         for(int i=0;i<3;++i) a.col[i]=-1;
     }
     for(int s=0;s<MAX_ACTIVE;++s) if(active[s].id>=0 && Pose(s).floor==floor) {
@@ -542,6 +551,17 @@ int World::DrawList(int *order) const {
         if(viewed) order[count++]=s;
     }
     Vec3 camera_position={(BS16(cam.data+6)-BS16(r.data))*10,(BS16(r.data+2)-BS16(cam.data+8))*10,(BS16(r.data+4)-BS16(cam.data+10))*10};
+    Rotation view_rotation=PrepareRotation(BS16(cam.data),BS16(cam.data+2),BS16(cam.data+4));
+    int farthest[MAX_ACTIVE],nearest[MAX_ACTIVE];
+    for(int i=0;i<count;++i) {
+        int s=order[i];Bounds box=Box(s,room);nearest[s]=32000;farthest[s]=-32000;
+        for(int corner=0;corner<8;++corner) {
+            Vec3 v={(corner&1?box.hi.x:box.lo.x)-camera_position.x,
+                    (corner&2?box.hi.y:box.lo.y)-camera_position.y,
+                    (corner&4?box.hi.z:box.lo.z)-camera_position.z};
+            Rotate(v,view_rotation);nearest[s]=Min(nearest[s],v.z);farthest[s]=Max(farthest[s],v.z);
+        }
+    }
     auto closer=[&](int left,int right) {
         Bounds a=Box(left,room),b=Box(right,room);int d1=0,d2=0;
         // Vertically separated surfaces have an unambiguous order along a
@@ -551,6 +571,10 @@ int World::DrawList(int *order) const {
         if(b.lo.y>=a.hi.y && a.lo.y<b.lo.y && camera_position.y<b.lo.y) return true;
         if(a.hi.y<=b.lo.y && b.hi.y>a.hi.y && camera_position.y>a.hi.y) return false;
         if(b.hi.y<=a.lo.y && a.hi.y>b.hi.y && camera_position.y>b.hi.y) return true;
+        // A distant door can be nearer on one world axis while its whole
+        // surface lies behind the player along the actual camera direction.
+        if(nearest[left]>=farthest[right]) return false;
+        if(nearest[right]>=farthest[left]) return true;
         // Mounted windows share the floor scene with the player. Height
         // buckets can put their glass in front despite greater camera distance.
         {

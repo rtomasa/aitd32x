@@ -187,17 +187,16 @@ void Game::Draw() {
                 }
             }
         }
-        // Resolve model contacts after the cached painter pass. The collision
-        // boxes omit hands during search/push, so include their reach margin.
+        // A rotating hatch or door can straddle the character's depth even
+        // while the character is idle. Resolve nearby prop intersections for
+        // every character pose, including the reach of search/push limbs.
         for(int i=0;i<count;++i) {
             int s=order[i];if(!(world.active[s].value.v[O_FLAGS]&F_ANIMATED) || (world.active[s].value.v[O_FLAGS]&F_MOVABLE)) continue;
-            // Search and push extend limbs beyond the collision box. Walking
-            // and idle actors remain separated from props by normal collision.
-            int anim=world.active[s].value.v[O_ANIM];if(anim!=2 && anim!=5) continue;
+            if(!(world.active[s].value.v[O_FLAGS]&F_TRIGGER)) continue;
             Bounds a=world.Box(s,world.room);uint32_t group_mask=1u<<s;Rect area={320,200,-1,-1};
             for(int j=0;j<count;++j) {
                 int t=order[j];int flags=world.active[t].value.v[O_FLAGS];
-                if(t==s || (flags&F_FOUNDABLE) || ((flags&F_ANIMATED) && !(flags&F_MOVABLE))) continue;
+                if(t==s || (flags&F_FOUNDABLE) || ((flags&F_ANIMATED) && (flags&F_TRIGGER) && !(flags&F_MOVABLE))) continue;
                 Bounds b=world.Box(t,world.room);
                 // Flat floor patches cannot occlude a reaching limb.
                 if(b.hi.y-b.lo.y<=20) continue;
@@ -210,9 +209,9 @@ void Game::Draw() {
             if(area.x1>area.x2 || area.y1>area.y2) continue;
             const Actor *group[MAX_ACTIVE];unsigned members=0;
             for(int j=0;j<count;++j) if(group_mask&(1u<<order[j])) group[members++]=&world.Pose(order[j]);
-            renderer.ResolveOverlap(group,members,area);
+            if(!renderer.ResolveOverlap(group,members,area)) continue;
             // Disjoint foreground models keep their ordinary painter position;
-            // they need no depth pass alongside this physically touching group.
+            // they need no depth pass alongside this intersecting group.
             for(int j=i+1;j<count;++j) {
                 int t=order[j];if(group_mask&(1u<<t)) continue;Rect b=static_bounds[t];
                 if(b.x1>area.x2 || b.x2<area.x1 || b.y1>area.y2 || b.y2<area.y1) continue;

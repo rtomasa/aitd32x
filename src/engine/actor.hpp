@@ -18,6 +18,7 @@ struct Actor {
 };
 void Actor_Init(Actor &actor,int character);
 void Actor_SetAnimation(Actor &actor,unsigned asset);
+void Actor_SetFrame(Actor &actor,unsigned frame);
 Vec3 Actor_Advance(Actor &actor,bool repeat=true);
 void Actor_SetModel(Actor &actor,int model);
 void Actor_Bounds(Actor &actor,int type);

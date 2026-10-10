@@ -181,7 +181,7 @@ void RasterPrimitive(RasterSurface &surface,unsigned type,const Point *screen,un
     }
 }
 
-void RasterDepthTriangle(RasterSurface &surface,const Point *p,const int *q,Rect tile,uint16_t *depth,uint8_t color,uint8_t material) {
+void RasterDepthTriangle(RasterSurface &surface,const Point *p,const int *q,Rect tile,uint16_t *depth,uint8_t color,uint8_t material,const uint8_t *mask) {
     int area=(p[1].x-p[0].x)*(p[2].y-p[0].y)-(p[1].y-p[0].y)*(p[2].x-p[0].x);
     if(area<=0) return;
     int left=Min(p[0].x,Min(p[1].x,p[2].x)),right=Max(p[0].x,Max(p[1].x,p[2].x));
@@ -202,6 +202,8 @@ void RasterDepthTriangle(RasterSurface &surface,const Point *p,const int *q,Rect
         int first=GAME_WIDTH,last=-1;
         for(int x=a;x<=b;++x,z+=dx) {
             if(material==2 && ((x+y)&1)) continue;
+            unsigned bit=(y-tile.y1)*64+x-tile.x1;
+            if(mask && (mask[bit/8]&(1u<<(bit&7)))) continue;
             int value=Clamp((z+128)>>8,1,65535);unsigned index=x-tile.x1;
             if(value<row[index]) continue;
             row[index]=(uint16_t)value;
@@ -217,11 +219,13 @@ void RasterDepthTriangle(RasterSurface &surface,const Point *p,const int *q,Rect
     if(written.x1<=written.x2) { Rect &d=surface.damage;d.x1=Min(d.x1,written.x1);d.x2=Max(d.x2,written.x2);d.y1=Min(d.y1,written.y1);d.y2=Max(d.y2,written.y2); }
 }
 
-void RasterDepthPoint(RasterSurface &surface,Point p,int q,int size,Rect tile,uint16_t *depth,uint8_t color,uint8_t material) {
+void RasterDepthPoint(RasterSurface &surface,Point p,int q,int size,Rect tile,uint16_t *depth,uint8_t color,uint8_t material,const uint8_t *mask) {
     for(int y=Max(tile.y1,p.y-size);y<=Min(tile.y2,p.y+size);++y) {
         int dy=y-p.y;if(dy<0) dy=-dy;int half=size-dy/2;
         for(int x=Max(tile.x1,p.x-half);x<=Min(tile.x2,p.x+half);++x) {
             if(material==2 && ((x+y)&1)) continue;
+            unsigned bit=(y-tile.y1)*64+x-tile.x1;
+            if(mask && (mask[bit/8]&(1u<<(bit&7)))) continue;
             uint16_t &old=depth[(y-tile.y1)*64+x-tile.x1];
             if(q<old) continue;
             old=(uint16_t)q;

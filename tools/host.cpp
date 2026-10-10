@@ -133,3 +133,18 @@ extern "C" int host_save() { return Game_Save(game); }
 extern "C" int host_load() { return Game_Load(game); }
 
 extern "C" void host_delete(int id) { game.world.Delete(id); }
+
+// Independent full-area depth capture for reported character/prop scenes.
+extern "C" int host_resolve_pair(int first,int second) {
+    int a=game.world.Slot(first),b=game.world.Slot(second);if(a<0 || b<0) return 0;
+    const Actor *group[]={&game.world.Pose(a),&game.world.Pose(b)};
+    return game.renderer.ResolveOverlap(group,2,{0,0,319,199});
+}
+extern "C" void host_draw_actor(int id) {
+    int slot=game.world.Slot(id);if(slot>=0) game.renderer.DrawActor(game.world.Pose(slot));
+}
+extern "C" int host_group(int id,int group,int field) {
+    int slot=game.world.Slot(id);if(slot<0 || group<0 || group>=MAX_GROUPS) return 0;
+    const GroupState &g=game.world.Pose(slot).state[group];
+    int values[]={g.type,g.delta.x,g.delta.y,g.delta.z};return field>=0 && field<4?values[field]:0;
+}

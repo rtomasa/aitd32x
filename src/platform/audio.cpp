@@ -71,7 +71,18 @@ void Audio_SlavePoll() {
     if(q.read!=q.written) {
         volatile Request &r=q.requests[q.read&7];int id=r.sample,next=r.next,repeat=r.repeat;q.read=q.read+1;
         if(id==-2) { voices[0].count=voices[1].count=0; }
-        else if(id>=0) { unsigned v=!voices[0].count?0:!voices[1].count?1:replacement++&1;Start(voices[v],id,next,repeat); }
+        else if(id>=0) {
+            // The chest's key-selected LIFE repeats SAMPLE 3 each tick until
+            // Search completes. Keep its unlock effect and the door creak (4)
+            // playing through instead of replacing them with their beginnings.
+            // Leave other effects and explicit repeat/chaining commands alone.
+            bool playing=false;
+            if((id==3 || id==4) && next<0 && !repeat) {
+                const uint8_t *data=asset_bank+BE32(asset_bank+16+16*sound_assets[id]);
+                for(const Voice &v:voices) if(v.count && v.data==data) playing=true;
+            }
+            if(!playing) { unsigned v=!voices[0].count?0:!voices[1].count?1:replacement++&1;Start(voices[v],id,next,repeat); }
+        }
     }
     if(!running && (voices[0].count || voices[1].count)) {
         cycle=COMM(7)==50?2851:2877;REG16(0x20004032)=cycle;REG16(0x20004030)=0x0305;
