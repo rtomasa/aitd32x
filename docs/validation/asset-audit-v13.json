@@ -1,0 +1,16 @@
+{
+  "assets": 1848,
+  "previous_payloads_unchanged": 1847,
+  "all_flags_raw": true,
+  "bank_bytes": 3664046,
+  "bank_sha256": "ee92c4001158d86417480f605d8332da9b487fd3d887a1298af39997d458cbf7",
+  "reimport_sha256": "ee92c4001158d86417480f605d8332da9b487fd3d887a1298af39997d458cbf7",
+  "source_inputs_unchanged": true,
+  "static_rasters": {
+    "entries": 432,
+    "distinct_programs": 169,
+    "bytes": 314742,
+    "oversized_poses_skipped": 0,
+    "scope": "fixed skeleton-free props; current masks applied at runtime"
+  }
+}

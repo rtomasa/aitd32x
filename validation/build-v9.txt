@@ -1,0 +1,13 @@
+make: Entering directory '/home/rtomas/Documents/Codex/2026-10-06/i/work/perf-v9/candidate'
+c++ -std=c++17 -O2 -fPIC -shared -Wall -Wextra src/engine/math.cpp src/engine/trig.cpp src/engine/actor.cpp src/engine/collision.cpp src/engine/game.cpp src/engine/world.cpp src/engine/life.cpp src/platform/storage.cpp src/render/render.cpp src/render/raster.cpp src/render/worker.cpp src/render/font.cpp tools/host.cpp -o build/libaitd32x.so
+c++ -std=c++17 -O2 -Wall -Wextra src/engine/math.cpp src/engine/trig.cpp src/engine/actor.cpp src/engine/collision.cpp src/engine/game.cpp src/engine/world.cpp src/engine/life.cpp src/platform/storage.cpp src/render/render.cpp src/render/raster.cpp src/render/worker.cpp src/render/font.cpp tools/check_render.cpp -o build/check_render
+/home/rtomas/Documents/Codex/2026-10-06/i/work/toolchain/mars/sh-elf/bin/sh-elf-g++ -m2 -mb -std=c++17 -ffreestanding -fno-exceptions -fno-rtti -fno-threadsafe-statics -fno-unwind-tables -fno-asynchronous-unwind-tables -fno-builtin -Wall -Wextra -O2 -MMD -MP -c src/render/raster.cpp -o build/src/render/raster.o
+/home/rtomas/Documents/Codex/2026-10-06/i/work/toolchain/mars/sh-elf/bin/sh-elf-g++ -m2 -mb -nostdlib -T src/sh2/mars.ld -Wl,-Map=build/AITD32X.map build/start.o build/src/engine/math.o build/src/engine/trig.o build/src/engine/actor.o build/src/engine/collision.o build/src/engine/game.o build/src/engine/world.o build/src/engine/life.o build/src/platform/storage.o build/src/render/render.o build/src/render/raster.o build/src/render/worker.o build/src/render/font.o build/src/sh2/master.o build/src/sh2/slave.o build/src/sh2/memory.o build/src/sh2/profile.o build/assets.o -o build/AITD32X.elf -lgcc
+/home/rtomas/Documents/Codex/2026-10-06/i/work/toolchain/mars/sh-elf/bin/../lib/gcc/sh-elf/13.1.0/../../../../sh-elf/bin/ld: warning: build/AITD32X.elf has a LOAD segment with RWX permissions
+/home/rtomas/Documents/Codex/2026-10-06/i/work/toolchain/mars/sh-elf/bin/sh-elf-size build/AITD32X.elf
+   text	   data	    bss	    dec	    hex	filename
+2986800	      4	 160464	3147268	 300604	build/AITD32X.elf
+/home/rtomas/Documents/Codex/2026-10-06/i/work/toolchain/mars/sh-elf/bin/sh-elf-objcopy -O binary build/AITD32X.elf build/unpadded.bin
+python3 tools/finalize_rom.py build/unpadded.bin build/AITD32X.32x
+build/AITD32X.32x: 3,014,656 bytes, checksum DD12
+make: Leaving directory '/home/rtomas/Documents/Codex/2026-10-06/i/work/perf-v9/candidate'

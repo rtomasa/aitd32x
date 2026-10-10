@@ -1,0 +1,30 @@
+{
+  "reference": "v4",
+  "unchanged_files": [
+    "src/engine/game.cpp",
+    "src/engine/trig.cpp",
+    "src/engine/actor.hpp",
+    "src/engine/collision.cpp",
+    "src/engine/math.cpp",
+    "src/engine/actor.cpp",
+    "src/engine/game.hpp",
+    "src/engine/types.hpp",
+    "src/sh2/assets.s",
+    "src/sh2/master.cpp",
+    "src/sh2/memory.cpp",
+    "src/sh2/profile.cpp",
+    "src/sh2/mars.ld",
+    "src/sh2/start.s",
+    "src/sh2/slave.cpp",
+    "src/md/common.h",
+    "src/md/font.s",
+    "src/md/main68k.c",
+    "src/md/md.ld",
+    "src/md/start.S",
+    "src/platform/storage.cpp",
+    "src/platform/profile.hpp",
+    "src/platform/platform_api.hpp",
+    "src/platform/32x/hardware.hpp",
+    "src/platform/32x/frame_stats.hpp"
+  ]
+}

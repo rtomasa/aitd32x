@@ -1,0 +1,106 @@
+{
+  "label": "baseline",
+  "region": "NTSC",
+  "character": "edward",
+  "distance": "far",
+  "seconds": 5,
+  "game_frames": 75,
+  "observed_swaps": 75,
+  "render_fps": 15.0,
+  "simulation_ticks": 125,
+  "counter_fps": 15.0,
+  "start": {
+    "tick": 314,
+    "camera": 0,
+    "x": 3231,
+    "y": 0,
+    "z": 548,
+    "beta": 0,
+    "mode": 1,
+    "paused": 0,
+    "character": 0,
+    "sequence": 1520,
+    "render_frames": 144,
+    "fps_tenths": 150,
+    "tick_batch": 2
+  },
+  "end": {
+    "tick": 439,
+    "camera": 0,
+    "x": 3231,
+    "y": 0,
+    "z": 548,
+    "beta": 0,
+    "mode": 1,
+    "paused": 0,
+    "character": 0,
+    "sequence": 2120,
+    "render_frames": 219,
+    "fps_tenths": 150,
+    "tick_batch": 2
+  },
+  "rom_sha256": "6880585216e412bbc02a655f1ab3aa2f504c2acd9662b3f08f25e6ec1314a37b",
+  "profile_frames": 75,
+  "timer_clock_hz": 143785.89191436768,
+  "timer_calibration_ratio": 1.0011427274501323,
+  "timings": {
+    "update": {
+      "timer_ticks": 6598,
+      "calls": 75,
+      "ms_per_frame": 0.6118356409106273
+    },
+    "restore": {
+      "timer_ticks": 5407,
+      "calls": 75,
+      "ms_per_frame": 0.5013936511675904
+    },
+    "transform": {
+      "timer_ticks": 70119,
+      "calls": 150,
+      "ms_per_frame": 6.50216782434257
+    },
+    "sort": {
+      "timer_ticks": 65029,
+      "calls": 75,
+      "ms_per_frame": 6.030169732157803
+    },
+    "primitives": {
+      "timer_ticks": 459283,
+      "calls": 75,
+      "ms_per_frame": 42.58952844261225
+    },
+    "fill": {
+      "timer_ticks": 328712,
+      "calls": 15825,
+      "ms_per_frame": 30.481618247198263
+    },
+    "mask": {
+      "timer_ticks": 5170,
+      "calls": 75,
+      "ms_per_frame": 0.47941652978295596
+    },
+    "fps_ui": {
+      "timer_ticks": 6607,
+      "calls": 75,
+      "ms_per_frame": 0.6126702151404236
+    },
+    "palette": {
+      "timer_ticks": 0,
+      "calls": 0,
+      "ms_per_frame": 0.0
+    },
+    "flip": {
+      "timer_ticks": 99056,
+      "calls": 75,
+      "ms_per_frame": 9.185509434077462
+    },
+    "frame": {
+      "timer_ticks": 710941,
+      "calls": 75,
+      "ms_per_frame": 65.92589305617494
+    },
+    "clip_project_dispatch": {
+      "ms_per_frame": 12.107910195413986
+    }
+  }
+}

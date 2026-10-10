@@ -1,0 +1,43 @@
+{
+  "label": "release-v3",
+  "region": "NTSC",
+  "character": "emily",
+  "distance": "near",
+  "seconds": 5,
+  "game_frames": 60,
+  "observed_swaps": 60,
+  "render_fps": 12.0,
+  "simulation_ticks": 125,
+  "counter_fps": 12.0,
+  "start": {
+    "tick": 476,
+    "camera": 0,
+    "x": 3231,
+    "y": 0,
+    "z": -3711,
+    "beta": 0,
+    "mode": 1,
+    "paused": 0,
+    "character": 1,
+    "sequence": 2296,
+    "render_frames": 218,
+    "fps_tenths": 120,
+    "tick_batch": 2
+  },
+  "end": {
+    "tick": 601,
+    "camera": 0,
+    "x": 3231,
+    "y": 0,
+    "z": -3711,
+    "beta": 0,
+    "mode": 1,
+    "paused": 0,
+    "character": 1,
+    "sequence": 2898,
+    "render_frames": 278,
+    "fps_tenths": 120,
+    "tick_batch": 2
+  },
+  "rom_sha256": "890e4a79d54f9a24009bbea9d90592f1e82df1adc76d0f354aa0adedd8073c34"
+}

@@ -1,0 +1,15 @@
+{
+  "rom_sha256": "636164edbcf90de49065d97b025c23b1a0c4cacfbd3c1b06af178601aa74201c",
+  "copyright": "(C)1992 I-MOTION/INFOGRAMES",
+  "host": [
+    "copyright",
+    "pickup",
+    "inventory",
+    "actions",
+    "book",
+    "pause",
+    "death",
+    "error"
+  ],
+  "native": []
+}

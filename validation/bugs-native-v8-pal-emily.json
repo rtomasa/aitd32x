@@ -1,0 +1,28 @@
+{
+  "contact_fps": 12.4,
+  "passed": true,
+  "character": "emily",
+  "region": "PAL",
+  "vase": {
+    "broken": true,
+    "key_taken": true,
+    "key_position": [
+      175,
+      0,
+      -1738
+    ]
+  },
+  "dog": {
+    "arrival": [
+      -750,
+      0,
+      681
+    ],
+    "health": 0,
+    "deleted": true,
+    "death_particles": 30
+  },
+  "framebuffer_banks_equal": true,
+  "simulation_ticks": 125,
+  "rom_sha256": "42a1e8a0fabe9ef0dc54ce70feeaa8c294a72b58855c6b3a22a02ec501cdeaf1"
+}

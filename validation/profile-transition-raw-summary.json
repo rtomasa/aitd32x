@@ -1,0 +1,559 @@
+{
+  "passed": true,
+  "baseline": "v10 plus phase-only instrumentation, raw bank, fast generic storage; no scanner or restore/bake change",
+  "region": "NTSC",
+  "character": "Edward",
+  "timer_clock_hz": 143785.89191436768,
+  "timer_calibration_ratio": 1.0014065078759717,
+  "bank_sha256": "8f51e5132bb25854ddfa190eea377b19bcb4ba4b639043549699fa1156829367",
+  "rom_sha256": "a5eb00908ba5cc15f0f73ee0510ceb428c4d73ca51e8497aa15d09cbbea19217",
+  "raw_trace": "transition-profile/build/transitions-phase-raw-ntsc-edward.json",
+  "transitions": [
+    {
+      "view": [
+        1,
+        6,
+        0
+      ],
+      "vblanks": 5.0,
+      "ms": 83.33333333333333,
+      "phases": {
+        "UPDATE": {
+          "ms": 3.5956239733721693,
+          "calls": 3
+        },
+        "RESTORE": {
+          "ms": 20.88522010065111,
+          "calls": 1
+        },
+        "TRANSFORM": {
+          "ms": 7.886726471574546,
+          "calls": 6
+        },
+        "SORT": {
+          "ms": 4.889214029556355,
+          "calls": 3
+        },
+        "PRIMITIVES": {
+          "ms": 16.733213307414776,
+          "calls": 3
+        },
+        "FILL": {
+          "ms": 8.693481560377586,
+          "calls": 91
+        },
+        "MASK": {
+          "ms": 1.3561831234189035,
+          "calls": 3
+        },
+        "UI": {
+          "ms": 0.612021101850582,
+          "calls": 1
+        },
+        "PALETTE": {
+          "ms": 0.0,
+          "calls": 0
+        },
+        "FLIP": {
+          "ms": 0.0,
+          "calls": 1
+        },
+        "FRAME": {
+          "ms": 79.93830164398398,
+          "calls": 1
+        },
+        "CAMERA": {
+          "ms": 7.2538410139790575,
+          "calls": 1
+        },
+        "DECODE": {
+          "ms": 6.975649604046975,
+          "calls": 1
+        },
+        "ROW_INDEX": {
+          "ms": 0.0,
+          "calls": 0
+        },
+        "BAKE": {
+          "ms": 10.45304222819801,
+          "calls": 1
+        },
+        "COVERAGE": {
+          "ms": 0.0,
+          "calls": 0
+        },
+        "CLEAR": {
+          "ms": 2.2324860647049642,
+          "calls": 2
+        },
+        "CACHE": {
+          "ms": 47.59855023937936,
+          "calls": 1
+        },
+        "CACHE_HASH": {
+          "ms": 0.020864355744906207,
+          "calls": 1
+        },
+        "DRAWLIST": {
+          "ms": 0.1530052754626455,
+          "calls": 1
+        }
+      }
+    },
+    {
+      "view": [
+        1,
+        0,
+        0
+      ],
+      "vblanks": 0.0,
+      "ms": 0.0,
+      "phases": {
+        "UPDATE": {
+          "ms": 2.62195403860988,
+          "calls": 1
+        },
+        "RESTORE": {
+          "ms": 2.524587045133651,
+          "calls": 1
+        },
+        "TRANSFORM": {
+          "ms": 5.355184641192593,
+          "calls": 2
+        },
+        "SORT": {
+          "ms": 3.331342133936691,
+          "calls": 1
+        },
+        "PRIMITIVES": {
+          "ms": 17.07399778458158,
+          "calls": 1
+        },
+        "FILL": {
+          "ms": 5.536009057648447,
+          "calls": 59
+        },
+        "MASK": {
+          "ms": 0.38946797390491583,
+          "calls": 1
+        },
+        "UI": {
+          "ms": 0.612021101850582,
+          "calls": 1
+        },
+        "PALETTE": {
+          "ms": 0.0,
+          "calls": 0
+        },
+        "FLIP": {
+          "ms": 1.0084438610038,
+          "calls": 1
+        },
+        "FRAME": {
+          "ms": 30.545416810542687,
+          "calls": 1
+        },
+        "CAMERA": {
+          "ms": 0.0,
+          "calls": 0
+        },
+        "DECODE": {
+          "ms": 0.0,
+          "calls": 0
+        },
+        "ROW_INDEX": {
+          "ms": 0.0,
+          "calls": 0
+        },
+        "BAKE": {
+          "ms": 0.0,
+          "calls": 0
+        },
+        "COVERAGE": {
+          "ms": 0.0,
+          "calls": 0
+        },
+        "CLEAR": {
+          "ms": 0.0,
+          "calls": 0
+        },
+        "CACHE": {
+          "ms": 0.0,
+          "calls": 0
+        },
+        "CACHE_HASH": {
+          "ms": 0.020864355744906207,
+          "calls": 1
+        },
+        "DRAWLIST": {
+          "ms": 0.10432177872453104,
+          "calls": 1
+        }
+      }
+    },
+    {
+      "view": [
+        1,
+        0,
+        1
+      ],
+      "vblanks": 8.0,
+      "ms": 133.33333333333334,
+      "phases": {
+        "UPDATE": {
+          "ms": 2.3437626286777973,
+          "calls": 1
+        },
+        "RESTORE": {
+          "ms": 20.88522010065111,
+          "calls": 1
+        },
+        "TRANSFORM": {
+          "ms": 9.486327078684022,
+          "calls": 10
+        },
+        "SORT": {
+          "ms": 6.1688945152439345,
+          "calls": 5
+        },
+        "PRIMITIVES": {
+          "ms": 27.116707683129764,
+          "calls": 5
+        },
+        "FILL": {
+          "ms": 8.589159781653056,
+          "calls": 19
+        },
+        "MASK": {
+          "ms": 0.9736699347622896,
+          "calls": 5
+        },
+        "UI": {
+          "ms": 0.6189758870988841,
+          "calls": 1
+        },
+        "PALETTE": {
+          "ms": 0.0,
+          "calls": 0
+        },
+        "FLIP": {
+          "ms": 0.0,
+          "calls": 1
+        },
+        "FRAME": {
+          "ms": 131.66799432085477,
+          "calls": 1
+        },
+        "CAMERA": {
+          "ms": 7.26079579922736,
+          "calls": 1
+        },
+        "DECODE": {
+          "ms": 6.975649604046975,
+          "calls": 1
+        },
+        "ROW_INDEX": {
+          "ms": 0.0,
+          "calls": 0
+        },
+        "BAKE": {
+          "ms": 10.45304222819801,
+          "calls": 1
+        },
+        "COVERAGE": {
+          "ms": 33.542929252560874,
+          "calls": 2
+        },
+        "CLEAR": {
+          "ms": 4.43715298841672,
+          "calls": 4
+        },
+        "CACHE": {
+          "ms": 109.21099275408739,
+          "calls": 1
+        },
+        "CACHE_HASH": {
+          "ms": 0.041728711489812415,
+          "calls": 1
+        },
+        "DRAWLIST": {
+          "ms": 0.3964227591532179,
+          "calls": 1
+        }
+      }
+    },
+    {
+      "view": [
+        1,
+        0,
+        0
+      ],
+      "vblanks": 5.0,
+      "ms": 83.33333333333333,
+      "phases": {
+        "UPDATE": {
+          "ms": 2.3854913401676097,
+          "calls": 1
+        },
+        "RESTORE": {
+          "ms": 20.88522010065111,
+          "calls": 1
+        },
+        "TRANSFORM": {
+          "ms": 7.69894726987039,
+          "calls": 6
+        },
+        "SORT": {
+          "ms": 4.889214029556355,
+          "calls": 3
+        },
+        "PRIMITIVES": {
+          "ms": 19.911550165888823,
+          "calls": 3
+        },
+        "FILL": {
+          "ms": 3.4773926241510345,
+          "calls": 31
+        },
+        "MASK": {
+          "ms": 0.06259306723471862,
+          "calls": 3
+        },
+        "UI": {
+          "ms": 0.6189758870988841,
+          "calls": 1
+        },
+        "PALETTE": {
+          "ms": 0.0,
+          "calls": 0
+        },
+        "FLIP": {
+          "ms": 6.509678992410736,
+          "calls": 1
+        },
+        "FRAME": {
+          "ms": 80.83546894101494,
+          "calls": 1
+        },
+        "CAMERA": {
+          "ms": 7.2538410139790575,
+          "calls": 1
+        },
+        "DECODE": {
+          "ms": 6.975649604046975,
+          "calls": 1
+        },
+        "ROW_INDEX": {
+          "ms": 0.0,
+          "calls": 0
+        },
+        "BAKE": {
+          "ms": 10.45304222819801,
+          "calls": 1
+        },
+        "COVERAGE": {
+          "ms": 0.0,
+          "calls": 0
+        },
+        "CLEAR": {
+          "ms": 2.225531279456662,
+          "calls": 2
+        },
+        "CACHE": {
+          "ms": 47.60550502462766,
+          "calls": 1
+        },
+        "CACHE_HASH": {
+          "ms": 0.020864355744906207,
+          "calls": 1
+        },
+        "DRAWLIST": {
+          "ms": 0.10432177872453104,
+          "calls": 1
+        }
+      }
+    },
+    {
+      "view": [
+        1,
+        6,
+        0
+      ],
+      "vblanks": 2.0,
+      "ms": 33.333333333333336,
+      "phases": {
+        "UPDATE": {
+          "ms": 2.4828583336438386,
+          "calls": 1
+        },
+        "RESTORE": {
+          "ms": 2.9557837305283794,
+          "calls": 1
+        },
+        "TRANSFORM": {
+          "ms": 5.132631513246927,
+          "calls": 2
+        },
+        "SORT": {
+          "ms": 3.3522064896815973,
+          "calls": 1
+        },
+        "PRIMITIVES": {
+          "ms": 14.598094236186043,
+          "calls": 1
+        },
+        "FILL": {
+          "ms": 5.709878688855999,
+          "calls": 56
+        },
+        "MASK": {
+          "ms": 0.020864355744906207,
+          "calls": 1
+        },
+        "UI": {
+          "ms": 0.6189758870988841,
+          "calls": 1
+        },
+        "PALETTE": {
+          "ms": 0.0,
+          "calls": 0
+        },
+        "FLIP": {
+          "ms": 3.755584034083117,
+          "calls": 1
+        },
+        "FRAME": {
+          "ms": 30.684512515508725,
+          "calls": 1
+        },
+        "CAMERA": {
+          "ms": 0.0,
+          "calls": 0
+        },
+        "DECODE": {
+          "ms": 0.0,
+          "calls": 0
+        },
+        "ROW_INDEX": {
+          "ms": 0.0,
+          "calls": 0
+        },
+        "BAKE": {
+          "ms": 0.0,
+          "calls": 0
+        },
+        "COVERAGE": {
+          "ms": 0.0,
+          "calls": 0
+        },
+        "CLEAR": {
+          "ms": 0.0,
+          "calls": 0
+        },
+        "CACHE": {
+          "ms": 0.0,
+          "calls": 0
+        },
+        "CACHE_HASH": {
+          "ms": 0.020864355744906207,
+          "calls": 1
+        },
+        "DRAWLIST": {
+          "ms": 0.1530052754626455,
+          "calls": 1
+        }
+      }
+    },
+    {
+      "view": [
+        0,
+        0,
+        4
+      ],
+      "vblanks": 8.0,
+      "ms": 133.33333333333334,
+      "phases": {
+        "UPDATE": {
+          "ms": 3.5121665503925446,
+          "calls": 1
+        },
+        "RESTORE": {
+          "ms": 20.88522010065111,
+          "calls": 1
+        },
+        "TRANSFORM": {
+          "ms": 20.90608445639602,
+          "calls": 20
+        },
+        "SORT": {
+          "ms": 14.396405463985282,
+          "calls": 10
+        },
+        "PRIMITIVES": {
+          "ms": 37.625388193314194,
+          "calls": 10
+        },
+        "FILL": {
+          "ms": 13.38100681773318,
+          "calls": 148
+        },
+        "MASK": {
+          "ms": 0.9528055790173834,
+          "calls": 10
+        },
+        "UI": {
+          "ms": 0.612021101850582,
+          "calls": 1
+        },
+        "PALETTE": {
+          "ms": 0.0,
+          "calls": 0
+        },
+        "FLIP": {
+          "ms": 4.117232866994825,
+          "calls": 1
+        },
+        "FRAME": {
+          "ms": 129.7693379480683,
+          "calls": 1
+        },
+        "CAMERA": {
+          "ms": 7.26079579922736,
+          "calls": 1
+        },
+        "DECODE": {
+          "ms": 6.975649604046975,
+          "calls": 1
+        },
+        "ROW_INDEX": {
+          "ms": 0.0,
+          "calls": 0
+        },
+        "BAKE": {
+          "ms": 10.446087442949707,
+          "calls": 1
+        },
+        "COVERAGE": {
+          "ms": 2.1559834269736413,
+          "calls": 1
+        },
+        "CLEAR": {
+          "ms": 8.992537326054574,
+          "calls": 8
+        },
+        "CACHE": {
+          "ms": 99.16132807029089,
+          "calls": 1
+        },
+        "CACHE_HASH": {
+          "ms": 0.1321409197177393,
+          "calls": 1
+        },
+        "DRAWLIST": {
+          "ms": 0.5911567461056758,
+          "calls": 1
+        }
+      }
+    }
+  ]
+}

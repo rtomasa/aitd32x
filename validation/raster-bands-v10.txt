@@ -1,0 +1,1 @@
+Previously completed on this v10 runtime: 200 randomized cases, six row splits each; 1200 pixel/damage/ownership/guard comparisons passed (3432 primitive calls).

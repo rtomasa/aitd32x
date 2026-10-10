@@ -1,0 +1,1 @@
+Pinned original source hashes checked; headless patch applied; core rebuilt without SDL/graphics/audio dependencies. Presentation stubs; not a graphical-PC parity result.

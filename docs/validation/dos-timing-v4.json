@@ -1,0 +1,42 @@
+{
+  "edition": "User-supplied original DOS CD edition; loaded SAVE0.ITD",
+  "exe_sha256": "2f2c0c27aa84fc10958ac10ab77a804cc500b531fac14bab7d7613064a874df1",
+  "dosbox": "0.74-3, normal CPU core; isolated SDL surface/dummy audio and video",
+  "timer_input_hz": 1193182,
+  "pit_divisor": 19886,
+  "timer_hz": 60.00110630594388,
+  "measurements": [
+    {
+      "cpu_cycles": 12000,
+      "walk_start_ms": 14110,
+      "walk_end_ms": 15930,
+      "key_start_tick": 578,
+      "key_end_tick": 688,
+      "animation_ticks": 110,
+      "seconds": 1.82
+    },
+    {
+      "cpu_cycles": 24000,
+      "walk_start_ms": 13890,
+      "walk_end_ms": 15730,
+      "key_start_tick": 587,
+      "key_end_tick": 697,
+      "animation_ticks": 110,
+      "seconds": 1.84
+    }
+  ],
+  "sample_interval_ms": 10,
+  "edward_first_key_duration": 15,
+  "edward_first_key_root_z": -346,
+  "edward_complete_walk_duration": 110,
+  "edward_complete_walk_root_z": -1369,
+  "floppy_cd_walk_run_assets_identical": true,
+  "floppy_execution_verified": false,
+  "notes": [
+    "EXE and original PAK bytes unmodified. Working copies only.",
+    "CD drive mounted using original copied data with silent placeholder audio tracks because this installation lacks CD audio/speech. Supplied save bypasses voiced introduction.",
+    "Watch addresses apply only to this EXE and this deterministic load sequence: timer=0x25cf0, body key timestamp=0x65144, protagonist actor=0x23b7e.",
+    "The 10 ms capture resolution brackets a 110/60.0011=1.83330 s cycle; frame completion may overshoot by an original timer tick.",
+    "The supplied floppy launcher did not enter gameplay in this DOSBox setup. The running CD executable supplies the measured baseline."
+  ]
+}

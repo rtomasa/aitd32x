@@ -1,0 +1,7 @@
+{
+  "native_sh2_q15_comparisons": 458752,
+  "boundary_and_adjacent_inputs": 393216,
+  "deterministic_random_inputs": 65536,
+  "full_int32_range": true,
+  "failures": 0
+}

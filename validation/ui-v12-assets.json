@@ -1,0 +1,18 @@
+{
+  "previous_asset_count": 1840,
+  "unchanged_original_payloads": 1839,
+  "changed_existing_assets": [
+    "TEXT"
+  ],
+  "appended_assets": [
+    "UI_TITLE",
+    "UI_MESSAGE",
+    "UI_PROMPT",
+    "UI_INVENTORY",
+    "UI_BOOK",
+    "UI_PAUSE",
+    "UI_STATUS"
+  ],
+  "original_input_hashes_unchanged": true,
+  "bank_sha256": "da8895261824da4c1e2237dae5aa785772725d00725df01ba4d5bf0498bad58d"
+}

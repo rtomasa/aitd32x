@@ -1,0 +1,453 @@
+{
+  "label": "v11-final",
+  "diagnostic": true,
+  "region": "NTSC",
+  "character": "edward",
+  "rom_sha256": "917e6c1b174e69693237ae5d84954b36ae795811e1a8afa3f8f1fab37f5ee737",
+  "rows": [
+    {
+      "history": "settled-before-entry",
+      "fps": 25.0,
+      "ticks": 125,
+      "view": [
+        1,
+        7,
+        14
+      ],
+      "pixels_sha256": "872dd6f14471500b878518bd76555a667fbe96e88cfee0181f8404cc978244df",
+      "scene": [
+        {
+          "slot": 0,
+          "id": 29,
+          "body": 25,
+          "flags": 0,
+          "room": 1,
+          "pos": [
+            -310,
+            0,
+            -1400
+          ],
+          "beta": 0,
+          "dynamic": false
+        },
+        {
+          "slot": 1,
+          "id": 1,
+          "body": 12,
+          "flags": 1,
+          "room": 7,
+          "pos": [
+            3158,
+            0,
+            -100
+          ],
+          "beta": 256,
+          "dynamic": true
+        },
+        {
+          "slot": 2,
+          "id": 30,
+          "body": 32,
+          "flags": 0,
+          "room": 1,
+          "pos": [
+            550,
+            20,
+            700
+          ],
+          "beta": 768,
+          "dynamic": false
+        },
+        {
+          "slot": 3,
+          "id": 58,
+          "body": -1,
+          "flags": 0,
+          "room": 7,
+          "pos": [
+            900,
+            125,
+            5050
+          ],
+          "beta": 0,
+          "dynamic": false
+        },
+        {
+          "slot": 4,
+          "id": 63,
+          "body": 34,
+          "flags": 0,
+          "room": 7,
+          "pos": [
+            3500,
+            0,
+            300
+          ],
+          "beta": 256,
+          "dynamic": false
+        },
+        {
+          "slot": 5,
+          "id": 64,
+          "body": 74,
+          "flags": 0,
+          "room": 7,
+          "pos": [
+            1150,
+            0,
+            3260
+          ],
+          "beta": 96,
+          "dynamic": false
+        },
+        {
+          "slot": 6,
+          "id": 65,
+          "body": 75,
+          "flags": 0,
+          "room": 7,
+          "pos": [
+            1150,
+            0,
+            -4450
+          ],
+          "beta": 416,
+          "dynamic": false
+        }
+      ]
+    },
+    {
+      "history": "ghosts-settled-in-view",
+      "fps": 25.0,
+      "ticks": 125,
+      "view": [
+        1,
+        7,
+        14
+      ],
+      "pixels_sha256": "872dd6f14471500b878518bd76555a667fbe96e88cfee0181f8404cc978244df",
+      "scene": [
+        {
+          "slot": 0,
+          "id": 29,
+          "body": 25,
+          "flags": 0,
+          "room": 1,
+          "pos": [
+            -310,
+            0,
+            -1400
+          ],
+          "beta": 0,
+          "dynamic": false
+        },
+        {
+          "slot": 1,
+          "id": 1,
+          "body": 12,
+          "flags": 1,
+          "room": 7,
+          "pos": [
+            3158,
+            0,
+            -100
+          ],
+          "beta": 256,
+          "dynamic": true
+        },
+        {
+          "slot": 2,
+          "id": 30,
+          "body": 32,
+          "flags": 0,
+          "room": 1,
+          "pos": [
+            550,
+            20,
+            700
+          ],
+          "beta": 768,
+          "dynamic": false
+        },
+        {
+          "slot": 3,
+          "id": 58,
+          "body": -1,
+          "flags": 0,
+          "room": 7,
+          "pos": [
+            900,
+            125,
+            5050
+          ],
+          "beta": 0,
+          "dynamic": false
+        },
+        {
+          "slot": 4,
+          "id": 63,
+          "body": 34,
+          "flags": 0,
+          "room": 7,
+          "pos": [
+            3500,
+            0,
+            300
+          ],
+          "beta": 256,
+          "dynamic": false
+        },
+        {
+          "slot": 5,
+          "id": 64,
+          "body": 74,
+          "flags": 0,
+          "room": 7,
+          "pos": [
+            1150,
+            0,
+            3260
+          ],
+          "beta": 96,
+          "dynamic": false
+        },
+        {
+          "slot": 6,
+          "id": 65,
+          "body": 75,
+          "flags": 0,
+          "room": 7,
+          "pos": [
+            1150,
+            0,
+            -4450
+          ],
+          "beta": 416,
+          "dynamic": false
+        }
+      ]
+    },
+    {
+      "history": "ghosts-and-door-settled-in-view",
+      "fps": 25.0,
+      "ticks": 125,
+      "view": [
+        1,
+        7,
+        14
+      ],
+      "pixels_sha256": "872dd6f14471500b878518bd76555a667fbe96e88cfee0181f8404cc978244df",
+      "scene": [
+        {
+          "slot": 0,
+          "id": 29,
+          "body": 25,
+          "flags": 0,
+          "room": 1,
+          "pos": [
+            -310,
+            0,
+            -1400
+          ],
+          "beta": 0,
+          "dynamic": false
+        },
+        {
+          "slot": 1,
+          "id": 1,
+          "body": 12,
+          "flags": 1,
+          "room": 7,
+          "pos": [
+            3158,
+            0,
+            -100
+          ],
+          "beta": 256,
+          "dynamic": true
+        },
+        {
+          "slot": 2,
+          "id": 30,
+          "body": 32,
+          "flags": 0,
+          "room": 1,
+          "pos": [
+            550,
+            20,
+            700
+          ],
+          "beta": 768,
+          "dynamic": false
+        },
+        {
+          "slot": 3,
+          "id": 58,
+          "body": -1,
+          "flags": 0,
+          "room": 7,
+          "pos": [
+            900,
+            125,
+            5050
+          ],
+          "beta": 0,
+          "dynamic": false
+        },
+        {
+          "slot": 4,
+          "id": 63,
+          "body": 34,
+          "flags": 0,
+          "room": 7,
+          "pos": [
+            3500,
+            0,
+            300
+          ],
+          "beta": 256,
+          "dynamic": false
+        },
+        {
+          "slot": 5,
+          "id": 64,
+          "body": 74,
+          "flags": 0,
+          "room": 7,
+          "pos": [
+            1150,
+            0,
+            3260
+          ],
+          "beta": 96,
+          "dynamic": false
+        },
+        {
+          "slot": 6,
+          "id": 65,
+          "body": 75,
+          "flags": 0,
+          "room": 7,
+          "pos": [
+            1150,
+            0,
+            -4450
+          ],
+          "beta": 416,
+          "dynamic": false
+        }
+      ]
+    },
+    {
+      "history": "cache-reset",
+      "fps": 25.0,
+      "ticks": 125,
+      "view": [
+        1,
+        7,
+        14
+      ],
+      "pixels_sha256": "872dd6f14471500b878518bd76555a667fbe96e88cfee0181f8404cc978244df",
+      "scene": [
+        {
+          "slot": 0,
+          "id": 29,
+          "body": 25,
+          "flags": 0,
+          "room": 1,
+          "pos": [
+            -310,
+            0,
+            -1400
+          ],
+          "beta": 0,
+          "dynamic": false
+        },
+        {
+          "slot": 1,
+          "id": 1,
+          "body": 12,
+          "flags": 1,
+          "room": 7,
+          "pos": [
+            3158,
+            0,
+            -100
+          ],
+          "beta": 256,
+          "dynamic": true
+        },
+        {
+          "slot": 2,
+          "id": 30,
+          "body": 32,
+          "flags": 0,
+          "room": 1,
+          "pos": [
+            550,
+            20,
+            700
+          ],
+          "beta": 768,
+          "dynamic": false
+        },
+        {
+          "slot": 3,
+          "id": 58,
+          "body": -1,
+          "flags": 0,
+          "room": 7,
+          "pos": [
+            900,
+            125,
+            5050
+          ],
+          "beta": 0,
+          "dynamic": false
+        },
+        {
+          "slot": 4,
+          "id": 63,
+          "body": 34,
+          "flags": 0,
+          "room": 7,
+          "pos": [
+            3500,
+            0,
+            300
+          ],
+          "beta": 256,
+          "dynamic": false
+        },
+        {
+          "slot": 5,
+          "id": 64,
+          "body": 74,
+          "flags": 0,
+          "room": 7,
+          "pos": [
+            1150,
+            0,
+            3260
+          ],
+          "beta": 96,
+          "dynamic": false
+        },
+        {
+          "slot": 6,
+          "id": 65,
+          "body": 75,
+          "flags": 0,
+          "room": 7,
+          "pos": [
+            1150,
+            0,
+            -4450
+          ],
+          "beta": 416,
+          "dynamic": false
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "entries": 216,
+  "distinct_programs": 169,
+  "bytes": 312150,
+  "oversized_poses_skipped": 0,
+  "scope": "fixed skeleton-free props; current masks applied at runtime"
+}

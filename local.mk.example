@@ -1,0 +1,4 @@
+# Copy this file to local.mk and set local dependency paths.
+# Leave GAME_DATA unset to use msdos-game/AITD_CD/INDARK.
+MARSDEV := $(CURDIR)/.local/toolchain/mars
+PICODRIVE_CORE := $(CURDIR)/.local/tools/picodrive_libretro.so

@@ -1,0 +1,74 @@
+[
+  {
+    "character": 0,
+    "camera": 3,
+    "hatch_behind_chest_and_player": true,
+    "cached_equal_fresh": true,
+    "cached_equal_original_painter": true,
+    "order": [
+      8,
+      6,
+      10,
+      13,
+      21,
+      7,
+      4,
+      0,
+      1
+    ]
+  },
+  {
+    "character": 0,
+    "camera": 2,
+    "hatch_behind_chest_and_player": true,
+    "cached_equal_fresh": true,
+    "cached_equal_original_painter": true,
+    "order": [
+      8,
+      6,
+      10,
+      13,
+      21,
+      7,
+      4,
+      1,
+      0
+    ]
+  },
+  {
+    "character": 1,
+    "camera": 3,
+    "hatch_behind_chest_and_player": true,
+    "cached_equal_fresh": true,
+    "cached_equal_original_painter": true,
+    "order": [
+      8,
+      6,
+      10,
+      13,
+      21,
+      7,
+      4,
+      0,
+      1
+    ]
+  },
+  {
+    "character": 1,
+    "camera": 2,
+    "hatch_behind_chest_and_player": true,
+    "cached_equal_fresh": true,
+    "cached_equal_original_painter": true,
+    "order": [
+      8,
+      6,
+      10,
+      13,
+      21,
+      7,
+      4,
+      1,
+      0
+    ]
+  }
+]

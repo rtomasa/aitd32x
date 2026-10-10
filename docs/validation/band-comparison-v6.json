@@ -1,0 +1,20 @@
+{
+  "source": "tools/check_bands.cpp",
+  "cases": 200,
+  "split_rows": [
+    0,
+    1,
+    66,
+    100,
+    199,
+    200
+  ],
+  "split_comparisons": 1200,
+  "raster_calls": 3432,
+  "exact_pixels": true,
+  "exact_union_damage": true,
+  "row_ownership_and_guards": true,
+  "asan_ubsan_passed": true,
+  "leak_detection": false,
+  "leak_detection_reason": "LeakSanitizer unavailable in sandbox."
+}

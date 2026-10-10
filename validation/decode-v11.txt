@@ -1,0 +1,1 @@
+Raw/RLE byte parity, aligned/unaligned tails, capacity guards and all 200 indexed camera rows passed

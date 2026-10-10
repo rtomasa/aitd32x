@@ -1,0 +1,69 @@
+--- a/src/gui/sdlmain.cpp
++++ b/src/gui/sdlmain.cpp
+@@ -50,6 +50,9 @@
+ #include "cpu.h"
+ #include "cross.h"
+ #include "control.h"
++#include "mem.h"
++#include "hardware.h"
++#include <vector>
+ 
+ #define MAPPERFILE "mapper-" VERSION ".map"
+ //#define DISABLE_JOYSTICK
+@@ -1439,7 +1442,46 @@
+ #define SDL_XORG_FIX 0
+ #endif
+ 
++
++struct RefKey { double time; int key; bool down; };
++static void ReferencePoll() {
++ static bool init=false;
++ static std::vector<RefKey> keys;
++ static unsigned keypos=0;
++ static double nextshot=1000, nextmem=1000, end=0;
++ static FILE* ram=0;
++ static FILE* watch=0; static double nextwatch=0;
++ const double now=PIC_FullIndex();
++ if(!init) {
++  init=true;
++  const char* script=getenv("AITD_KEYS");
++  if(script) { FILE* f=fopen(script,"r"); if(f) {RefKey k; int d; while(fscanf(f,"%lf %d %d",&k.time,&k.key,&d)==3) {k.down=d; keys.push_back(k);} fclose(f);} }
++  const char* name=getenv("AITD_RAM"); if(name) ram=fopen(name,"wb");
++  const char* watchname=getenv("AITD_WATCH"); if(watchname) watch=fopen(watchname,"w");
++  const char* stop=getenv("AITD_STOP"); if(stop) end=atof(stop);
++ }
++ while(keypos<keys.size() && now>=keys[keypos].time) {
++  RefKey k=keys[keypos++]; KEYBOARD_AddKey((KBD_KEYS)k.key,k.down);
++  fprintf(stderr,"REF key %.3f %d %d\n",now,k.key,k.down);
++ }
++ if(now>=nextshot) { nextshot+=1000; CaptureState |= CAPTURE_IMAGE; }
++ if(ram && now>=nextmem) {
++  nextmem+=100;
++  unsigned short regs[]={SegValue(cs),reg_ip,SegValue(ds),SegValue(ss),reg_sp};
++  fwrite(&now,8,1,ram); fwrite(regs,2,5,ram); fwrite(GetMemBase(),1,1024*1024,ram);
++ }
++ if(watch && now>=nextwatch) {
++  nextwatch+=10;
++  fprintf(watch,"%.6f,%u,%u",now,mem_readw(0x25cf0),mem_readw(0x65144));
++  const unsigned offsets[]={0,2,14*2,16*2,17*2,19*2,21*2,23*2,24*2,31*2,37*2,45*2,47*2};
++  for(unsigned i=0;i<sizeof(offsets)/sizeof(offsets[0]);++i) fprintf(watch,",%d",(short)mem_readw(0x23b7e + offsets[i]));
++  fprintf(watch,"\n");
++ }
++ if(end>0 && now>=end) { if(ram) fclose(ram); if(watch) fclose(watch); exit(0); }
++}
++
+ void GFX_Events() {
++ ReferencePoll();
+ 	//Don't poll too often. This can be heavy on the OS, especially Macs.
+ 	//In idle mode 3000-4000 polls are done per second without this check.
+ 	//Macs, with this code,  max 250 polls per second. (non-macs unused default max 500)
+--- a/src/hardware/timer.cpp
++++ b/src/hardware/timer.cpp
+@@ -225,6 +225,7 @@
+ 			p->update_count=true;
+ 			return;
+ 		}
++		if(counter==0) fprintf(stderr,"REF PIT %.3f count=%lu rate=%.9f\n",PIC_FullIndex(),(unsigned long)p->cntr,(double)PIT_TICK_RATE/p->cntr);
+ 		p->start=PIC_FullIndex();
+ 		p->delay=(1000.0f/((float)PIT_TICK_RATE/(float)p->cntr));
+ 

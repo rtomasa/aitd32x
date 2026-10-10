@@ -1,0 +1,18 @@
+{
+  "rom_sha256": "917e6c1b174e69693237ae5d84954b36ae795811e1a8afa3f8f1fab37f5ee737",
+  "rom_bytes": 3276800,
+  "checksum": "CD84",
+  "bank_sha256": "8f51e5132bb25854ddfa190eea377b19bcb4ba4b639043549699fa1156829367",
+  "bank_bytes": 3164508,
+  "bank_growth_bytes": 264592,
+  "module_bytes": 83988,
+  "bss_bytes": 160568,
+  "sdram_static_end": "0x0603BB50",
+  "headroom_bytes": 1200,
+  "raw_backgrounds": 20,
+  "all_unpacked_assets_preserved": 1840,
+  "stair_room_fps": 25,
+  "steady_chest_fps": 12.0,
+  "simulation_hz": 25.05050505050505,
+  "core_sha256": "bffc428d4090480f7e12807124c670734181fda8de34d1ee4f6f6628f5e584f3"
+}

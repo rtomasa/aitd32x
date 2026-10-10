@@ -1,0 +1,54 @@
+--- a/pico/32x/sh2soc.c
++++ b/pico/32x/sh2soc.c
+@@ -253,6 +253,23 @@
+ // SH2 internal peripheral memhandlers
+ // we keep them in little endian format
+ 
++// Profiling shim for the unimplemented FRC. No compare/capture/interrupt support.
++// Implements the internal counter and high-then-low byte latch used by AITD32X.
++static struct { u32 last, remainder; u16 counter; u8 temp; } profile_frt[2];
++static void profile_frt_update(SH2 *sh2)
++{
++  unsigned i = sh2->is_slave;
++  u32 now = sh2_cycles_done_t(sh2);
++  u32 delta = now - profile_frt[i].last;
++  unsigned cks = PREG8(sh2->peri_regs, 0x16) & 3;
++  unsigned shift = cks == 0 ? 3 : cks == 1 ? 5 : 7;
++  profile_frt[i].last = now;
++  if (cks == 3) return;
++  delta += profile_frt[i].remainder;
++  profile_frt[i].counter += delta >> shift;
++  profile_frt[i].remainder = delta & ((1u << shift) - 1);
++}
++
+ u32 REGPARM(2) sh2_peripheral_read8(u32 a, SH2 *sh2)
+ {
+   u8 *r = (void *)sh2->peri_regs;
+@@ -260,6 +277,12 @@
+ 
+   DRC_SAVE_SR(sh2);
+   a &= 0x1ff;
++  if (a == 0x12) {
++    profile_frt_update(sh2);
++    PREG8(r, 0x12) = profile_frt[sh2->is_slave].counter >> 8;
++    profile_frt[sh2->is_slave].temp = profile_frt[sh2->is_slave].counter;
++  }
++  if (a == 0x13) PREG8(r, 0x13) = profile_frt[sh2->is_slave].temp;
+   d = PREG8(r, a);
+ 
+   elprintf_sh2(sh2, EL_32XP, "peri r8  [%08x]       %02x @%06x",
+@@ -357,6 +380,14 @@
+     a, d, sh2_pc(sh2));
+ 
+   a &= 0x1ff;
++  if (a == 0x12 || a == 0x13 || a == 0x16) {
++    profile_frt_update(sh2);
++    if (a == 0x12) profile_frt[sh2->is_slave].temp = d;
++    if (a == 0x13) {
++      profile_frt[sh2->is_slave].counter = (profile_frt[sh2->is_slave].temp << 8) | (d & 0xff);
++      profile_frt[sh2->is_slave].remainder = 0;
++    }
++  }
+   old = PREG8(r, a);
+   PREG8(r, a) = d;
+ 

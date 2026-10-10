@@ -1,0 +1,299 @@
+{
+  "label": "v9-final",
+  "scene": "hall2",
+  "region": "NTSC",
+  "character": "edward",
+  "seconds": 5,
+  "fps": 15.2,
+  "ticks": 125,
+  "static_rebuilds": 0,
+  "start": [
+    282,
+    2,
+    2700,
+    0,
+    400,
+    0,
+    1,
+    0,
+    0,
+    1368,
+    85,
+    150,
+    2,
+    2,
+    40,
+    328,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    2,
+    -1,
+    18,
+    185,
+    16,
+    20,
+    -1,
+    0,
+    1
+  ],
+  "end": [
+    407,
+    2,
+    2700,
+    0,
+    400,
+    0,
+    1,
+    0,
+    0,
+    1964,
+    161,
+    150,
+    2,
+    2,
+    40,
+    328,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    2,
+    -1,
+    18,
+    310,
+    16,
+    20,
+    -1,
+    0,
+    1
+  ],
+  "rom_sha256": "24b75db7a2baf760b99e9a8b2126d158eed070bf2b492417d62241306ffd3f78",
+  "cache": [
+    {
+      "id": 22,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        320,
+        200,
+        -1,
+        -1
+      ]
+    },
+    {
+      "id": 1,
+      "flags": 65,
+      "dynamic": true,
+      "spans": 0,
+      "bounds": [
+        177,
+        64,
+        220,
+        168
+      ]
+    },
+    {
+      "id": 25,
+      "flags": 128,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": 29,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 83,
+      "bounds": [
+        72,
+        21,
+        94,
+        105
+      ]
+    },
+    {
+      "id": 30,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 138,
+      "bounds": [
+        77,
+        109,
+        200,
+        164
+      ]
+    },
+    {
+      "id": 31,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 147,
+      "bounds": [
+        141,
+        30,
+        168,
+        53
+      ]
+    },
+    {
+      "id": 32,
+      "flags": 80,
+      "dynamic": true,
+      "spans": 5,
+      "bounds": [
+        320,
+        200,
+        -1,
+        -1
+      ]
+    },
+    {
+      "id": 33,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 200,
+      "bounds": [
+        0,
+        0,
+        76,
+        199
+      ]
+    },
+    {
+      "id": 36,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        320,
+        200,
+        -1,
+        -1
+      ]
+    },
+    {
+      "id": 45,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        17,
+        46,
+        60,
+        88
+      ]
+    },
+    {
+      "id": 49,
+      "flags": 80,
+      "dynamic": true,
+      "spans": 103,
+      "bounds": [
+        224,
+        73,
+        239,
+        85
+      ]
+    },
+    {
+      "id": 50,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 92,
+      "bounds": [
+        162,
+        20,
+        180,
+        113
+      ]
+    },
+    {
+      "id": 51,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        277,
+        5,
+        319,
+        70
+      ]
+    },
+    {
+      "id": 56,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 5,
+      "bounds": [
+        159,
+        59,
+        169,
+        66
+      ]
+    },
+    {
+      "id": 59,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 181,
+      "bounds": [
+        198,
+        0,
+        280,
+        183
+      ]
+    },
+    {
+      "id": 60,
+      "flags": 64,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        273,
+        88,
+        319,
+        154
+      ]
+    },
+    {
+      "id": 63,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 56,
+      "bounds": [
+        104,
+        26,
+        136,
+        84
+      ]
+    },
+    {
+      "id": 279,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ],
+  "completed_frame_seconds": 4.966666666666667,
+  "simulation_hz": 25.167785234899327
+}

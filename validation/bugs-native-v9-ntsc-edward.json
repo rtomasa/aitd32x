@@ -1,0 +1,28 @@
+{
+  "contact_fps": 16.8,
+  "passed": true,
+  "character": "edward",
+  "region": "NTSC",
+  "vase": {
+    "broken": true,
+    "key_taken": true,
+    "key_position": [
+      195,
+      0,
+      -1764
+    ]
+  },
+  "dog": {
+    "arrival": [
+      -750,
+      0,
+      681
+    ],
+    "health": 0,
+    "deleted": true,
+    "death_particles": 30
+  },
+  "framebuffer_banks_equal": true,
+  "simulation_ticks": 125,
+  "rom_sha256": "24b75db7a2baf760b99e9a8b2126d158eed070bf2b492417d62241306ffd3f78"
+}

@@ -1,0 +1,15 @@
+{
+  "region": "PAL",
+  "sram_bytes": 131072,
+  "persistent_core_restart": true,
+  "pose": [
+    3231,
+    0,
+    -3720
+  ],
+  "world_variable_restored": true,
+  "walking_sound": true,
+  "fm_nonzero": true,
+  "save_wait_extra_frames": 61,
+  "rom_sha256": "d0529b3f4b19bfa301438844d20f4f8a9d7c737d51f24a01e96af3167a45a3ad"
+}

@@ -1,0 +1,12 @@
+{
+  "module_bytes": 71956,
+  "bss_bytes": 161204,
+  "static_sdram_bytes": 233160,
+  "static_end": "0x6038ec8",
+  "remaining_before_stacks": 12600,
+  "master_stack_bytes": 12288,
+  "slave_stack_bytes": 4096,
+  "rom_bytes": 3014656,
+  "rom_sha256": "999a08dee49185194b86e15d7eb86cb15fc0e8dba465602be54150499be97d84",
+  "checksum": "0x90b4"
+}

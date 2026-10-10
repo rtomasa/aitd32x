@@ -1,0 +1,42 @@
+{
+  "region": "PAL",
+  "character": "emily",
+  "seconds": 5,
+  "game_frames": 62,
+  "observed_swaps": 62,
+  "render_fps": 12.4,
+  "simulation_ticks": 124,
+  "simulation_hz": 24.8,
+  "counter_fps": 12.0,
+  "start": {
+    "tick": 125,
+    "camera": 0,
+    "x": 3231,
+    "y": 0,
+    "z": -1548,
+    "beta": 0,
+    "mode": 1,
+    "paused": 0,
+    "character": 1,
+    "sequence": 508,
+    "render_frames": 17,
+    "fps_tenths": 118,
+    "tick_batch": 3
+  },
+  "end": {
+    "tick": 249,
+    "camera": 0,
+    "x": 3231,
+    "y": 0,
+    "z": -3052,
+    "beta": 0,
+    "mode": 1,
+    "paused": 0,
+    "character": 1,
+    "sequence": 1006,
+    "render_frames": 79,
+    "fps_tenths": 120,
+    "tick_batch": 2
+  },
+  "rom_sha256": "a628efb3ac7fc8e9ea2249552c7a4d94b9a5a2162407e5a166d74eed078e5855"
+}

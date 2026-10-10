@@ -1,0 +1,28 @@
+{
+  "diagnostic": true,
+  "separate_instrumented_v12": true,
+  "inclusive_scopes_overlap": true,
+  "frc_ticks_per_second": 143785.89,
+  "crossing_frame": 171,
+  "phase_ms": {
+    "update": 7.566806450897233,
+    "restore": 5.6681500528320266,
+    "transform": 20.30101841008182,
+    "sort": 14.723280566681472,
+    "primitives": 137.59347318432984,
+    "fill": 68.37249468637012,
+    "mask": 28.528529468364383,
+    "ui": 0.6120211099990409,
+    "palette": 0.0,
+    "flip": 6.662684356580468,
+    "frame": 292.58086450624603,
+    "cache": 237.3250949728099,
+    "camera": 7.253841110556814,
+    "coverage": 34.2314534479009,
+    "bake": 9.354186283508067,
+    "activate": 2.7123662829502946,
+    "life": 1.7108771938609553,
+    "advance": 2.0794808169285592,
+    "drawlist": 3.0322864086316117
+  }
+}

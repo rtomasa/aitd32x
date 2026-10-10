@@ -1,0 +1,239 @@
+{
+  "label": "final-v13",
+  "scene": "chest",
+  "region": "NTSC",
+  "character": "edward",
+  "seconds": 5,
+  "fps": 11.8,
+  "ticks": 123,
+  "static_rebuilds": 1,
+  "start": [
+    317,
+    3,
+    -4000,
+    0,
+    1200,
+    0,
+    1,
+    0,
+    0,
+    1534,
+    184,
+    210,
+    0,
+    1,
+    960,
+    328,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    2,
+    -1,
+    14,
+    166,
+    256,
+    20,
+    -1,
+    0,
+    1
+  ],
+  "end": [
+    440,
+    3,
+    -4000,
+    0,
+    -270,
+    0,
+    1,
+    0,
+    0,
+    2122,
+    243,
+    120,
+    2,
+    2,
+    130,
+    329,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    2,
+    -1,
+    14,
+    289,
+    256,
+    20,
+    -1,
+    0,
+    1
+  ],
+  "rom_sha256": "de9781ccbbf437a7a64c461626816b61e595b18eb3316cde0966e208440610c1",
+  "completed_frame_seconds": 4.9,
+  "simulation_hz": 25.10204081632653,
+  "cache": [
+    {
+      "id": 0,
+      "flags": 16,
+      "dynamic": true,
+      "spans": 38,
+      "bounds": [
+        167,
+        62,
+        207,
+        94
+      ]
+    },
+    {
+      "id": 1,
+      "flags": 65,
+      "dynamic": true,
+      "spans": 0,
+      "bounds": [
+        157,
+        58,
+        191,
+        96
+      ]
+    },
+    {
+      "id": 4,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        320,
+        200,
+        -1,
+        -1
+      ]
+    },
+    {
+      "id": 6,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 15,
+      "bounds": [
+        37,
+        45,
+        48,
+        60
+      ]
+    },
+    {
+      "id": 7,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        320,
+        200,
+        -1,
+        -1
+      ]
+    },
+    {
+      "id": 8,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 51,
+      "bounds": [
+        115,
+        124,
+        192,
+        175
+      ]
+    },
+    {
+      "id": 9,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        14,
+        88,
+        41,
+        113
+      ]
+    },
+    {
+      "id": 10,
+      "flags": 16,
+      "dynamic": true,
+      "spans": 0,
+      "bounds": [
+        81,
+        61,
+        92,
+        71
+      ]
+    },
+    {
+      "id": 11,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": 13,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 4,
+      "bounds": [
+        127,
+        41,
+        129,
+        45
+      ]
+    },
+    {
+      "id": 14,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": 21,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        320,
+        200,
+        -1,
+        -1
+      ]
+    },
+    {
+      "id": 278,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ]
+}

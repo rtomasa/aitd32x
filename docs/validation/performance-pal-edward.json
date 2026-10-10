@@ -1,0 +1,42 @@
+{
+  "region": "PAL",
+  "character": "edward",
+  "seconds": 5,
+  "game_frames": 62,
+  "observed_swaps": 62,
+  "render_fps": 12.4,
+  "simulation_ticks": 125,
+  "simulation_hz": 25.0,
+  "counter_fps": 12.3,
+  "start": {
+    "tick": 115,
+    "camera": 0,
+    "x": 3231,
+    "y": 0,
+    "z": -1548,
+    "beta": 0,
+    "mode": 1,
+    "paused": 0,
+    "character": 0,
+    "sequence": 470,
+    "render_frames": 16,
+    "fps_tenths": 118,
+    "tick_batch": 2
+  },
+  "end": {
+    "tick": 240,
+    "camera": 0,
+    "x": 3231,
+    "y": 0,
+    "z": -3216,
+    "beta": 0,
+    "mode": 1,
+    "paused": 0,
+    "character": 0,
+    "sequence": 968,
+    "render_frames": 78,
+    "fps_tenths": 123,
+    "tick_batch": 2
+  },
+  "rom_sha256": "a628efb3ac7fc8e9ea2249552c7a4d94b9a5a2162407e5a166d74eed078e5855"
+}

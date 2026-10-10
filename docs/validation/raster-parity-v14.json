@@ -1,0 +1,10 @@
+{
+  "compiled_entries": 216,
+  "pixel_and_coverage_comparisons": 432,
+  "bounds_modes": [
+    1,
+    3
+  ],
+  "moved_rotating_fallback_comparisons": 3,
+  "exact": true
+}

@@ -1,0 +1,43 @@
+{
+  "label": "release-v3",
+  "region": "PAL",
+  "character": "edward",
+  "distance": "near",
+  "seconds": 5,
+  "game_frames": 63,
+  "observed_swaps": 63,
+  "render_fps": 12.6,
+  "simulation_ticks": 126,
+  "counter_fps": 12.5,
+  "start": {
+    "tick": 485,
+    "camera": 0,
+    "x": 3231,
+    "y": 0,
+    "z": -3734,
+    "beta": 0,
+    "mode": 1,
+    "paused": 0,
+    "character": 0,
+    "sequence": 1948,
+    "render_frames": 232,
+    "fps_tenths": 125,
+    "tick_batch": 2
+  },
+  "end": {
+    "tick": 611,
+    "camera": 0,
+    "x": 3231,
+    "y": 0,
+    "z": -3734,
+    "beta": 0,
+    "mode": 1,
+    "paused": 0,
+    "character": 0,
+    "sequence": 2452,
+    "render_frames": 295,
+    "fps_tenths": 125,
+    "tick_batch": 2
+  },
+  "rom_sha256": "890e4a79d54f9a24009bbea9d90592f1e82df1adc76d0f354aa0adedd8073c34"
+}

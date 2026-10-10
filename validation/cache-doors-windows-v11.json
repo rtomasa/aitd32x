@@ -1,0 +1,74 @@
+[
+  {
+    "scene": "window-front",
+    "character": 0,
+    "cached_equal_fresh": true,
+    "cached_vs_unbaked": 0
+  },
+  {
+    "scene": "window-back",
+    "character": 0,
+    "cached_equal_fresh": true,
+    "cached_vs_unbaked": 0
+  },
+  {
+    "scene": "hall2",
+    "character": 0,
+    "cached_equal_fresh": true,
+    "cached_vs_unbaked": 0
+  },
+  {
+    "scene": "hall3",
+    "character": 0,
+    "cached_equal_fresh": true,
+    "cached_vs_unbaked": 0
+  },
+  {
+    "scene": "bow-open",
+    "character": 0,
+    "cached_equal_fresh": true,
+    "cached_vs_unbaked": 0
+  },
+  {
+    "scene": "bow-opening",
+    "character": 0,
+    "cached_equal_fresh": true,
+    "cached_vs_unbaked": 0
+  },
+  {
+    "scene": "window-front",
+    "character": 1,
+    "cached_equal_fresh": true,
+    "cached_vs_unbaked": 0
+  },
+  {
+    "scene": "window-back",
+    "character": 1,
+    "cached_equal_fresh": true,
+    "cached_vs_unbaked": 0
+  },
+  {
+    "scene": "hall2",
+    "character": 1,
+    "cached_equal_fresh": true,
+    "cached_vs_unbaked": 0
+  },
+  {
+    "scene": "hall3",
+    "character": 1,
+    "cached_equal_fresh": true,
+    "cached_vs_unbaked": 0
+  },
+  {
+    "scene": "bow-open",
+    "character": 1,
+    "cached_equal_fresh": true,
+    "cached_vs_unbaked": 0
+  },
+  {
+    "scene": "bow-opening",
+    "character": 1,
+    "cached_equal_fresh": true,
+    "cached_vs_unbaked": 0
+  }
+]

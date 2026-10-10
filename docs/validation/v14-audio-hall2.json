@@ -1,0 +1,299 @@
+{
+  "label": "v14-audio",
+  "scene": "hall2",
+  "region": "NTSC",
+  "character": "edward",
+  "seconds": 5,
+  "fps": 20.0,
+  "ticks": 125,
+  "static_rebuilds": 0,
+  "start": [
+    252,
+    2,
+    2700,
+    0,
+    400,
+    0,
+    1,
+    0,
+    0,
+    1222,
+    121,
+    200,
+    1,
+    1,
+    180,
+    328,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    2,
+    -1,
+    18,
+    154,
+    16,
+    20,
+    -1,
+    0,
+    1
+  ],
+  "end": [
+    377,
+    2,
+    2700,
+    0,
+    400,
+    0,
+    1,
+    0,
+    0,
+    1822,
+    221,
+    200,
+    1,
+    1,
+    180,
+    328,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    2,
+    -1,
+    18,
+    279,
+    16,
+    20,
+    -1,
+    0,
+    1
+  ],
+  "rom_sha256": "d0529b3f4b19bfa301438844d20f4f8a9d7c737d51f24a01e96af3167a45a3ad",
+  "completed_frame_seconds": 5.0,
+  "simulation_hz": 25.0,
+  "cache": [
+    {
+      "id": 22,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        320,
+        200,
+        -1,
+        -1
+      ]
+    },
+    {
+      "id": 1,
+      "flags": 65,
+      "dynamic": true,
+      "spans": 0,
+      "bounds": [
+        177,
+        65,
+        225,
+        168
+      ]
+    },
+    {
+      "id": 25,
+      "flags": 128,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": 29,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 83,
+      "bounds": [
+        72,
+        21,
+        94,
+        105
+      ]
+    },
+    {
+      "id": 30,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 138,
+      "bounds": [
+        77,
+        109,
+        200,
+        164
+      ]
+    },
+    {
+      "id": 31,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 147,
+      "bounds": [
+        141,
+        30,
+        168,
+        53
+      ]
+    },
+    {
+      "id": 32,
+      "flags": 80,
+      "dynamic": true,
+      "spans": 5,
+      "bounds": [
+        320,
+        200,
+        -1,
+        -1
+      ]
+    },
+    {
+      "id": 33,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 200,
+      "bounds": [
+        0,
+        0,
+        76,
+        199
+      ]
+    },
+    {
+      "id": 36,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        320,
+        200,
+        -1,
+        -1
+      ]
+    },
+    {
+      "id": 45,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        17,
+        46,
+        60,
+        88
+      ]
+    },
+    {
+      "id": 49,
+      "flags": 80,
+      "dynamic": true,
+      "spans": 103,
+      "bounds": [
+        224,
+        73,
+        239,
+        85
+      ]
+    },
+    {
+      "id": 50,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 92,
+      "bounds": [
+        162,
+        20,
+        180,
+        113
+      ]
+    },
+    {
+      "id": 51,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        277,
+        5,
+        319,
+        70
+      ]
+    },
+    {
+      "id": 56,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 5,
+      "bounds": [
+        159,
+        59,
+        169,
+        66
+      ]
+    },
+    {
+      "id": 59,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 181,
+      "bounds": [
+        198,
+        0,
+        280,
+        183
+      ]
+    },
+    {
+      "id": 60,
+      "flags": 64,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        273,
+        88,
+        319,
+        154
+      ]
+    },
+    {
+      "id": 63,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 56,
+      "bounds": [
+        104,
+        26,
+        136,
+        84
+      ]
+    },
+    {
+      "id": 279,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ]
+}

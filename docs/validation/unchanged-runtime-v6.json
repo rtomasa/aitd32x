@@ -1,0 +1,51 @@
+{
+  "files": [
+    {
+      "path": "src/engine/game.cpp",
+      "sha256": "7c8676d689338314e10792dbd5e7b4558777e90b2d68967c9e77d46dbc9beff8",
+      "byte_identical_v5": true
+    },
+    {
+      "path": "src/engine/game.hpp",
+      "sha256": "51d1d0a3b2a13e00abfa0b4cb8303be5edf01cc92444f063acf91e969247aadd",
+      "byte_identical_v5": true
+    },
+    {
+      "path": "src/engine/collision.cpp",
+      "sha256": "9fce9a8c213bf44ba57049dd257d7bccc4feb80235ea46610195b8232b1de1db",
+      "byte_identical_v5": true
+    },
+    {
+      "path": "src/engine/actor.hpp",
+      "sha256": "b0b4bcdeab47c604d74bfa71dc86348386e266f91a5c22e8fafabeb63bfde3e5",
+      "byte_identical_v5": true
+    },
+    {
+      "path": "src/sh2/master.cpp",
+      "sha256": "06a6efbaa63ce8d95f5bc73d543d3d90466d0827a4d460bb92a37a698e75b53e",
+      "byte_identical_v5": true
+    },
+    {
+      "path": "src/md/main68k.c",
+      "sha256": "3ac17bb72937e489a481d597b27ffee9bb0ecd512c3c2e0fbc31126d7786ef40",
+      "byte_identical_v5": true
+    },
+    {
+      "path": "src/platform/storage.cpp",
+      "sha256": "6162ce3ffcbb73482e994a6793f6ba9ca6d25a73541dccb12cfbea089a999c8a",
+      "byte_identical_v5": true
+    },
+    {
+      "path": "src/platform/32x/frame_stats.hpp",
+      "sha256": "233ff7cea7f3cd537d39a195490d841127051b53e3578a0439782df98b1db0a3",
+      "byte_identical_v5": true
+    }
+  ],
+  "asset_bank_sha256": "c257542990a41792910f6d542eee040a8aefe985e9ab1801e31dfda67db12213",
+  "rom_sha256": "29c8fcdd7f39a396b2657280f1220511a464823fe5897f9bd667dee637f169a5",
+  "actor_advancement_prefix": {
+    "through": "before RotateGroup",
+    "byte_identical_v5": true,
+    "sha256": "21a5ed8f1c86d65e3ac9b477f5b769facca6a3cc574c5437ca37f0e04aad94df"
+  }
+}

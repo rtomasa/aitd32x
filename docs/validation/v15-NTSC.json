@@ -1,0 +1,48 @@
+{
+  "0": {
+    "window_sound_chain": [
+      2,
+      29
+    ],
+    "window_fault": false,
+    "entrance_adlib": 1,
+    "queued_ambient_adlib": 0
+  },
+  "1": {
+    "window_sound_chain": [
+      2,
+      29
+    ],
+    "window_fault": false,
+    "entrance_adlib": 1,
+    "queued_ambient_adlib": 0
+  },
+  "reading": {
+    "documents": 21,
+    "pages_checked": 166,
+    "illustrations": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "page_sample": 49,
+    "world_paused": true,
+    "closing_restores_scene": true
+  },
+  "native": {
+    "region": "NTSC",
+    "window_fault": false,
+    "entrance_adlib": 1,
+    "queued_ambient_cd": 4,
+    "original_reading_host_native_exact": [
+      1,
+      2,
+      7
+    ],
+    "both_buffers": true,
+    "page_sound": true
+  },
+  "rom_sha256": "556275aae35a59cf1863d9c47f39912578912be772a749c40d17a9506857eb60"
+}

@@ -1,0 +1,239 @@
+{
+  "label": "v14-audio",
+  "scene": "chest",
+  "region": "NTSC",
+  "character": "edward",
+  "seconds": 5,
+  "fps": 11.8,
+  "ticks": 121,
+  "static_rebuilds": 1,
+  "start": [
+    314,
+    3,
+    -4000,
+    0,
+    1200,
+    0,
+    1,
+    0,
+    0,
+    1518,
+    182,
+    230,
+    0,
+    1,
+    660,
+    328,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    2,
+    -1,
+    14,
+    161,
+    256,
+    20,
+    -1,
+    0,
+    1
+  ],
+  "end": [
+    435,
+    3,
+    -4000,
+    0,
+    -238,
+    0,
+    1,
+    0,
+    0,
+    2100,
+    241,
+    120,
+    2,
+    1,
+    700,
+    329,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    2,
+    -1,
+    14,
+    282,
+    256,
+    20,
+    -1,
+    0,
+    1
+  ],
+  "rom_sha256": "d0529b3f4b19bfa301438844d20f4f8a9d7c737d51f24a01e96af3167a45a3ad",
+  "completed_frame_seconds": 4.85,
+  "simulation_hz": 24.948453608247423,
+  "cache": [
+    {
+      "id": 0,
+      "flags": 16,
+      "dynamic": true,
+      "spans": 38,
+      "bounds": [
+        167,
+        62,
+        207,
+        94
+      ]
+    },
+    {
+      "id": 1,
+      "flags": 65,
+      "dynamic": true,
+      "spans": 0,
+      "bounds": [
+        157,
+        58,
+        191,
+        96
+      ]
+    },
+    {
+      "id": 4,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        320,
+        200,
+        -1,
+        -1
+      ]
+    },
+    {
+      "id": 6,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 15,
+      "bounds": [
+        37,
+        45,
+        48,
+        60
+      ]
+    },
+    {
+      "id": 7,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        320,
+        200,
+        -1,
+        -1
+      ]
+    },
+    {
+      "id": 8,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 51,
+      "bounds": [
+        115,
+        124,
+        192,
+        175
+      ]
+    },
+    {
+      "id": 9,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        14,
+        88,
+        41,
+        113
+      ]
+    },
+    {
+      "id": 10,
+      "flags": 16,
+      "dynamic": true,
+      "spans": 0,
+      "bounds": [
+        81,
+        61,
+        92,
+        71
+      ]
+    },
+    {
+      "id": 11,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": 13,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 4,
+      "bounds": [
+        127,
+        41,
+        129,
+        45
+      ]
+    },
+    {
+      "id": 14,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": 21,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        320,
+        200,
+        -1,
+        -1
+      ]
+    },
+    {
+      "id": 278,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ]
+}

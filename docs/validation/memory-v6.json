@@ -1,0 +1,19 @@
+{
+  "loaded_module_bytes": 23460,
+  "bss_bytes": 85324,
+  "static_sdram_bytes": 108784,
+  "static_end": "0x0601A8F0",
+  "stack_reserve_starts": "0x0603C000",
+  "headroom_bytes": 136976,
+  "master_stack_bytes": 12288,
+  "slave_stack_bytes": 4096,
+  "release_stack_frames_bytes": {
+    "DrawActor": 1492,
+    "GeneralPolygon": 2172,
+    "Triangle": 188,
+    "MakeEdge": 40,
+    "WorkerPoll": 24,
+    "s_main": 24
+  },
+  "review": "largest slave raster call chain approximately 2.3 KiB plus interrupts; no recursive calls or heap"
+}

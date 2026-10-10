@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "character": "emily",
+  "region": "PAL",
+  "scenes": [
+    {
+      "camera": 3,
+      "framebuffer_banks_equal": true,
+      "game_fault": 0
+    },
+    {
+      "camera": 2,
+      "framebuffer_banks_equal": true,
+      "game_fault": 0
+    }
+  ],
+  "rom_sha256": "917e6c1b174e69693237ae5d84954b36ae795811e1a8afa3f8f1fab37f5ee737"
+}

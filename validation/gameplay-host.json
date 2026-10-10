@@ -1,0 +1,238 @@
+{
+  "passed": true,
+  "characters": [
+    {
+      "character": 0,
+      "chest": {
+        "floor": 0,
+        "room": 0,
+        "inventory": [
+          2,
+          3
+        ],
+        "peak_active": 14,
+        "health": 20,
+        "position": [
+          -6000,
+          0,
+          -395
+        ]
+      },
+      "landing": {
+        "floor": 1,
+        "room": 6,
+        "inventory": [
+          2,
+          15,
+          3
+        ],
+        "peak_active": 14,
+        "health": 20,
+        "position": [
+          0,
+          0,
+          -1895
+        ]
+      },
+      "roundtrip": {
+        "floor": 0,
+        "room": 0,
+        "inventory": [
+          2,
+          15,
+          3
+        ],
+        "peak_active": 14,
+        "health": 20,
+        "position": [
+          6830,
+          0,
+          3564
+        ]
+      },
+      "throw_stopped": [
+        3426,
+        -5984,
+        0
+      ],
+      "melee": {
+        "floor": 0,
+        "room": 0,
+        "inventory": [
+          2
+        ],
+        "peak_active": 14,
+        "health": 19,
+        "position": [
+          2000,
+          0,
+          3500
+        ]
+      },
+      "rifle": {
+        "floor": 0,
+        "room": 0,
+        "inventory": [
+          2,
+          3
+        ],
+        "peak_active": 14,
+        "health": 19,
+        "position": [
+          2000,
+          0,
+          3901
+        ]
+      },
+      "cache": [
+        {
+          "x": 3231,
+          "z": -1548,
+          "sha256": "26478b90acb6e68c00c4fb481f088bcb670c6d84c7bddc01ad2ab38d5e6d0b62"
+        },
+        {
+          "x": -5800,
+          "z": -395,
+          "sha256": "ec80b7a4320dc61db4fcd93877a981fde59ebf47b626facb7811fa8b417e8c8a"
+        },
+        {
+          "x": -4500,
+          "z": 1500,
+          "sha256": "0810e1d11c3b52ae4d6bd58b87a03794ca9ac3e9de8d87070af15eff399852b9"
+        },
+        {
+          "x": 3000,
+          "z": -4600,
+          "sha256": "a2a9dab394618ca3fd53b3d286f48da76d0a46847bd1d95a6675932cb6030be2"
+        },
+        {
+          "x": 5740,
+          "z": 1000,
+          "sha256": "0ae658997895e12aa79ef274a1b6da013ccf4119ca23438c186c8c3d3d0cca6b"
+        },
+        {
+          "x": 0,
+          "z": 4200,
+          "sha256": "658446a32185de6263218b1fabe2dfd7b87712d1454cb90d676bd3210a9d8c9c"
+        }
+      ]
+    },
+    {
+      "character": 1,
+      "chest": {
+        "floor": 0,
+        "room": 0,
+        "inventory": [
+          2,
+          3
+        ],
+        "peak_active": 14,
+        "health": 20,
+        "position": [
+          -6000,
+          0,
+          -395
+        ]
+      },
+      "landing": {
+        "floor": 1,
+        "room": 6,
+        "inventory": [
+          2,
+          15,
+          3
+        ],
+        "peak_active": 14,
+        "health": 20,
+        "position": [
+          0,
+          0,
+          -1898
+        ]
+      },
+      "roundtrip": {
+        "floor": 0,
+        "room": 0,
+        "inventory": [
+          2,
+          15,
+          3
+        ],
+        "peak_active": 14,
+        "health": 20,
+        "position": [
+          6830,
+          0,
+          3562
+        ]
+      },
+      "throw_stopped": [
+        3406,
+        -5932,
+        0
+      ],
+      "melee": {
+        "floor": 0,
+        "room": 0,
+        "inventory": [
+          2
+        ],
+        "peak_active": 14,
+        "health": 19,
+        "position": [
+          2000,
+          0,
+          3500
+        ]
+      },
+      "rifle": {
+        "floor": 0,
+        "room": 0,
+        "inventory": [
+          2,
+          3
+        ],
+        "peak_active": 14,
+        "health": 19,
+        "position": [
+          2000,
+          0,
+          3867
+        ]
+      },
+      "cache": [
+        {
+          "x": 3231,
+          "z": -1548,
+          "sha256": "08741ce2f35cbcbe70ce8241e5d48d1ace87a162d95bfee9ee81edc3778d2ace"
+        },
+        {
+          "x": -5800,
+          "z": -395,
+          "sha256": "cd7c618abce73b23570077c54e20303bf0d58cf5304a204831ca3f7e23e20c64"
+        },
+        {
+          "x": -4500,
+          "z": 1500,
+          "sha256": "6e6ef6d6fa1a0d03e2efea607f60c2f845c17fa590210dacd8aad9663121d6b2"
+        },
+        {
+          "x": 3000,
+          "z": -4600,
+          "sha256": "f1d7c2b71b1df6b1c534a4481ae8e9ed9d4aed07045323920ef7ea59c15ca503"
+        },
+        {
+          "x": 5740,
+          "z": 1000,
+          "sha256": "c98c2560cdd2afac9162fc5aec75a4f7b7cd5e1c96aa04317af2326779d3802c"
+        },
+        {
+          "x": 0,
+          "z": 4200,
+          "sha256": "b8b9fe0ae6e421d5e472856d0d18a20d624eae08cdb76431e1bab7baa14d9628"
+        }
+      ]
+    }
+  ],
+  "bank_sha256": "a7dd45ef9a57231dd986417e9e9e94faba41a954155dbb70334f0d65304d9fa8"
+}

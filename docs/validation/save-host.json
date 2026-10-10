@@ -1,0 +1,20 @@
+[
+  {
+    "character": 0,
+    "payload_bytes": 21515,
+    "roundtrip": true,
+    "all_fields_identical": true,
+    "corrupt_newest_fallback": true,
+    "title_load": true,
+    "invalid_load_unchanged": true
+  },
+  {
+    "character": 1,
+    "payload_bytes": 21515,
+    "roundtrip": true,
+    "all_fields_identical": true,
+    "corrupt_newest_fallback": true,
+    "title_load": true,
+    "invalid_load_unchanged": true
+  }
+]

@@ -1,0 +1,410 @@
+{
+  "character": "edward",
+  "region": "NTSC",
+  "cases": 40,
+  "both_banks_exact": true,
+  "canonical": "idle key 0, paused; includes pause overlay",
+  "rom_sha256": "205a73e363dadc4f32990ef85c597a5d0db21b533b57e2529ed9cdbbbdbcb517",
+  "samples": [
+    {
+      "camera": 0,
+      "pose": [
+        3231,
+        0,
+        500,
+        0
+      ],
+      "pixel_sha256": "d265113c14c88e21dfa25324a0aec285669660a689f955a12f55fd45f3a96af1"
+    },
+    {
+      "camera": 0,
+      "pose": [
+        3231,
+        0,
+        -1548,
+        0
+      ],
+      "pixel_sha256": "5a1d37c76b028c04539bf22d2979659b676cb06d138bc205ef6fdd965182cd71"
+    },
+    {
+      "camera": 0,
+      "pose": [
+        3231,
+        0,
+        -3734,
+        0
+      ],
+      "pixel_sha256": "3e38423fa2fe936806ee2e563c3439a103d6683e811927cf18160c512dbbe99a"
+    },
+    {
+      "camera": 0,
+      "pose": [
+        4500,
+        0,
+        -3500,
+        0
+      ],
+      "pixel_sha256": "95ff901fd787f6932b649346140c00fc64bd7b347a0efde141e9b715388ca411"
+    },
+    {
+      "camera": 0,
+      "pose": [
+        4500,
+        0,
+        -3500,
+        260
+      ],
+      "pixel_sha256": "02d040d58873a116b521439d565b5b62b4751d94d71929df9fc11420321575dc"
+    },
+    {
+      "camera": 0,
+      "pose": [
+        5000,
+        0,
+        -4000,
+        520
+      ],
+      "pixel_sha256": "ff0d4eaea9468cb5c0bdf848e9de0a61c637b16c4e8c9276b5679f07531f1cb5"
+    },
+    {
+      "camera": 0,
+      "pose": [
+        4500,
+        0,
+        -6000,
+        0
+      ],
+      "pixel_sha256": "c4d6ff3246cc7959fab9523f75945393897ef2760340bd81593a7a3f3092e3b1"
+    },
+    {
+      "camera": 0,
+      "pose": [
+        6000,
+        0,
+        -5000,
+        780
+      ],
+      "pixel_sha256": "c4d6ff3246cc7959fab9523f75945393897ef2760340bd81593a7a3f3092e3b1"
+    },
+    {
+      "camera": 1,
+      "pose": [
+        3231,
+        0,
+        500,
+        0
+      ],
+      "pixel_sha256": "718fd5a7dec385f37f38bf43676f813d885c719ec3b091883b449fc191fd3f2c"
+    },
+    {
+      "camera": 1,
+      "pose": [
+        3231,
+        0,
+        -1548,
+        0
+      ],
+      "pixel_sha256": "718fd5a7dec385f37f38bf43676f813d885c719ec3b091883b449fc191fd3f2c"
+    },
+    {
+      "camera": 1,
+      "pose": [
+        3231,
+        0,
+        -3734,
+        0
+      ],
+      "pixel_sha256": "2da4e6294e46d9de0e51d0045af3780de0a5f93efc79b1dfe31629e95be02c8a"
+    },
+    {
+      "camera": 1,
+      "pose": [
+        4500,
+        0,
+        -3500,
+        0
+      ],
+      "pixel_sha256": "e0200c6234bfcd3a3d9077df0b67711b62b50b45a4496769e0813d04fb303c06"
+    },
+    {
+      "camera": 1,
+      "pose": [
+        4500,
+        0,
+        -3500,
+        260
+      ],
+      "pixel_sha256": "bbda6d69c3e42902c1c89991550d1d5344d60417c8addb3a670af21b486529ab"
+    },
+    {
+      "camera": 1,
+      "pose": [
+        5000,
+        0,
+        -4000,
+        520
+      ],
+      "pixel_sha256": "5e72eff4db1d72a7dd15a0674a20eea8d49b6a8f047e8cd5c9e0e4c640215356"
+    },
+    {
+      "camera": 1,
+      "pose": [
+        4500,
+        0,
+        -6000,
+        0
+      ],
+      "pixel_sha256": "718fd5a7dec385f37f38bf43676f813d885c719ec3b091883b449fc191fd3f2c"
+    },
+    {
+      "camera": 1,
+      "pose": [
+        6000,
+        0,
+        -5000,
+        780
+      ],
+      "pixel_sha256": "5cfdc6056f98d11aaae4dca3f05673eefe4f0530452fbfd3ada6ec47174d9103"
+    },
+    {
+      "camera": 2,
+      "pose": [
+        3231,
+        0,
+        500,
+        0
+      ],
+      "pixel_sha256": "235ef2d388d1b12a77071ba247f43d697c4e6664002f2146ea77209076d5c568"
+    },
+    {
+      "camera": 2,
+      "pose": [
+        3231,
+        0,
+        -1548,
+        0
+      ],
+      "pixel_sha256": "3f8e0b512b3661fd4cf40ef8fba17948a7adbc3997e97525473a75b88c569a5c"
+    },
+    {
+      "camera": 2,
+      "pose": [
+        3231,
+        0,
+        -3734,
+        0
+      ],
+      "pixel_sha256": "a30b995bcab1036b4b3df2a1cefd6508c1e5f9366ce6655148c2aedd2e8f6c83"
+    },
+    {
+      "camera": 2,
+      "pose": [
+        4500,
+        0,
+        -3500,
+        0
+      ],
+      "pixel_sha256": "a30b995bcab1036b4b3df2a1cefd6508c1e5f9366ce6655148c2aedd2e8f6c83"
+    },
+    {
+      "camera": 2,
+      "pose": [
+        4500,
+        0,
+        -3500,
+        260
+      ],
+      "pixel_sha256": "a30b995bcab1036b4b3df2a1cefd6508c1e5f9366ce6655148c2aedd2e8f6c83"
+    },
+    {
+      "camera": 2,
+      "pose": [
+        5000,
+        0,
+        -4000,
+        520
+      ],
+      "pixel_sha256": "a30b995bcab1036b4b3df2a1cefd6508c1e5f9366ce6655148c2aedd2e8f6c83"
+    },
+    {
+      "camera": 2,
+      "pose": [
+        4500,
+        0,
+        -6000,
+        0
+      ],
+      "pixel_sha256": "a30b995bcab1036b4b3df2a1cefd6508c1e5f9366ce6655148c2aedd2e8f6c83"
+    },
+    {
+      "camera": 2,
+      "pose": [
+        6000,
+        0,
+        -5000,
+        780
+      ],
+      "pixel_sha256": "a30b995bcab1036b4b3df2a1cefd6508c1e5f9366ce6655148c2aedd2e8f6c83"
+    },
+    {
+      "camera": 3,
+      "pose": [
+        3231,
+        0,
+        500,
+        0
+      ],
+      "pixel_sha256": "b0a61e6adddb22f7090043bf4cc3447a77afe46ffe18b38bd464e2cbcc9f6838"
+    },
+    {
+      "camera": 3,
+      "pose": [
+        3231,
+        0,
+        -1548,
+        0
+      ],
+      "pixel_sha256": "54514926f822e08194ab88fe57ae83a4cff507fc50192e0e824f74430dad7cdf"
+    },
+    {
+      "camera": 3,
+      "pose": [
+        3231,
+        0,
+        -3734,
+        0
+      ],
+      "pixel_sha256": "f7c298512427a20561a91ad88a0266f32e258ff2cd6bb56b3bd16a79481c3857"
+    },
+    {
+      "camera": 3,
+      "pose": [
+        4500,
+        0,
+        -3500,
+        0
+      ],
+      "pixel_sha256": "b582dbf8e72c73ee975501a573671dc09c1eda682dde05c19cfa6b4fb35f32f1"
+    },
+    {
+      "camera": 3,
+      "pose": [
+        4500,
+        0,
+        -3500,
+        260
+      ],
+      "pixel_sha256": "f68002ff82be0bb55764f786c66adc2c44b0552d75ab1bfea4e335ed3bc93b82"
+    },
+    {
+      "camera": 3,
+      "pose": [
+        5000,
+        0,
+        -4000,
+        520
+      ],
+      "pixel_sha256": "626a5f740d7541ddf397cee11193f693458b67333f9218432fa47492ff034051"
+    },
+    {
+      "camera": 3,
+      "pose": [
+        4500,
+        0,
+        -6000,
+        0
+      ],
+      "pixel_sha256": "5857cb3f7b73b1d1e53322902f190a23609d6654718f3417b9bfc10872ae6fbf"
+    },
+    {
+      "camera": 3,
+      "pose": [
+        6000,
+        0,
+        -5000,
+        780
+      ],
+      "pixel_sha256": "fc0ed8bac33d9a1042b5b5a8b2aac538b54b1b1403ad444909ab06eb09396ba5"
+    },
+    {
+      "camera": 4,
+      "pose": [
+        3231,
+        0,
+        500,
+        0
+      ],
+      "pixel_sha256": "e068329858edd4428e6229641eaad17081a91d36945653359ca6934a65c34f7f"
+    },
+    {
+      "camera": 4,
+      "pose": [
+        3231,
+        0,
+        -1548,
+        0
+      ],
+      "pixel_sha256": "eb21f3270ff39a84ced3fd2767697daaa930b6fd52023f358d5f0d0bf00a21f8"
+    },
+    {
+      "camera": 4,
+      "pose": [
+        3231,
+        0,
+        -3734,
+        0
+      ],
+      "pixel_sha256": "eb21f3270ff39a84ced3fd2767697daaa930b6fd52023f358d5f0d0bf00a21f8"
+    },
+    {
+      "camera": 4,
+      "pose": [
+        4500,
+        0,
+        -3500,
+        0
+      ],
+      "pixel_sha256": "eb21f3270ff39a84ced3fd2767697daaa930b6fd52023f358d5f0d0bf00a21f8"
+    },
+    {
+      "camera": 4,
+      "pose": [
+        4500,
+        0,
+        -3500,
+        260
+      ],
+      "pixel_sha256": "eb21f3270ff39a84ced3fd2767697daaa930b6fd52023f358d5f0d0bf00a21f8"
+    },
+    {
+      "camera": 4,
+      "pose": [
+        5000,
+        0,
+        -4000,
+        520
+      ],
+      "pixel_sha256": "eb21f3270ff39a84ced3fd2767697daaa930b6fd52023f358d5f0d0bf00a21f8"
+    },
+    {
+      "camera": 4,
+      "pose": [
+        4500,
+        0,
+        -6000,
+        0
+      ],
+      "pixel_sha256": "eb21f3270ff39a84ced3fd2767697daaa930b6fd52023f358d5f0d0bf00a21f8"
+    },
+    {
+      "camera": 4,
+      "pose": [
+        6000,
+        0,
+        -5000,
+        780
+      ],
+      "pixel_sha256": "eb21f3270ff39a84ced3fd2767697daaa930b6fd52023f358d5f0d0bf00a21f8"
+    }
+  ]
+}

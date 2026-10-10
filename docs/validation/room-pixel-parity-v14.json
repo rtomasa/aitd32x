@@ -1,0 +1,12 @@
+[
+  {
+    "character": 0,
+    "exact_frames": 345,
+    "world_state_equal": true
+  },
+  {
+    "character": 1,
+    "exact_frames": 345,
+    "world_state_equal": true
+  }
+]

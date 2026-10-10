@@ -1,0 +1,88 @@
+{
+  "cameras_visited": [
+    0,
+    1,
+    3
+  ],
+  "states": [
+    {
+      "tick": 112,
+      "camera": 0,
+      "x": 3231,
+      "y": 0,
+      "z": -1548,
+      "beta": 744,
+      "mode": 1,
+      "paused": 0,
+      "character": 0,
+      "sequence": 552,
+      "render_frames": 30,
+      "fps_tenths": 167,
+      "tick_batch": 1
+    },
+    {
+      "tick": 408,
+      "camera": 3,
+      "x": -6330,
+      "y": 0,
+      "z": -248,
+      "beta": 744,
+      "mode": 1,
+      "paused": 0,
+      "character": 0,
+      "sequence": 1972,
+      "render_frames": 266,
+      "fps_tenths": 200,
+      "tick_batch": 1
+    },
+    {
+      "tick": 426,
+      "camera": 3,
+      "x": -6330,
+      "y": 0,
+      "z": -248,
+      "beta": 984,
+      "mode": 1,
+      "paused": 0,
+      "character": 0,
+      "sequence": 2056,
+      "render_frames": 280,
+      "fps_tenths": 200,
+      "tick_batch": 1
+    },
+    {
+      "tick": 578,
+      "camera": 1,
+      "x": -7231,
+      "y": 0,
+      "z": -4423,
+      "beta": 984,
+      "mode": 1,
+      "paused": 0,
+      "character": 0,
+      "sequence": 2788,
+      "render_frames": 381,
+      "fps_tenths": 92,
+      "tick_batch": 2
+    }
+  ],
+  "route_frames": [
+    [
+      31,
+      8
+    ],
+    [
+      696,
+      17
+    ],
+    [
+      31,
+      4
+    ],
+    [
+      360,
+      17
+    ]
+  ],
+  "release_frames_between_segments": 12
+}

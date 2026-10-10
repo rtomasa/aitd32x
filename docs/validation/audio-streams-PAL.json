@@ -1,0 +1,68 @@
+{
+  "rom_sha256": "d0529b3f4b19bfa301438844d20f4f8a9d7c737d51f24a01e96af3167a45a3ad",
+  "checks": [
+    {
+      "track": 0,
+      "duration_seconds": 119.74489795918367,
+      "peak": 9051,
+      "autonomous_while_paused": true,
+      "ends_on_time": true
+    },
+    {
+      "track": 1,
+      "duration_seconds": 23.69047619047619,
+      "peak": 12966,
+      "autonomous_while_paused": true,
+      "ends_on_time": true
+    },
+    {
+      "track": 2,
+      "duration_seconds": 61.105442176870746,
+      "peak": 9758,
+      "autonomous_while_paused": true,
+      "ends_on_time": true
+    },
+    {
+      "track": 3,
+      "duration_seconds": 159.88095238095238,
+      "peak": 5881,
+      "autonomous_while_paused": true,
+      "ends_on_time": true
+    },
+    {
+      "track": 4,
+      "duration_seconds": 206.13945578231292,
+      "peak": 11611,
+      "autonomous_while_paused": true,
+      "ends_on_time": true
+    },
+    {
+      "track": 5,
+      "duration_seconds": 103.8265306122449,
+      "peak": 10616,
+      "autonomous_while_paused": true,
+      "ends_on_time": true
+    },
+    {
+      "track": 6,
+      "duration_seconds": 130.4251700680272,
+      "peak": 11962,
+      "autonomous_while_paused": true,
+      "ends_on_time": true
+    },
+    {
+      "track": 7,
+      "duration_seconds": 144.77891156462584,
+      "peak": 13342,
+      "autonomous_while_paused": true,
+      "ends_on_time": true
+    },
+    {
+      "effect": 0,
+      "pcm_samples": 6600,
+      "duration_seconds": 0.825,
+      "completed": true,
+      "sample_clock_verified": true
+    }
+  ]
+}

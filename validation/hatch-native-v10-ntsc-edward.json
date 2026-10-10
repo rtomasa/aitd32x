@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "character": "edward",
+  "region": "NTSC",
+  "scenes": [
+    {
+      "camera": 3,
+      "framebuffer_banks_equal": true,
+      "game_fault": 0
+    },
+    {
+      "camera": 2,
+      "framebuffer_banks_equal": true,
+      "game_fault": 0
+    }
+  ],
+  "rom_sha256": "c05cedc2dae81490677e3b04e237de632fb2718b51969d099239eff770b1e164"
+}

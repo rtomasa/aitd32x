@@ -1,0 +1,7 @@
+{
+  "rom_sha256": "d0529b3f4b19bfa301438844d20f4f8a9d7c737d51f24a01e96af3167a45a3ad",
+  "bank_sha256": "0e6a3f1321223eebd7ab7e449a263e7fe34215660a2ae80394217ed6a2871f65",
+  "independent_import_identical": true,
+  "clean_source_build_identical": true,
+  "executable_and_importer_files_identical": 90
+}

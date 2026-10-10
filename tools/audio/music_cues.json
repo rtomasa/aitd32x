@@ -1,0 +1,983 @@
+{
+  "cd_sha256": "99d7d62490766c16d0df3e5d4624b74257300b8c45a70ab29cc1b474ca7deb1b",
+  "floppy_sha256": "d314a64ff779fb8e43ab5a4a84be1a57c2a882f130269672946bf4a99e60b8a9",
+  "mapping": {
+    "13": 1,
+    "5": 2,
+    "4": 0,
+    "12": 1,
+    "8": 5,
+    "14": 1,
+    "15": 3,
+    "17": 4,
+    "16": 5,
+    "7": 1,
+    "11": 1,
+    "2": 7
+  },
+  "matched": [
+    {
+      "life": 16,
+      "word": 38,
+      "cd": 13,
+      "adlib": 1,
+      "cd_opcode": 44,
+      "floppy_opcode": 44
+    },
+    {
+      "life": 16,
+      "word": 40,
+      "cd": 5,
+      "adlib": 2,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 17,
+      "word": 43,
+      "cd": 4,
+      "adlib": 0,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 18,
+      "word": 79,
+      "cd": 4,
+      "adlib": 0,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 19,
+      "word": 15,
+      "cd": 12,
+      "adlib": 1,
+      "cd_opcode": 44,
+      "floppy_opcode": 44
+    },
+    {
+      "life": 19,
+      "word": 17,
+      "cd": 5,
+      "adlib": 2,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 20,
+      "word": 24,
+      "cd": 4,
+      "adlib": 0,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 21,
+      "word": 79,
+      "cd": 4,
+      "adlib": 0,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 39,
+      "word": 69,
+      "cd": 8,
+      "adlib": 5,
+      "cd_opcode": 44,
+      "floppy_opcode": 81
+    },
+    {
+      "life": 39,
+      "word": 103,
+      "cd": 8,
+      "adlib": 5,
+      "cd_opcode": 44,
+      "floppy_opcode": 81
+    },
+    {
+      "life": 52,
+      "word": 15,
+      "cd": 13,
+      "adlib": 1,
+      "cd_opcode": 44,
+      "floppy_opcode": 44
+    },
+    {
+      "life": 52,
+      "word": 17,
+      "cd": 5,
+      "adlib": 2,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 53,
+      "word": 79,
+      "cd": 4,
+      "adlib": 0,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 72,
+      "word": 15,
+      "cd": 12,
+      "adlib": 1,
+      "cd_opcode": 44,
+      "floppy_opcode": 44
+    },
+    {
+      "life": 72,
+      "word": 17,
+      "cd": 5,
+      "adlib": 2,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 72,
+      "word": 45,
+      "cd": 12,
+      "adlib": 1,
+      "cd_opcode": 44,
+      "floppy_opcode": 44
+    },
+    {
+      "life": 72,
+      "word": 47,
+      "cd": 5,
+      "adlib": 2,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 74,
+      "word": 79,
+      "cd": 4,
+      "adlib": 0,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 83,
+      "word": 21,
+      "cd": 13,
+      "adlib": 1,
+      "cd_opcode": 44,
+      "floppy_opcode": 44
+    },
+    {
+      "life": 83,
+      "word": 23,
+      "cd": 5,
+      "adlib": 2,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 84,
+      "word": 79,
+      "cd": 4,
+      "adlib": 0,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 90,
+      "word": 84,
+      "cd": 14,
+      "adlib": 1,
+      "cd_opcode": 44,
+      "floppy_opcode": 44
+    },
+    {
+      "life": 90,
+      "word": 86,
+      "cd": 5,
+      "adlib": 2,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 92,
+      "word": 197,
+      "cd": 4,
+      "adlib": 0,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 123,
+      "word": 63,
+      "cd": 4,
+      "adlib": 0,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 131,
+      "word": 70,
+      "cd": 4,
+      "adlib": 0,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 132,
+      "word": 135,
+      "cd": 4,
+      "adlib": 0,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 139,
+      "word": 14,
+      "cd": 12,
+      "adlib": 1,
+      "cd_opcode": 44,
+      "floppy_opcode": 44
+    },
+    {
+      "life": 139,
+      "word": 16,
+      "cd": 5,
+      "adlib": 2,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 142,
+      "word": 77,
+      "cd": 4,
+      "adlib": 0,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 165,
+      "word": 12,
+      "cd": 14,
+      "adlib": 1,
+      "cd_opcode": 44,
+      "floppy_opcode": 44
+    },
+    {
+      "life": 165,
+      "word": 14,
+      "cd": 5,
+      "adlib": 2,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 202,
+      "word": 32,
+      "cd": 14,
+      "adlib": 1,
+      "cd_opcode": 44,
+      "floppy_opcode": 44
+    },
+    {
+      "life": 202,
+      "word": 34,
+      "cd": 5,
+      "adlib": 2,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 220,
+      "word": 3,
+      "cd": 14,
+      "adlib": 1,
+      "cd_opcode": 44,
+      "floppy_opcode": 44
+    },
+    {
+      "life": 261,
+      "word": 8,
+      "cd": 4,
+      "adlib": 0,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 262,
+      "word": 8,
+      "cd": 4,
+      "adlib": 0,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 263,
+      "word": 8,
+      "cd": 4,
+      "adlib": 0,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 266,
+      "word": 11,
+      "cd": 14,
+      "adlib": 1,
+      "cd_opcode": 44,
+      "floppy_opcode": 44
+    },
+    {
+      "life": 266,
+      "word": 13,
+      "cd": 5,
+      "adlib": 2,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 267,
+      "word": 25,
+      "cd": 14,
+      "adlib": 1,
+      "cd_opcode": 44,
+      "floppy_opcode": 44
+    },
+    {
+      "life": 267,
+      "word": 27,
+      "cd": 5,
+      "adlib": 2,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 268,
+      "word": 10,
+      "cd": 4,
+      "adlib": 0,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 268,
+      "word": 265,
+      "cd": 4,
+      "adlib": 0,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 283,
+      "word": 97,
+      "cd": 15,
+      "adlib": 3,
+      "cd_opcode": 44,
+      "floppy_opcode": 81
+    },
+    {
+      "life": 285,
+      "word": 33,
+      "cd": 14,
+      "adlib": 1,
+      "cd_opcode": 44,
+      "floppy_opcode": 44
+    },
+    {
+      "life": 285,
+      "word": 35,
+      "cd": 5,
+      "adlib": 2,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 290,
+      "word": 33,
+      "cd": 14,
+      "adlib": 1,
+      "cd_opcode": 44,
+      "floppy_opcode": 44
+    },
+    {
+      "life": 290,
+      "word": 35,
+      "cd": 5,
+      "adlib": 2,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 295,
+      "word": 33,
+      "cd": 14,
+      "adlib": 1,
+      "cd_opcode": 44,
+      "floppy_opcode": 44
+    },
+    {
+      "life": 295,
+      "word": 35,
+      "cd": 5,
+      "adlib": 2,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 304,
+      "word": 23,
+      "cd": 14,
+      "adlib": 1,
+      "cd_opcode": 44,
+      "floppy_opcode": 44
+    },
+    {
+      "life": 304,
+      "word": 25,
+      "cd": 5,
+      "adlib": 2,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 362,
+      "word": 26,
+      "cd": 13,
+      "adlib": 1,
+      "cd_opcode": 44,
+      "floppy_opcode": 44
+    },
+    {
+      "life": 362,
+      "word": 28,
+      "cd": 5,
+      "adlib": 2,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 366,
+      "word": 79,
+      "cd": 4,
+      "adlib": 0,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 379,
+      "word": 93,
+      "cd": 17,
+      "adlib": 4,
+      "cd_opcode": 44,
+      "floppy_opcode": 81
+    },
+    {
+      "life": 421,
+      "word": 188,
+      "cd": 13,
+      "adlib": 1,
+      "cd_opcode": 44,
+      "floppy_opcode": 44
+    },
+    {
+      "life": 421,
+      "word": 190,
+      "cd": 5,
+      "adlib": 2,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 421,
+      "word": 230,
+      "cd": 4,
+      "adlib": 0,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 431,
+      "word": 93,
+      "cd": 16,
+      "adlib": 5,
+      "cd_opcode": 44,
+      "floppy_opcode": 81
+    },
+    {
+      "life": 441,
+      "word": 21,
+      "cd": 14,
+      "adlib": 1,
+      "cd_opcode": 44,
+      "floppy_opcode": 44
+    },
+    {
+      "life": 441,
+      "word": 23,
+      "cd": 5,
+      "adlib": 2,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 441,
+      "word": 49,
+      "cd": 14,
+      "adlib": 1,
+      "cd_opcode": 44,
+      "floppy_opcode": 44
+    },
+    {
+      "life": 441,
+      "word": 51,
+      "cd": 5,
+      "adlib": 2,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 442,
+      "word": 106,
+      "cd": 4,
+      "adlib": 0,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 444,
+      "word": 21,
+      "cd": 14,
+      "adlib": 1,
+      "cd_opcode": 44,
+      "floppy_opcode": 44
+    },
+    {
+      "life": 444,
+      "word": 23,
+      "cd": 5,
+      "adlib": 2,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 444,
+      "word": 49,
+      "cd": 14,
+      "adlib": 1,
+      "cd_opcode": 44,
+      "floppy_opcode": 44
+    },
+    {
+      "life": 444,
+      "word": 51,
+      "cd": 5,
+      "adlib": 2,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 445,
+      "word": 106,
+      "cd": 4,
+      "adlib": 0,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 447,
+      "word": 21,
+      "cd": 14,
+      "adlib": 1,
+      "cd_opcode": 44,
+      "floppy_opcode": 44
+    },
+    {
+      "life": 447,
+      "word": 23,
+      "cd": 5,
+      "adlib": 2,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 447,
+      "word": 49,
+      "cd": 14,
+      "adlib": 1,
+      "cd_opcode": 44,
+      "floppy_opcode": 44
+    },
+    {
+      "life": 447,
+      "word": 51,
+      "cd": 5,
+      "adlib": 2,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 448,
+      "word": 106,
+      "cd": 4,
+      "adlib": 0,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 466,
+      "word": 7,
+      "cd": 12,
+      "adlib": 1,
+      "cd_opcode": 44,
+      "floppy_opcode": 44
+    },
+    {
+      "life": 466,
+      "word": 9,
+      "cd": 5,
+      "adlib": 2,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 467,
+      "word": 77,
+      "cd": 4,
+      "adlib": 0,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 469,
+      "word": 22,
+      "cd": 14,
+      "adlib": 1,
+      "cd_opcode": 44,
+      "floppy_opcode": 44
+    },
+    {
+      "life": 469,
+      "word": 24,
+      "cd": 5,
+      "adlib": 2,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 475,
+      "word": 10,
+      "cd": 13,
+      "adlib": 1,
+      "cd_opcode": 44,
+      "floppy_opcode": 44
+    },
+    {
+      "life": 475,
+      "word": 12,
+      "cd": 5,
+      "adlib": 2,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 476,
+      "word": 89,
+      "cd": 4,
+      "adlib": 0,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 480,
+      "word": 111,
+      "cd": 4,
+      "adlib": 0,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 483,
+      "word": 25,
+      "cd": 14,
+      "adlib": 1,
+      "cd_opcode": 44,
+      "floppy_opcode": 44
+    },
+    {
+      "life": 483,
+      "word": 27,
+      "cd": 5,
+      "adlib": 2,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 484,
+      "word": 10,
+      "cd": 4,
+      "adlib": 0,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 484,
+      "word": 105,
+      "cd": 4,
+      "adlib": 0,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 501,
+      "word": 98,
+      "cd": 4,
+      "adlib": 0,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 515,
+      "word": 10,
+      "cd": 13,
+      "adlib": 1,
+      "cd_opcode": 44,
+      "floppy_opcode": 44
+    },
+    {
+      "life": 515,
+      "word": 12,
+      "cd": 5,
+      "adlib": 2,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 517,
+      "word": 89,
+      "cd": 4,
+      "adlib": 0,
+      "cd_opcode": 80,
+      "floppy_opcode": 80
+    },
+    {
+      "life": 528,
+      "word": 58,
+      "cd": 7,
+      "adlib": 1,
+      "cd_opcode": 44,
+      "floppy_opcode": 44
+    },
+    {
+      "life": 529,
+      "word": 58,
+      "cd": 7,
+      "adlib": 1,
+      "cd_opcode": 44,
+      "floppy_opcode": 44
+    },
+    {
+      "life": 530,
+      "word": 58,
+      "cd": 7,
+      "adlib": 1,
+      "cd_opcode": 44,
+      "floppy_opcode": 44
+    },
+    {
+      "life": 531,
+      "word": 62,
+      "cd": 7,
+      "adlib": 1,
+      "cd_opcode": 44,
+      "floppy_opcode": 44
+    },
+    {
+      "life": 532,
+      "word": 56,
+      "cd": 11,
+      "adlib": 1,
+      "cd_opcode": 44,
+      "floppy_opcode": 44
+    },
+    {
+      "life": 533,
+      "word": 233,
+      "cd": 11,
+      "adlib": 1,
+      "cd_opcode": 44,
+      "floppy_opcode": 44
+    },
+    {
+      "life": 534,
+      "word": 251,
+      "cd": 11,
+      "adlib": 1,
+      "cd_opcode": 44,
+      "floppy_opcode": 44
+    },
+    {
+      "life": 546,
+      "word": 12,
+      "cd": 2,
+      "adlib": 7,
+      "cd_opcode": 44,
+      "floppy_opcode": 81
+    }
+  ],
+  "edition_specific": [
+    {
+      "life": 13,
+      "cd": [],
+      "floppy": [
+        [
+          38,
+          81,
+          39,
+          [
+            0
+          ]
+        ]
+      ]
+    },
+    {
+      "life": 522,
+      "cd": [
+        [
+          17,
+          44,
+          18,
+          [
+            10
+          ]
+        ]
+      ],
+      "floppy": []
+    },
+    {
+      "life": 539,
+      "cd": [
+        [
+          62,
+          44,
+          63,
+          [
+            3
+          ]
+        ]
+      ],
+      "floppy": []
+    },
+    {
+      "life": 542,
+      "cd": [
+        [
+          4,
+          44,
+          5,
+          [
+            9
+          ]
+        ]
+      ],
+      "floppy": []
+    },
+    {
+      "life": 544,
+      "cd": [],
+      "floppy": [
+        [
+          34,
+          81,
+          35,
+          [
+            6
+          ]
+        ]
+      ]
+    },
+    {
+      "life": 550,
+      "cd": [
+        [
+          357,
+          44,
+          358,
+          [
+            11
+          ]
+        ],
+        [
+          453,
+          44,
+          454,
+          [
+            11
+          ]
+        ],
+        [
+          561,
+          44,
+          562,
+          [
+            11
+          ]
+        ],
+        [
+          623,
+          44,
+          624,
+          [
+            11
+          ]
+        ],
+        [
+          1090,
+          44,
+          1091,
+          [
+            -1
+          ]
+        ]
+      ],
+      "floppy": [
+        [
+          1082,
+          81,
+          1083,
+          [
+            -1
+          ]
+        ]
+      ]
+    },
+    {
+      "life": 561,
+      "cd": [],
+      "floppy": [
+        [
+          10,
+          81,
+          11,
+          [
+            0
+          ]
+        ]
+      ]
+    },
+    {
+      "life": 562,
+      "cd": [
+        [
+          10,
+          44,
+          11,
+          [
+            4
+          ]
+        ]
+      ],
+      "floppy": []
+    }
+  ]
+}

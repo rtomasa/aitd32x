@@ -1,0 +1,2 @@
+Static raster commands: {"entries": 216, "distinct_programs": 169, "bytes": 312150, "oversized_poses_skipped": 0, "scope": "fixed skeleton-free props; current masks applied at runtime"}
+1957 native assets; floors [(1, 5), (8, 15)]; 3,788,160 bytes; player object 1

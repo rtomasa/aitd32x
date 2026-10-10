@@ -1,0 +1,7 @@
+{
+  "module_bytes": 81508,
+  "bss_bytes": 162312,
+  "end_address": "0x603b870",
+  "stack_reserve_start": "0x0603c000",
+  "headroom_bytes": 1936
+}

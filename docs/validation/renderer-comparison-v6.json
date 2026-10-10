@@ -1,0 +1,10 @@
+{
+  "exact_pixel_comparisons": 966,
+  "characters": [
+    "edward",
+    "emily"
+  ],
+  "camera_route": true,
+  "near_plane_cases": true,
+  "reference_eyes": "corrected type-2 one pixel"
+}

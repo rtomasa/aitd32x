@@ -1,0 +1,1 @@
+60 Hz animation / 25 Hz logic: original cycle lengths and root totals; fractional key crossing; PAL/NTSC catch-up passed

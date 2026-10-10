@@ -1,0 +1,7 @@
+{
+  "clean_source_archive_rebuild": true,
+  "release_sha256": "de9781ccbbf437a7a64c461626816b61e595b18eb3316cde0966e208440610c1",
+  "clean_rebuild_sha256": "de9781ccbbf437a7a64c461626816b61e595b18eb3316cde0966e208440610c1",
+  "asset_reimport_identical": true,
+  "rom_bytes": 3801088
+}

@@ -1,0 +1,6 @@
+{
+  "exact_pixel_palette_cases": 876,
+  "reference": "v5/v6 renderer with original v1 bank",
+  "candidate": "compact v2 model bank with same prototype controller",
+  "geometry_and_indices_unchanged": true
+}

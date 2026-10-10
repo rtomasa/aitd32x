@@ -1,0 +1,32 @@
+{
+  "cases": 160,
+  "all_five_cameras": true,
+  "both_banks_exact": true,
+  "reference": "canonical paused idle poses of v5 native NTSC cartridges",
+  "reports": [
+    {
+      "file": "native-release-v6-ntsc-edward.json",
+      "cases": 40,
+      "rom_sha256": "29c8fcdd7f39a396b2657280f1220511a464823fe5897f9bd667dee637f169a5",
+      "exact_v5_native_reference": true
+    },
+    {
+      "file": "native-release-v6-ntsc-emily.json",
+      "cases": 40,
+      "rom_sha256": "29c8fcdd7f39a396b2657280f1220511a464823fe5897f9bd667dee637f169a5",
+      "exact_v5_native_reference": true
+    },
+    {
+      "file": "native-release-v6-pal-edward.json",
+      "cases": 40,
+      "rom_sha256": "29c8fcdd7f39a396b2657280f1220511a464823fe5897f9bd667dee637f169a5",
+      "exact_v5_native_reference": true
+    },
+    {
+      "file": "native-release-v6-pal-emily.json",
+      "cases": 40,
+      "rom_sha256": "29c8fcdd7f39a396b2657280f1220511a464823fe5897f9bd667dee637f169a5",
+      "exact_v5_native_reference": true
+    }
+  ]
+}

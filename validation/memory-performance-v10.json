@@ -1,0 +1,14 @@
+{
+  "rom_sha256": "c05cedc2dae81490677e3b04e237de632fb2718b51969d099239eff770b1e164",
+  "rom_bytes": 3014656,
+  "checksum": "0x668e",
+  "bank_sha256": "a7dd45ef9a57231dd986417e9e9e94faba41a954155dbb70334f0d65304d9fa8",
+  "core_sha256": "bffc428d4090480f7e12807124c670734181fda8de34d1ee4f6f6628f5e584f3",
+  "module_bytes": 82996,
+  "bss_bytes": 160472,
+  "sdram_static_end": "0x0603B710",
+  "stack_reserve_start": "0x0603C000",
+  "headroom_bytes": 2288,
+  "steady_chest_fps": 11.8,
+  "simulation_hz": 25.05050505050505
+}

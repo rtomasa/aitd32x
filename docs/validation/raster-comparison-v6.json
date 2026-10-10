@@ -1,0 +1,7 @@
+{
+  "cases": 1147,
+  "exact_pixels_damage_restore": true,
+  "framebuffer_guards_passed": true,
+  "baseline_equal": true,
+  "report_sha256": "90b1c60f19ba3a22433847e89b2a4a6d4bb53de278a0bc352be4ec61ed9c260d"
+}

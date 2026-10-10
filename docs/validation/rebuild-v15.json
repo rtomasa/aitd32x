@@ -1,0 +1,12 @@
+{
+  "assets/bank.bin": {
+    "byte_identical": true,
+    "bytes": 3976924,
+    "sha256": "b1a17763e20dd481337d4495c0ee32147b08a9e474c3a4e2c122164079f97dfa"
+  },
+  "build/AITD32X.32x": {
+    "byte_identical": true,
+    "bytes": 4128768,
+    "sha256": "556275aae35a59cf1863d9c47f39912578912be772a749c40d17a9506857eb60"
+  }
+}

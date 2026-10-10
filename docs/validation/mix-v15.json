@@ -1,0 +1,28 @@
+{
+  "reference": {
+    "music": {
+      "rms": 483.8127657293582,
+      "peak": 2838,
+      "clipped": 0
+    },
+    "effect": {
+      "rms": 1022.2949936583652,
+      "peak": 7735,
+      "clipped": 0
+    }
+  },
+  "current": {
+    "music": {
+      "rms": 241.93845978263866,
+      "peak": 1409,
+      "clipped": 0
+    },
+    "effect": {
+      "rms": 1533.379422639912,
+      "peak": 11608,
+      "clipped": 0
+    }
+  },
+  "music_rms_ratio": 0.500066300271989,
+  "effect_rms_ratio": 1.4999383075843793
+}

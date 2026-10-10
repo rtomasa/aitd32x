@@ -1,0 +1,298 @@
+{
+  "region": "PAL",
+  "width": 320,
+  "height": 224,
+  "line_table_1_to_1": true,
+  "black_borders_except_fps": true,
+  "fps_overlay": true,
+  "source_title_indices_exact": true,
+  "source_attic_indices_exact": true,
+  "cameras_visited": [
+    0,
+    2,
+    3,
+    4
+  ],
+  "ticks_in_ten_seconds": 250,
+  "states": [
+    {
+      "stage": "boot",
+      "comm": [
+        256,
+        85,
+        21324,
+        175,
+        0,
+        0,
+        350,
+        50
+      ],
+      "engine": {
+        "tick": 85,
+        "camera": 0,
+        "x": 3231,
+        "y": 0,
+        "z": -1548,
+        "beta": 0,
+        "mode": 0,
+        "paused": 0,
+        "character": 0,
+        "sequence": 350,
+        "render_frames": 1,
+        "fps_tenths": 0,
+        "tick_batch": 0,
+        "animation_frame": 0,
+        "animation_phase": 0,
+        "animation_asset": 25
+      }
+    },
+    {
+      "stage": "attic-emily",
+      "comm": [
+        4096,
+        102,
+        21324,
+        211,
+        40960,
+        0,
+        422,
+        50
+      ],
+      "engine": {
+        "tick": 102,
+        "camera": 0,
+        "x": 3231,
+        "y": 0,
+        "z": -1548,
+        "beta": 0,
+        "mode": 1,
+        "paused": 0,
+        "character": 1,
+        "sequence": 416,
+        "render_frames": 8,
+        "fps_tenths": -1,
+        "tick_batch": 1,
+        "animation_frame": 0,
+        "animation_phase": 420,
+        "animation_asset": 57
+      }
+    },
+    {
+      "stage": "turn-west",
+      "comm": [
+        4096,
+        124,
+        21324,
+        255,
+        34824,
+        0,
+        510,
+        50
+      ],
+      "engine": {
+        "tick": 124,
+        "camera": 0,
+        "x": 3231,
+        "y": 0,
+        "z": -1548,
+        "beta": 784,
+        "mode": 1,
+        "paused": 0,
+        "character": 0,
+        "sequence": 504,
+        "render_frames": 30,
+        "fps_tenths": 230,
+        "tick_batch": 1,
+        "animation_frame": 0,
+        "animation_phase": 720,
+        "animation_asset": 41
+      }
+    },
+    {
+      "stage": "west",
+      "comm": [
+        4099,
+        374,
+        21324,
+        755,
+        39185,
+        0,
+        1510,
+        50
+      ],
+      "engine": {
+        "tick": 374,
+        "camera": 3,
+        "x": -7215,
+        "y": 0,
+        "z": -1180,
+        "beta": 764,
+        "mode": 1,
+        "paused": 0,
+        "character": 0,
+        "sequence": 1504,
+        "render_frames": 278,
+        "fps_tenths": 250,
+        "tick_batch": 1,
+        "animation_frame": 3,
+        "animation_phase": 315,
+        "animation_asset": 39
+      }
+    },
+    {
+      "stage": "turn-south",
+      "comm": [
+        4099,
+        387,
+        21324,
+        781,
+        37128,
+        0,
+        1562,
+        50
+      ],
+      "engine": {
+        "tick": 387,
+        "camera": 3,
+        "x": -7215,
+        "y": 0,
+        "z": -1178,
+        "beta": 524,
+        "mode": 1,
+        "paused": 0,
+        "character": 0,
+        "sequence": 1558,
+        "render_frames": 291,
+        "fps_tenths": 250,
+        "tick_batch": 0,
+        "animation_frame": 0,
+        "animation_phase": 720,
+        "animation_asset": 41
+      }
+    },
+    {
+      "stage": "south",
+      "comm": [
+        4098,
+        527,
+        21324,
+        1061,
+        32785,
+        0,
+        2122,
+        50
+      ],
+      "engine": {
+        "tick": 527,
+        "camera": 2,
+        "x": -6732,
+        "y": 0,
+        "z": 3732,
+        "beta": 504,
+        "mode": 1,
+        "paused": 0,
+        "character": 0,
+        "sequence": 2118,
+        "render_frames": 429,
+        "fps_tenths": 250,
+        "tick_batch": 0,
+        "animation_frame": 2,
+        "animation_phase": 90,
+        "animation_asset": 39
+      }
+    },
+    {
+      "stage": "turn-east",
+      "comm": [
+        4098,
+        540,
+        21324,
+        1087,
+        34824,
+        0,
+        2174,
+        50
+      ],
+      "engine": {
+        "tick": 540,
+        "camera": 2,
+        "x": -6729,
+        "y": 0,
+        "z": 3732,
+        "beta": 264,
+        "mode": 1,
+        "paused": 0,
+        "character": 0,
+        "sequence": 2170,
+        "render_frames": 442,
+        "fps_tenths": 250,
+        "tick_batch": 0,
+        "animation_frame": 0,
+        "animation_phase": 720,
+        "animation_asset": 41
+      }
+    },
+    {
+      "stage": "east",
+      "comm": [
+        4100,
+        840,
+        21324,
+        1687,
+        39185,
+        0,
+        3374,
+        50
+      ],
+      "engine": {
+        "tick": 840,
+        "camera": 4,
+        "x": 6739,
+        "y": 0,
+        "z": 2094,
+        "beta": 244,
+        "mode": 1,
+        "paused": 0,
+        "character": 0,
+        "sequence": 3370,
+        "render_frames": 738,
+        "fps_tenths": 250,
+        "tick_batch": 0,
+        "animation_frame": 3,
+        "animation_phase": 315,
+        "animation_asset": 39
+      }
+    },
+    {
+      "stage": "pause",
+      "comm": [
+        4228,
+        859,
+        21324,
+        1723,
+        6400,
+        0,
+        3446,
+        50
+      ],
+      "engine": {
+        "tick": 859,
+        "camera": 4,
+        "x": 6833,
+        "y": 0,
+        "z": 2088,
+        "beta": 244,
+        "mode": 1,
+        "paused": 1,
+        "character": 0,
+        "sequence": 3446,
+        "render_frames": 740,
+        "fps_tenths": 230,
+        "tick_batch": 0,
+        "animation_frame": 0,
+        "animation_phase": 0,
+        "animation_asset": 39
+      }
+    }
+  ]
+}

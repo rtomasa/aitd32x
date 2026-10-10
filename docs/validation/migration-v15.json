@@ -1,0 +1,19 @@
+{
+  "scope": "One relocated asset import and forced release rebuild; no gameplay test suite rerun.",
+  "commands": [
+    "make assets",
+    "make -B -j2"
+  ],
+  "save_backup": "User tests on a separate device; no local save transfer required.",
+  "build/AITD32X.32x": {
+    "bytes": 4128768,
+    "sha256": "556275aae35a59cf1863d9c47f39912578912be772a749c40d17a9506857eb60",
+    "matches_v15": true
+  },
+  "assets/bank.bin": {
+    "bytes": 3976924,
+    "sha256": "b1a17763e20dd481337d4495c0ee32147b08a9e474c3a4e2c122164079f97dfa",
+    "matches_v15": true
+  },
+  "gameplay_source_unchanged": true
+}

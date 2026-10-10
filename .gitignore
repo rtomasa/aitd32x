@@ -1,0 +1,25 @@
+# Original DOS installations and locally preserved dependencies/releases/saves
+/msdos-game/
+/MS-DOS Game/
+/.local/
+/local.mk
+# Generated build products and imported game assets
+/build/
+/assets/*
+# Local helper binaries and Python caches
+*.so
+*.o
+*.a
+*.elf
+*.pyc
+__pycache__/
+# Emulator battery saves, states and ROM outputs
+*.srm
+*.sav
+*.sra
+*.state
+*.state.*
+*.32x
+# Editor/OS scratch
+*~
+.DS_Store

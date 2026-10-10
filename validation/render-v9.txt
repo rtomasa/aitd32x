@@ -1,0 +1,1 @@
+Eyes, FPS border, glass CPU split, contact depth, original/RLE mask pixels, red hits and enlarged death particles passed

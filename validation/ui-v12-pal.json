@@ -1,0 +1,98 @@
+{
+  "rom_sha256": "636164edbcf90de49065d97b025c23b1a0c4cacfbd3c1b06af178601aa74201c",
+  "copyright": "(C)1992 I-MOTION/INFOGRAMES",
+  "host": [
+    "copyright",
+    "pickup",
+    "inventory",
+    "actions",
+    "book",
+    "pause",
+    "death",
+    "error"
+  ],
+  "native": [
+    {
+      "panel": "title",
+      "banks": [
+        0,
+        1
+      ]
+    },
+    {
+      "panel": "inventory",
+      "banks": [
+        0,
+        1
+      ],
+      "state": {
+        "tick": 188,
+        "camera": 0,
+        "x": 3231,
+        "y": 0,
+        "z": -1548,
+        "beta": 0,
+        "mode": 1,
+        "paused": 0,
+        "character": 1,
+        "sequence": 760,
+        "render_frames": 46,
+        "fps_tenths": 167,
+        "tick_batch": 1,
+        "animation_frame": 2,
+        "animation_phase": 560,
+        "animation_asset": 905
+      }
+    },
+    {
+      "panel": "actions",
+      "banks": [
+        0,
+        1
+      ],
+      "state": {
+        "tick": 214,
+        "camera": 0,
+        "x": 3231,
+        "y": 0,
+        "z": -1548,
+        "beta": 0,
+        "mode": 1,
+        "paused": 0,
+        "character": 1,
+        "sequence": 864,
+        "render_frames": 60,
+        "fps_tenths": 150,
+        "tick_batch": 2,
+        "animation_frame": 2,
+        "animation_phase": 560,
+        "animation_asset": 905
+      }
+    },
+    {
+      "panel": "pause",
+      "banks": [
+        0,
+        1
+      ],
+      "state": {
+        "tick": 296,
+        "camera": 0,
+        "x": 3231,
+        "y": 0,
+        "z": -1548,
+        "beta": 0,
+        "mode": 1,
+        "paused": 1,
+        "character": 1,
+        "sequence": 1192,
+        "render_frames": 95,
+        "fps_tenths": 20,
+        "tick_batch": 0,
+        "animation_frame": 3,
+        "animation_phase": 690,
+        "animation_asset": 905
+      }
+    }
+  ]
+}

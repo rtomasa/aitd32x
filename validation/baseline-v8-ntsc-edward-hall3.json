@@ -1,0 +1,299 @@
+{
+  "label": "v8-match",
+  "scene": "hall3",
+  "region": "NTSC",
+  "character": "edward",
+  "seconds": 5,
+  "fps": 7.8,
+  "ticks": 125,
+  "static_rebuilds": 0,
+  "start": [
+    285,
+    3,
+    -800,
+    0,
+    -1000,
+    0,
+    1,
+    0,
+    0,
+    1378,
+    75,
+    75,
+    3,
+    2,
+    220,
+    328,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    2,
+    -1,
+    18,
+    188,
+    16,
+    20,
+    -1,
+    0,
+    1
+  ],
+  "end": [
+    410,
+    3,
+    -800,
+    0,
+    -1000,
+    0,
+    1,
+    0,
+    0,
+    1982,
+    114,
+    75,
+    3,
+    2,
+    220,
+    328,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    2,
+    -1,
+    18,
+    313,
+    16,
+    20,
+    -1,
+    0,
+    1
+  ],
+  "rom_sha256": "42a1e8a0fabe9ef0dc54ce70feeaa8c294a72b58855c6b3a22a02ec501cdeaf1",
+  "completed_frame_seconds": 5.033333333333333,
+  "simulation_hz": 24.834437086092716,
+  "cache": [
+    {
+      "id": 22,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 77,
+      "bounds": [
+        54,
+        50,
+        94,
+        130
+      ]
+    },
+    {
+      "id": 1,
+      "flags": 65,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        180,
+        20,
+        232,
+        195
+      ]
+    },
+    {
+      "id": 25,
+      "flags": 128,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        102,
+        100,
+        110,
+        125
+      ]
+    },
+    {
+      "id": 29,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 200,
+      "bounds": [
+        215,
+        -72,
+        298,
+        204
+      ]
+    },
+    {
+      "id": 30,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 77,
+      "bounds": [
+        15,
+        141,
+        172,
+        173
+      ]
+    },
+    {
+      "id": 31,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 147,
+      "bounds": [
+        141,
+        30,
+        168,
+        53
+      ]
+    },
+    {
+      "id": 32,
+      "flags": 80,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        267,
+        91,
+        316,
+        142
+      ]
+    },
+    {
+      "id": 33,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 106,
+      "bounds": [
+        127,
+        33,
+        146,
+        140
+      ]
+    },
+    {
+      "id": 36,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 30,
+      "bounds": [
+        119,
+        100,
+        171,
+        131
+      ]
+    },
+    {
+      "id": 45,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        319,
+        -18,
+        631,
+        212
+      ]
+    },
+    {
+      "id": 49,
+      "flags": 80,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        319,
+        199,
+        0,
+        0
+      ]
+    },
+    {
+      "id": 50,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 186,
+      "bounds": [
+        -8,
+        -55,
+        17,
+        193
+      ]
+    },
+    {
+      "id": 51,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        -4096,
+        -1490,
+        0,
+        87
+      ]
+    },
+    {
+      "id": 56,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        -4096,
+        -696,
+        0,
+        652
+      ]
+    },
+    {
+      "id": 59,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 120,
+      "bounds": [
+        17,
+        22,
+        28,
+        147
+      ]
+    },
+    {
+      "id": 60,
+      "flags": 64,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        -179,
+        90,
+        0,
+        157
+      ]
+    },
+    {
+      "id": 63,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": 279,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ]
+}

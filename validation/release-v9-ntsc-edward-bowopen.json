@@ -1,0 +1,299 @@
+{
+  "label": "v9-final",
+  "scene": "bowopen",
+  "region": "NTSC",
+  "character": "edward",
+  "seconds": 5,
+  "fps": 15.0,
+  "ticks": 125,
+  "static_rebuilds": 0,
+  "start": [
+    275,
+    3,
+    -800,
+    0,
+    -1000,
+    0,
+    1,
+    0,
+    0,
+    1330,
+    86,
+    150,
+    2,
+    1,
+    1680,
+    328,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    2,
+    -1,
+    18,
+    179,
+    16,
+    20,
+    -1,
+    0,
+    1
+  ],
+  "end": [
+    400,
+    3,
+    -800,
+    0,
+    -1000,
+    0,
+    1,
+    0,
+    0,
+    1930,
+    161,
+    150,
+    2,
+    1,
+    1680,
+    328,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    2,
+    -1,
+    18,
+    304,
+    16,
+    20,
+    -1,
+    0,
+    1
+  ],
+  "rom_sha256": "24b75db7a2baf760b99e9a8b2126d158eed070bf2b492417d62241306ffd3f78",
+  "completed_frame_seconds": 5.0,
+  "simulation_hz": 25.0,
+  "cache": [
+    {
+      "id": 22,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 77,
+      "bounds": [
+        53,
+        50,
+        58,
+        130
+      ]
+    },
+    {
+      "id": 1,
+      "flags": 65,
+      "dynamic": true,
+      "spans": 0,
+      "bounds": [
+        178,
+        20,
+        232,
+        195
+      ]
+    },
+    {
+      "id": 25,
+      "flags": 128,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        102,
+        100,
+        110,
+        125
+      ]
+    },
+    {
+      "id": 29,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 200,
+      "bounds": [
+        215,
+        0,
+        298,
+        199
+      ]
+    },
+    {
+      "id": 30,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 77,
+      "bounds": [
+        15,
+        141,
+        172,
+        173
+      ]
+    },
+    {
+      "id": 31,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 147,
+      "bounds": [
+        141,
+        30,
+        168,
+        53
+      ]
+    },
+    {
+      "id": 32,
+      "flags": 80,
+      "dynamic": true,
+      "spans": 5,
+      "bounds": [
+        267,
+        91,
+        316,
+        142
+      ]
+    },
+    {
+      "id": 33,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 106,
+      "bounds": [
+        127,
+        33,
+        146,
+        140
+      ]
+    },
+    {
+      "id": 36,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 30,
+      "bounds": [
+        119,
+        100,
+        171,
+        131
+      ]
+    },
+    {
+      "id": 45,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        320,
+        200,
+        -1,
+        -1
+      ]
+    },
+    {
+      "id": 49,
+      "flags": 80,
+      "dynamic": true,
+      "spans": 103,
+      "bounds": [
+        320,
+        200,
+        -1,
+        -1
+      ]
+    },
+    {
+      "id": 50,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 186,
+      "bounds": [
+        0,
+        0,
+        17,
+        193
+      ]
+    },
+    {
+      "id": 51,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        320,
+        200,
+        -1,
+        -1
+      ]
+    },
+    {
+      "id": 56,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        320,
+        200,
+        -1,
+        -1
+      ]
+    },
+    {
+      "id": 59,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 120,
+      "bounds": [
+        17,
+        22,
+        28,
+        147
+      ]
+    },
+    {
+      "id": 60,
+      "flags": 64,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        320,
+        200,
+        -1,
+        -1
+      ]
+    },
+    {
+      "id": 63,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": 279,
+      "flags": 0,
+      "dynamic": false,
+      "spans": 0,
+      "bounds": [
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "cases": 1147,
+  "triangles": 1008,
+  "quads": 100,
+  "endpoint_spans": 36,
+  "overlaps": 3,
+  "exact_pixels_and_damage_and_restore": true,
+  "address_undefined_sanitizers_passed": true,
+  "aggregate_fnv64": "500deee1de01e656",
+  "report_sha256": "90b1c60f19ba3a22433847e89b2a4a6d4bb53de278a0bc352be4ec61ed9c260d"
+}

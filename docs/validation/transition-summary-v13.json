@@ -1,0 +1,138 @@
+[
+  {
+    "revision": "v12",
+    "region": "ntsc",
+    "character": "edward",
+    "rom_sha256": "636164edbcf90de49065d97b025c23b1a0c4cacfbd3c1b06af178601aa74201c",
+    "first_gap_ms": 300.0,
+    "hitches": [
+      {
+        "seconds": 0.0,
+        "gap_ms": 300.0
+      },
+      {
+        "seconds": 0.3,
+        "gap_ms": 300.0
+      },
+      {
+        "seconds": 0.4,
+        "gap_ms": 100.0
+      },
+      {
+        "seconds": 1.283,
+        "gap_ms": 300.0
+      }
+    ],
+    "steady_fps": 15.0,
+    "steady_frame_ms": 66.66666666666667,
+    "steady_simulation_hz": 25.1123595505618,
+    "draws_by_second": [
+      10,
+      11,
+      15,
+      15,
+      15,
+      15,
+      15,
+      15
+    ]
+  },
+  {
+    "revision": "final-v13",
+    "region": "ntsc",
+    "character": "edward",
+    "rom_sha256": "de9781ccbbf437a7a64c461626816b61e595b18eb3316cde0966e208440610c1",
+    "first_gap_ms": 216.66666666666666,
+    "hitches": [
+      {
+        "seconds": 0.0,
+        "gap_ms": 216.66666666666666
+      },
+      {
+        "seconds": 0.233,
+        "gap_ms": 233.33333333333334
+      }
+    ],
+    "steady_fps": 20.0,
+    "steady_frame_ms": 50.0,
+    "steady_simulation_hz": 25.0,
+    "draws_by_second": [
+      16,
+      20,
+      20,
+      20,
+      20,
+      20,
+      20,
+      20
+    ]
+  },
+  {
+    "revision": "v12",
+    "region": "pal",
+    "character": "emily",
+    "rom_sha256": "636164edbcf90de49065d97b025c23b1a0c4cacfbd3c1b06af178601aa74201c",
+    "first_gap_ms": 300.0,
+    "hitches": [
+      {
+        "seconds": 0.0,
+        "gap_ms": 300.0
+      },
+      {
+        "seconds": 0.3,
+        "gap_ms": 300.0
+      },
+      {
+        "seconds": 0.4,
+        "gap_ms": 100.0
+      },
+      {
+        "seconds": 1.34,
+        "gap_ms": 300.0
+      }
+    ],
+    "steady_fps": 16.666666666666664,
+    "steady_frame_ms": 60.0,
+    "steady_simulation_hz": 24.915824915824913,
+    "draws_by_second": [
+      10,
+      12,
+      17,
+      16,
+      17,
+      17,
+      16,
+      17
+    ]
+  },
+  {
+    "revision": "final-v13",
+    "region": "pal",
+    "character": "emily",
+    "rom_sha256": "de9781ccbbf437a7a64c461626816b61e595b18eb3316cde0966e208440610c1",
+    "first_gap_ms": 220.0,
+    "hitches": [
+      {
+        "seconds": 0.0,
+        "gap_ms": 220.0
+      },
+      {
+        "seconds": 0.24,
+        "gap_ms": 240.0
+      }
+    ],
+    "steady_fps": 19.23076923076923,
+    "steady_frame_ms": 60.0,
+    "steady_simulation_hz": 25.083612040133776,
+    "draws_by_second": [
+      15,
+      19,
+      19,
+      19,
+      20,
+      19,
+      19,
+      19
+    ]
+  }
+]

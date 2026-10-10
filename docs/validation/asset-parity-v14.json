@@ -1,0 +1,9 @@
+{
+  "old_ids_preserved": true,
+  "prior_changed_payloads": [
+    "UI_PAUSE",
+    "STATIC_RASTERS"
+  ],
+  "prior_payloads_unchanged": 1846,
+  "camera_images_raw": true
+}
