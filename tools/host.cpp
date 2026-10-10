@@ -11,7 +11,14 @@ extern "C" void Platform_Fatal() { abort(); }
 extern "C" void host_init(const uint8_t *bank,unsigned size) {
     Platform_SetAssetBank(bank,size);game.renderer.buffer_index=0;game.Init();game.renderer.target=pixels+GAME_Y_OFFSET*160;
 }
-extern "C" void host_tick(unsigned pad) { game.Input(pad);game.Update();game.Draw(); }
+extern "C" void host_tick(unsigned pad) { game.StartupAdvance(1500/GAME_HZ);game.Input(pad);game.Update();game.Draw(); }
+extern "C" int host_startup(unsigned field) {
+    switch(field) { case 0:return game.startup_phase;case 1:return game.startup_time;case 2:return game.startup_next;
+    case 3:return game.book_line;case 4:return game.world.intro;case 5:return game.world.picture_id;
+    case 6:return game.world.picture_duration;case 7:return game.world.cvars[15];default:return 0; }
+}
+// Direct gameplay fixture for focused existing checks; never linked into ROM.
+extern "C" void host_startgame(int character) { game.character=character;game.StartGameplay();game.Draw(); }
 extern "C" const void *host_pixels() { return game.renderer.buffer_index?alternate_pixels:pixels; }
 extern "C" const void *host_palette() { return game.renderer.palette; }
 // Diagnostic scene placement; never linked into the cartridge.

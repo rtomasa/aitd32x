@@ -11,8 +11,8 @@ def sprite(data,index):
     assert len(image)==w*h
     return w,h,image
 
-def layout(text,kind,font,graphics):
-    left,top,right,bottom=[(60,10,245,190),(48,2,260,197),(50,20,250,199)][kind]
+def layout(text,kind,font,graphics,rectangle=None):
+    left,top,right,bottom=rectangle or [(60,10,245,190),(48,2,260,197),(50,20,250,199)][kind]
     width=right-left+4;pages=[];commands=[];y=top
     def page():
         nonlocal commands,y

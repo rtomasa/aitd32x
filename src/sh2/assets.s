@@ -1,8 +1,8 @@
-    .section .rodata
+    .section .assets,"a"
     .align 4
     .global _asset_bank
-    .global _asset_bank_end
 _asset_bank:
-    .incbin "assets/bank.bin"
-_asset_bank_end:
+    .incbin "assets/bank-main.bin"
+    .section .romextra,"a"
+    .incbin "assets/bank-extra.bin"
 

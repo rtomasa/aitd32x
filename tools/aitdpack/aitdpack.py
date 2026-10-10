@@ -79,6 +79,21 @@ class Writer:
     def patch(self, o, fmt, *values):
         struct.pack_into('>'+fmt, self.b, o, *values)
 
+def native_text(data, original_font=False):
+    entries=[]
+    for match in re.finditer(rb'@(\d+):([^\x00-\x1f]*)',data):
+        if original_font:
+            # Proportional text uses the source's glyph indices directly:
+            # A9 is the small copyright sign and FA the I-Motion separator.
+            value=match[2]
+        else:
+            source=match[2].replace(b'\xa9',b'(C)').replace(b'\xfa',b'-')
+            value=source.decode('cp437').upper().encode('ascii','replace')
+        entries.append((int(match[1]),value+b'\0'))
+    entries.sort();words=Writer(bytes(4+8*len(entries)));words.patch(0,'I',len(entries))
+    for i,(id,value) in enumerate(entries):words.patch(4+i*8,'2HI',id,len(value),words.add(value))
+    return bytes(words.b)
+
 def offsets(data):
     result = []
     for i in range(U32(data)//4):
@@ -222,8 +237,8 @@ def rle(b):
 def native_panel(gfx, width, height, remap=None):
     """Original ITD_RESS:4 corners, tiled rails and title plaque (FITD aitdBox).
 
-    Precompose in ROM so overlays need no decoding buffer or frame-building
-    work on either SH-2. Small panels crop the repeating rails to fit.
+    Precompose the original layout before lossless encoding. Runtime overlays
+    need no additional bitmap buffer. Small panels crop the rails to fit.
     """
     pixels=bytearray(width*height)
     def sprite(index, x, y, opaque=False):
@@ -275,7 +290,9 @@ def main():
     title=get('ITD_RESS',13)
     if len(title)!=64770 or title[:2]!=b'VP':raise ValueError('invalid title')
     add('TITLE_PALETTE',1,b''.join(struct.pack('>H',(r>>3)|((g>>3)<<5)|((b>>3)<<10)) for r,g,b in zip(title[2:770:3],title[3:770:3],title[4:770:3])))
-    add('TITLE',2,title[770:],True)
+    from startup import lz4_block,compile_startup,build_bank,BANK_PHYSICAL_BASE,BANK_EXTRA_ORIGIN
+    title_pixels=title[770:]
+    assets.append(('TITLE',2,lz4_block(title_pixels),len(title_pixels),2))
     levels=[]
     for floor in (0,1):
         rawrooms,rawcams=get(f'ETAGE{floor:02d}',0),get(f'ETAGE{floor:02d}',1)
@@ -315,16 +332,8 @@ def main():
     variables=(args.game/'VARS.ITD').read_bytes()
     add('VARS_INITIAL',11,b''.join(struct.pack('>h',v) for (v,) in struct.iter_unpack('<h',variables)))
     add('DEFINES_INITIAL',11,defines_data)
-    text=get('ENGLISH',0)
-    entries=[]
-    for match in re.finditer(rb'@(\d+):([^\x00-\x1f]*)',text):
-        # The original font uses A9 for copyright and FA for the I-Motion dot.
-        # Neither has a glyph in our ASCII font; preserve their meaning.
-        source=match[2].replace(b'\xa9',b'(C)').replace(b'\xfa',b'-')
-        id=int(match[1]);value=source.decode('cp437').upper().encode('ascii','replace')+b'\0';entries.append((id,value))
-    entries.sort();words=Writer(bytes(4+8*len(entries)));words.patch(0,'I',len(entries))
-    for i,(id,value) in enumerate(entries):words.patch(4+i*8,'2HI',id,len(value),words.add(value))
-    add('TEXT',12,bytes(words.b))
+    # Preserve the approved uppercase gameplay labels byte-for-byte.
+    add('TEXT',12,native_text(get('ENGLISH',0)))
     book_count=len(paks['ENGLISH'])-1
     from books import compile_books
     books,reading_assets,reading_report=compile_books(get,book_count)
@@ -338,7 +347,9 @@ def main():
     colors=list(zip(*[iter(title_palette)]*3))
     remap=[0]+[min(range(1,256),key=lambda j:sum((palette[i*3+k]-colors[j][k])**2 for k in range(3))) for i in range(1,256)]
     for name,width,height in [('TITLE',304,68),('MESSAGE',304,42),('PROMPT',272,82),('INVENTORY',288,177),('BOOK',2,2),('PAUSE',272,132),('STATUS',272,66)]:
-        add('UI_'+name,13,struct.pack('>2H',2,2)+bytes(4) if name=='BOOK' else native_panel(bezel,width,height,remap if name=='TITLE' else None))
+        panel=struct.pack('>2H',2,2)+bytes(4) if name=='BOOK' else native_panel(bezel,width,height,remap if name=='TITLE' else None)
+        # Preserve existing gameplay overlays' direct aligned-copy fast path.
+        add('UI_'+name,13,panel)
     # Write a complete bootstrap bank/header before compiling the host renderer.
     # The final native command asset replaces this placeholder at the same ID.
     raster_id=add('STATIC_RASTERS',14,struct.pack('>I',0))
@@ -346,31 +357,40 @@ def main():
     from compile_audio import compile_audio
     audio,audio_report=compile_audio(get,paks)
     for name,typ,data in audio:add(name,typ,data)
-    for name,typ,data in reading_assets:add(name,typ,data)
+    for name,typ,data in reading_assets:
+        if name.startswith('READ_BACKGROUND_'):
+            assets.append((name,typ,lz4_block(data),len(data),2))
+        else:add(name,typ,data)
     (args.out/'audio_manifest.json').write_text(json.dumps(audio_report,indent=2)+'\n')
-    bank=Writer(bytes(16+len(assets)*16))
-    bank.patch(0,'4s3I',b'A32X',2,len(assets),0)
-    manifest=[]
-    shared={}
-    for i,(name,typ,data,usize,flags) in enumerate(assets):
-        key=(typ,flags,data)
-        off=shared.get(key)
-        if off is None:off=shared[key]=bank.add(data)
-        bank.patch(16+16*i,'3I2H',off,len(data),usize,typ,flags)
-        manifest.append(dict(id=i,name=name,offset=off,packed_size=len(data),unpacked_size=usize,type=typ,flags=flags))
-    bank.patch(12,'I',len(bank.b))
-    (args.out/'bank.bin').write_bytes(bank.b)
-    header=['/* Generated by aitdpack. Never edit. */','#pragma once',f'#define A32X_ASSET_COUNT {len(assets)}','#define A32X_BANK_VERSION 2',f'#define A32X_SAVE_FINGERPRINT 0x{hashlib.sha256(objects+variables+defines_data+paks["LISTLIFE"].b+paks["LISTTRAK"].b).hexdigest()[:8]}u',f'#define A32X_SOUND_COUNT {len(paks["LISTSAMP"])}',f'#define A32X_MUSIC_COUNT {len(paks["LISTMUS"])}',f'#define A32X_OBJECT_COUNT {len(objs)}',f'#define A32X_VAR_COUNT {len(variables)//2}',f'#define A32X_MODEL_COUNT {model_count}',f'#define A32X_ANIMATION_COUNT {animation_count}','#define A32X_LIFE_COUNT 563','#define A32X_TRACK_COUNT 45','#define A32X_FLOOR_COUNT 2',f'#define A32X_BOOK_COUNT {book_count}',f'#define A32X_CAMERA_COUNT {levels[0][1]}',f'#define A32X_ROOM_COUNT {levels[0][0]}','enum AssetId {']
+    # Appending preserves every existing resource ID and the save fingerprint.
+    startup_assets,startup_levels,startup_report=compile_startup(get,defines_data,native_model,native_room,native_camera,offsets,native_panel,rle,native_text)
+    assets.extend(startup_assets)
+    gameplay_levels=list(levels)
+    levels.extend([startup_levels.get(floor,(0,0)) for floor in range(2,8)])
+    startup_report['existing_presentation_compression']=[dict(name=name,packed_bytes=len(data),unpacked_bytes=usize,flags=flags)
+        for name,typ,data,usize,flags in assets if name=='TITLE' or name.startswith('UI_') or name.startswith('READ_BACKGROUND_')]
+    (args.out/'startup_manifest.json').write_text(json.dumps(startup_report,indent=2)+'\n')
+    def write_bank():
+        full,fixed,extra,manifest,layout=build_bank(assets)
+        for name,data in [('bank.bin',full),('bank-main.bin',fixed),('bank-extra.bin',extra)]:
+            (args.out/name).write_bytes(data)
+        return full,manifest,dict(layout,main_sha256=hashlib.sha256(fixed).hexdigest(),extra_sha256=hashlib.sha256(extra).hexdigest())
+    bank,manifest,bank_layout=write_bank()
+    header=['/* Generated by aitdpack. Never edit. */','#pragma once',f'#define A32X_ASSET_COUNT {len(assets)}','#define A32X_BANK_VERSION 2',f'#define A32X_SAVE_FINGERPRINT 0x{hashlib.sha256(objects+variables+defines_data+paks["LISTLIFE"].b+paks["LISTTRAK"].b).hexdigest()[:8]}u',f'#define A32X_SOUND_COUNT {len(paks["LISTSAMP"])}',f'#define A32X_MUSIC_COUNT {len(paks["LISTMUS"])}',f'#define A32X_OBJECT_COUNT {len(objs)}',f'#define A32X_VAR_COUNT {len(variables)//2}',f'#define A32X_MODEL_COUNT {model_count}',f'#define A32X_ANIMATION_COUNT {animation_count}','#define A32X_LIFE_COUNT 563','#define A32X_TRACK_COUNT 45',f'#define A32X_FLOOR_COUNT {len(levels)}',f'#define A32X_BOOK_COUNT {book_count}',f'#define A32X_CAMERA_COUNT {levels[0][1]}',f'#define A32X_ROOM_COUNT {levels[0][0]}','enum AssetId {']
     header += [f'    AS_{name} = {i},' for i,(name,*_) in enumerate(assets)]
     header += ['};']
-    def table(label,names):header.append('static const unsigned short '+label+'[] = {'+','.join('AS_'+n for n in names)+'};')
+    header += [f'#define A32X_BANK_PHYSICAL_BASE 0x{BANK_PHYSICAL_BASE:x}u',f'#define A32X_BANK_EXTRA_ORIGIN 0x{BANK_EXTRA_ORIGIN:x}u']
+    available={name for name,*_ in assets}
+    def table(label,names):header.append('static const unsigned short '+label+'[] = {'+','.join('AS_'+n if n in available else '65535' for n in names)+'};')
     for floor,(nr,nc) in enumerate(levels):
+        if not nr:continue
         table(f'room_assets_{floor}',[f'ROOM_{floor}_{i}' for i in range(nr)])
         table(f'camera_assets_{floor}',[f'CAMERA_{floor}_{i}' for i in range(nc)])
         table(f'background_assets_{floor}',[f'BACKGROUND_{floor}_{i}' for i in range(nc)])
     header += ['#define AS_ROOM_0 AS_ROOM_0_0','#define camera_assets camera_assets_0','#define background_assets background_assets_0']
     header += ['static const unsigned short room_counts[]={'+','.join(str(x[0]) for x in levels)+'};','static const unsigned short camera_counts[]={'+','.join(str(x[1]) for x in levels)+'};']
-    header += ['static const unsigned short *const floor_rooms[]={room_assets_0,room_assets_1};','static const unsigned short *const floor_cameras[]={camera_assets_0,camera_assets_1};','static const unsigned short *const floor_backgrounds[]={background_assets_0,background_assets_1};']
+    for label,base in [('floor_rooms','room_assets'),('floor_cameras','camera_assets'),('floor_backgrounds','background_assets')]:
+        header.append('static const unsigned short *const '+label+'[]={'+','.join(f'{base}_{floor}' if nr else '0' for floor,(nr,nc) in enumerate(levels))+'};')
     for char in (0,1):
         table(f'model_assets_{char}',[f'MODEL_{char}_{i}' for i in range(model_count)])
         table(f'animation_assets_{char}',[f'ANIM_{char}_{i}' for i in range(animation_count)])
@@ -384,24 +404,18 @@ def main():
     (args.out/'resource_ids.h').write_text('\n'.join(header)+'\n')
     input_hashes={n+'.PAK':hashlib.sha256(p.b).hexdigest() for n,p in paks.items()}
     input_hashes.update({'OBJETS.ITD':hashlib.sha256(objects).hexdigest(),'DEFINES.ITD':hashlib.sha256(defines_data).hexdigest(),'VARS.ITD':hashlib.sha256(variables).hexdigest()})
-    (args.out/'manifest.json').write_text(json.dumps(dict(version=2,levels=levels,reference=REFERENCE,bank_sha256=hashlib.sha256(bank.b).hexdigest(),rooms=sum(x[0] for x in levels),cameras=sum(x[1] for x in levels),player_object=player,assets=manifest,input_sha256=input_hashes),indent=2)+'\n')
+    (args.out/'manifest.json').write_text(json.dumps(dict(version=2,levels=levels,reference=REFERENCE,bank_sha256=hashlib.sha256(bank).hexdigest(),bank_layout=bank_layout,rooms=sum(x[0] for x in levels),cameras=sum(x[1] for x in levels),player_object=player,assets=manifest,input_sha256=input_hashes),indent=2)+'\n')
     from static_rasters import compile_rasters
-    raster=compile_rasters(ROOT,args.out,objs,levels)
+    # Introduction scenery is decoded once and not baked into gameplay caches.
+    raster=compile_rasters(ROOT,args.out,objs,gameplay_levels)
     name,typ,*_=assets[raster_id];assets[raster_id]=(name,typ,raster,len(raster),0)
-    bank=Writer(bytes(16+len(assets)*16));bank.patch(0,'4s3I',b'A32X',2,len(assets),0)
-    shared={}
-    for i,(name,typ,data,usize,flags) in enumerate(assets):
-        key=(typ,flags,data)
-        off=shared.get(key)
-        if off is None:off=shared[key]=bank.add(data)
-        bank.patch(16+16*i,'3I2H',off,len(data),usize,typ,flags)
-        manifest[i].update(offset=off,packed_size=len(data),unpacked_size=usize,flags=flags)
-    bank.patch(12,'I',len(bank.b))
-    (args.out/'bank.bin').write_bytes(bank.b)
+    bank,manifest,bank_layout=write_bank()
     metadata=json.loads((args.out/'manifest.json').read_text())
-    metadata.update(bank_sha256=hashlib.sha256(bank.b).hexdigest(),assets=manifest)
+    metadata.update(bank_sha256=hashlib.sha256(bank).hexdigest(),bank_layout=bank_layout,assets=manifest)
     (args.out/'manifest.json').write_text(json.dumps(metadata,indent=2)+'\n')
-    print(f'{len(assets)} native assets; floors {levels}; {len(bank.b):,} bytes; player object {player}')
+    startup_report['bank_layout']=bank_layout
+    (args.out/'startup_manifest.json').write_text(json.dumps(startup_report,indent=2)+'\n')
+    print(f'{len(assets)} native assets; floors {levels}; {len(bank):,} bank bytes; {bank_layout["fixed_bytes"]:,} fixed + {bank_layout["extra_bytes"]:,} extra; player object {player}')
 
 if __name__=='__main__':
     main()

@@ -73,16 +73,18 @@ bool Renderer::DrawCompiledActor(const Actor &a) {
     return true;
 }
 #endif
-bool Renderer::SetCamera(unsigned id,unsigned floor,unsigned room_id) {
+bool Renderer::SetCamera(unsigned id,unsigned floor,unsigned room_id,bool load_palette) {
     if(floor>=A32X_FLOOR_COUNT || id>=camera_counts[floor] || room_id>=room_counts[floor]) return false;
     coverage_mode=false;
     camera=Platform_ReadAsset(floor_cameras[floor][id]);room=Platform_ReadAsset(floor_rooms[floor][room_id]);
     Asset bg=Platform_ReadAsset(floor_backgrounds[floor][id]),pal=Platform_ReadAsset(AS_GAME_PALETTE);
-    if(!camera.data || !room.data || pal.size!=512 || bg.unpacked!=sizeof(background) || bg.flags!=0) return false;
-    // Camera images are raw; masks can read their rows directly from ROM.
+    if(!camera.data || !room.data || pal.size!=512 || bg.unpacked!=sizeof(background) ||
+       (bg.flags!=0 && !(floor>=2 && bg.flags==0x8000))) return false;
+    // Raw banked intro originals remain available during a scoped scene draw;
+    // the RAM restore image can use the same scenery cache as gameplay.
     if(!Platform_Decode(bg,background,sizeof(background))) return false;
     original_background=bg;
-    for(unsigned i=0;i<256;++i) {
+    if(load_palette) for(unsigned i=0;i<256;++i) {
         uint16_t color=i?BE16Aligned(pal.data+i*2):0;
         if(palette[i]!=color) palette_changed=true;
         palette[i]=color;
@@ -92,11 +94,28 @@ bool Renderer::SetCamera(unsigned id,unsigned floor,unsigned room_id) {
     return true;
 }
 bool Renderer::SetTitle() {
+    return SetImage(AS_TITLE,AS_TITLE_PALETTE);
+}
+A32X_COLD bool Renderer::SetImage(unsigned image,unsigned colors) {
     coverage_mode=false;
-    Asset bg=Platform_ReadAsset(AS_TITLE),pal=Platform_ReadAsset(AS_TITLE_PALETTE);
-    if(pal.size!=512 || bg.unpacked!=sizeof(background) || !Platform_Decode(bg,background,sizeof(background))) return false;
+    Asset bg=Platform_ReadAsset(image),pal=Platform_ReadAsset(colors);
+    if(!pal.data || pal.size!=512 || pal.flags || bg.type!=2 || bg.unpacked!=sizeof(background) || !Platform_Decode(bg,background,sizeof(background))) return false;
+    camera=room={};original_background=bg;camera_id=0xffffffffu;
     for(unsigned i=0;i<256;++i) palette[i]=BE16Aligned(pal.data+i*2);
     palette[0]=0;full_restore[0]=full_restore[1]=true;palette_changed=true;
+    return true;
+}
+A32X_COLD bool Renderer::DrawImage(unsigned image,int x,int y,unsigned width,unsigned height) {
+    Asset a=Platform_ReadAsset(image);
+    if(a.type==13) {
+        if(!a.data || a.size<4 || a.unpacked<4 || (a.flags!=0 && a.flags!=3 && a.flags!=4)) return false;
+        width=BE16Aligned(a.data);height=BE16Aligned(a.data+2);
+        a={a.data+4,a.size-4,a.unpacked-4,a.type,(uint16_t)(a.flags==3?1:a.flags==4?2:0)};
+    } else if(a.type!=2) return false;
+    if(x<0 || (x&1) || y<0 || x>GAME_WIDTH || y>GAME_HEIGHT || width>(unsigned)(GAME_WIDTH-x) || height>(unsigned)(GAME_HEIGHT-y)) return false;
+    if(!Platform_Blit(a,target+y*(GAME_WIDTH/2)+x/2,width,height)) return false;
+    Rect &d=damage[buffer_index];
+    d={Min(d.x1,x),Min(d.y1,y),Max(d.x2,x+(int)width-1),Max(d.y2,y+(int)height-1)};
     return true;
 }
 void Renderer::Restore() {
@@ -206,7 +225,7 @@ void Renderer::BackgroundSpan(int y,int left,int right,bool original) {
     d.x1=Min(d.x1,left);d.x2=Max(d.x2,right);d.y1=Min(d.y1,y);d.y2=Max(d.y2,y);
     volatile uint16_t *p=target+y*160;
     const uint8_t *source=background+y*320;
-    if(original && original_background.data) {
+    if(original && original_background.data && !original_background.flags) {
         source=original_background.data+y*GAME_WIDTH;
     }
     if(left&1) {
@@ -229,6 +248,10 @@ void Renderer::Box(int x,int y,int w,int h,uint8_t color) {
 }
 void Renderer::Panel(int x,int y,unsigned asset) {
     Asset panel=Platform_ReadAsset(asset);
+    if(panel.flags==3 || panel.flags==4) {
+        if(!DrawImage(asset,x,y)) Platform_Fatal();
+        return;
+    }
     const int w=BE16Aligned(panel.data),h=BE16Aligned(panel.data+2);
     const uint16_t *source=(const uint16_t *)(panel.data+4);
     // Importer supplies even widths; all UI positions are even and on screen.

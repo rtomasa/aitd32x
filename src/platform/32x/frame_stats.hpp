@@ -3,7 +3,8 @@
 #include "../../engine/types.hpp"
 
 // Count completed game draws over elapsed VBlanks, independently of logic ticks.
-// Overlay-only refreshes on the title or pause screen do not inflate this rate.
+// Overlay-only refreshes do not inflate this rate. Sample requests a redraw
+// only when the displayed value or its readiness changes.
 struct FrameStats {
     uint16_t last_sequence;
     unsigned window_frames,window_draws,rendered_total,fps_tenths;
@@ -18,8 +19,9 @@ struct FrameStats {
         window_frames+=(uint16_t)(sequence-last_sequence)/2;
         last_sequence=sequence;
         if(window_frames<refresh) return false;
-        fps_tenths=(window_draws*refresh*10+window_frames/2)/window_frames;
+        unsigned next=(window_draws*refresh*10+window_frames/2)/window_frames;
+        bool changed=!ready || next!=fps_tenths;fps_tenths=next;
         window_frames=window_draws=0;ready=true;
-        return true;
+        return changed;
     }
 };

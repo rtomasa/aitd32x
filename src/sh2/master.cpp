@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "../engine/game.hpp"
+#include "../engine/startup.hpp"
 #include "../platform/platform_api.hpp"
 #include "../platform/32x/hardware.hpp"
 #include "../platform/32x/frame_stats.hpp"
@@ -55,6 +56,8 @@ extern "C" int m_main(void) {
         InputSnapshot input=ReadInput();
         uint16_t toggles=input.pad>>8;
         game.InputSnapshot(input.pad&255,toggles^last_toggles);last_toggles=toggles;
+        unsigned elapsed=(uint16_t)(input.sequence-clock_state.last)/2;
+        game.StartupAdvance(elapsed*(1500/refresh));
         unsigned ticks=clock_state.Advance(input.sequence,refresh);
         int previous_mode=game.mode;
         if(ticks) {
@@ -67,7 +70,7 @@ extern "C" int m_main(void) {
         if(game.mode!=previous_mode) frame_stats.ResetWindow(input.sequence);
         bool game_frame=game.dirty;
         bool stats_changed=frame_stats.Sample(input.sequence,refresh);
-        if(game_frame || stats_changed) {
+        if(game_frame || (game.mode && stats_changed)) {
             {
             ProfileScope timing(PROFILE_FRAME);
             game.renderer.buffer_index=displayed^1;
@@ -75,11 +78,18 @@ extern "C" int m_main(void) {
             if(game.renderer.palette_changed) {
                 ProfileScope palette(PROFILE_PALETTE);LoadPalette();
             }
-            { ProfileScope ui(PROFILE_UI);Renderer_DrawFPS(FRAMEBUFFER+256,frame_stats.fps_tenths,frame_stats.ready); }
+            { ProfileScope ui(PROFILE_UI);
+              if(game.mode) Renderer_DrawFPS(FRAMEBUFFER+256,frame_stats.fps_tenths,frame_stats.ready);
+              else for(unsigned p=0;p<GAME_Y_OFFSET*160;++p) FRAMEBUFFER[256+p]=0;
+            }
             { ProfileScope flip(PROFILE_FLIP);Flip(); }
             if(game_frame) frame_stats.Rendered();
             }
             Profile_Publish();
+        } else if(game.renderer.palette_changed) {
+            // Static startup screens fade through CRAM alone. Their displayed
+            // pixels stay valid without another restore, text draw or flip.
+            ProfileScope palette(PROFILE_PALETTE);LoadPalette();
         }
         COMM(0)=(uint16_t)((game.mode?0x1000:0x0100)|(game.paused?0x80:0)|(game.camera&15));
         COMM(1)=(uint16_t)game.tick;
@@ -93,14 +103,15 @@ extern "C" int m_main(void) {
         debug_state[13]=(int32_t)game.player.frame;
         debug_state[14]=(int32_t)game.player.frame_phase;
         debug_state[15]=(int32_t)game.player.anim_asset;
-        debug_state[16]=game.mode?game.world.floor:0;debug_state[17]=game.mode?game.world.room:0;
-        debug_state[18]=game.menu;debug_state[19]=game.mode?game.world.fault_code:0;
-        debug_state[20]=game.mode?game.world.fault_life:0;debug_state[21]=game.mode?game.world.fault_pc:0;
+        bool world_active=game.mode || game.startup_phase==STARTUP_ARRIVAL || game.startup_phase==STARTUP_PICTURE;
+        debug_state[16]=world_active?game.world.floor:0;debug_state[17]=world_active?game.world.room:0;
+        debug_state[18]=game.menu;debug_state[19]=world_active?game.world.fault_code:0;
+        debug_state[20]=world_active?game.world.fault_life:0;debug_state[21]=world_active?game.world.fault_pc:0;
         debug_state[22]=game.mode?game.world.inventory_count:0;debug_state[23]=game.mode?game.world.in_hand:-1;
         debug_state[24]=game.mode?game.world.prompt:-1;debug_state[25]=game.mode?game.world.peak_active:0;
-        debug_state[26]=game.mode?game.world.ticks:0;debug_state[27]=game.mode?game.world.vars[90]:0;
+        debug_state[26]=world_active?game.world.ticks:0;debug_state[27]=game.mode?game.world.vars[90]:game.startup_phase;
         debug_state[28]=game.mode?game.world.vars[21]:0;debug_state[29]=game.mode?game.world.book:-1;
-        debug_state[30]=game.mode?game.world.finished:0;debug_state[31]=game.mode?game.world.camera_target:1;
+        debug_state[30]=world_active?game.world.finished:0;debug_state[31]=world_active?game.world.camera_target:1;
     }
 }
 extern "C" void Platform_Fatal(void) {

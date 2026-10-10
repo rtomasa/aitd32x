@@ -19,14 +19,24 @@ struct Game {
     uint16_t held,pending_edges;
     int mode,camera,character;
     bool paused,help,dirty,resync_clock;
+    // Presentation time is in 1/1500 s, independent of the 25 Hz world.
+    uint32_t startup_time,startup_since,startup_transition;
+    uint16_t startup_palette;
+    uint8_t startup_phase,startup_next,startup_fade;
     bool Dynamic(int slot) const { return (dynamic_slots&(1u<<slot))!=0; }
     void ResetCache();
     void RebuildStaticOrder(const int *order,int count);
-    void Init();
+    void Init(bool boot=true);
     void Input(uint16_t pad);
     void InputSnapshot(uint16_t pad,uint16_t pressed) { pending_edges|=pressed;held=pad; }
     void Update();
+    void DrawScene();
     void Draw();
+    A32X_COLD void StartupEnter(unsigned phase);
+    A32X_COLD void StartupAdvance(unsigned elapsed);
+    A32X_COLD void StartupUpdate(uint16_t edges);
+    A32X_COLD void StartupDraw();
+    A32X_COLD void StartGameplay();
 };
 // Region-independent fixed-tick scheduler. A frame counter is measured by MD.
 struct Clock {

@@ -11,7 +11,7 @@ static void Compare(const std::vector<uint8_t> &packed,const std::vector<uint8_t
     for(unsigned input_offset:{0u,1u}) for(unsigned output_offset:{4u,5u}) {
         std::vector<uint8_t> source(packed.size()+input_offset+4),dest(plain.size()+16,0xed);
         std::memcpy(source.data()+input_offset,packed.data(),packed.size());
-        Asset a={source.data()+input_offset,(uint32_t)packed.size(),(uint32_t)plain.size(),0,(uint16_t)flags};
+        Asset a={source.data()+input_offset,(uint32_t)packed.size(),(uint32_t)plain.size(),(uint16_t)(flags>=3?13:0),(uint16_t)flags};
         uint16_t offsets[200];uint8_t skips[200];
         Check(Platform_Decode(a,dest.data()+output_offset,plain.size(),rows?offsets:nullptr,rows?skips:nullptr));
         Check(!std::memcmp(dest.data()+output_offset,plain.data(),plain.size()));
@@ -30,6 +30,16 @@ static void Compare(const std::vector<uint8_t> &packed,const std::vector<uint8_t
         for(auto c:dest) Check(c==0xed);
     }
 }
+static void Framebuffer(const std::vector<uint8_t> &packed,const std::vector<uint8_t> &plain,unsigned flags) {
+    // Odd image widths and overlapping LZ4 matches cross physical row padding.
+    constexpr unsigned width=5,height=3,stride=8;
+    std::vector<uint16_t> dest(stride*height/2+4,0xeded);
+    Asset a={packed.data(),(uint32_t)packed.size(),(uint32_t)plain.size(),2,(uint16_t)flags};
+    Check(Platform_Blit(a,dest.data()+2,width,height,stride));
+    const uint8_t *bytes=(const uint8_t *)(dest.data()+2);
+    for(unsigned y=0;y<height;++y) for(unsigned x=0;x<stride;++x) Check(bytes[y*stride+x]==(x<width?plain[y*width+x]:0xed));
+    Check(dest[0]==0xeded && dest[1]==0xeded && dest[dest.size()-2]==0xeded && dest.back()==0xeded);
+}
 int main() {
     std::vector<uint8_t> raw(103);for(unsigned i=0;i<raw.size();++i) raw[i]=(uint8_t)(i*47);Compare(raw,raw,0);
     std::vector<uint8_t> packed,plain;
@@ -41,10 +51,29 @@ int main() {
         packed.push_back(n);packed.push_back(c);plain.insert(plain.end(),n,c);
     }
     Compare(packed,plain,1,true);
+    // Standard raw LZ4: overlapping match, multiple length extension bytes,
+    // and a literal-only tail. This fixture is independent of the importer.
+    packed={0x3f,'a','b','c',3,0,255,255,12,0xf0,16};plain={'a','b','c'};
+    for(unsigned i=0;i<541;++i) plain.push_back(plain[plain.size()-3]);
+    for(unsigned i=0;i<31;++i) { packed.push_back((uint8_t)(i*13));plain.push_back((uint8_t)(i*13)); }
+    Compare(packed,plain,2);
+    uint8_t lz_bad[]={0x10,7,0,0,0x00};
+    uint8_t lz_out[16]={};
+    Check(!Platform_Decode({lz_bad,sizeof(lz_bad),5,2,2},lz_out,4));
+    Check(!Platform_Decode({lz_bad,sizeof(lz_bad),5,2,2},lz_out,sizeof(lz_out)));
+    Check(!Platform_Decode({lz_bad,1,5,2,2},lz_out,sizeof(lz_out)));
+    uint8_t lz_far[]={0x10,7,2,0};
+    Check(!Platform_Decode({lz_far,sizeof(lz_far),5,2,2},lz_out,sizeof(lz_out)));
+    packed={0x34,0,7,9,3,0,0x40,11,0,13,0};plain={0,7,9};
+    for(unsigned i=0;i<8;++i) plain.push_back(plain[plain.size()-3]);
+    plain.insert(plain.end(),{11,0,13,0});Framebuffer(packed,plain,2);
+    Framebuffer(plain,plain,0);Framebuffer({14,0,1,9},std::vector<uint8_t>{0,0,0,0,0,0,0,0,0,0,0,0,0,0,9},1);
+    packed={0,5,0,3,14,0,1,9};plain={0,5,0,3};plain.insert(plain.end(),14,0);plain.push_back(9);Compare(packed,plain,3);
+    packed={0,5,0,3,0xf0,0};packed.insert(packed.end(),plain.begin()+4,plain.end());Compare(packed,plain,4);
     uint8_t bad[]={0,9,2,1},out[4]={};
     Check(!Platform_Decode({bad,4,4,0,1},out,4));
     Check(!Platform_Decode({bad+2,1,2,0,1},out,4));
     Check(!Platform_Decode({bad+2,2,1,0,1},out,4));
     Check(!Platform_Decode({bad+2,2,3,0,1},out,4));
-    std::puts("Raw/RLE byte parity, aligned/unaligned tails, capacity guards and all 200 indexed camera rows passed");
+    std::puts("Raw/RLE/LZ4 byte parity, overlapping matches, packed framebuffer rows, guards and all 200 indexed camera rows passed");
 }

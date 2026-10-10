@@ -112,6 +112,21 @@ RAM_CODE void ServiceSave(void) {
     }
     comm[1]=value;comm[0]=0x5FFF;
 }
+RAM_CODE void ServiceMapper(void) {
+    volatile uint16_t *comm=(volatile uint16_t *)MARS_COMM0;
+    uint16_t op=comm[0];if(op!=0x5020 && op!=0x5021) return;
+    uint16_t bank=op==0x5020?comm[1]:1;
+    if(!save_active && bank<=255) {
+        // Mapper registers are driven from MD RAM while RV briefly transfers
+        // cartridge access to the 68000. SH2 code and audio assets are outside
+        // the selected 512 KiB aperture; RV returns before the acknowledgement.
+        volatile uint8_t *dreq=(volatile uint8_t *)0xA15107;
+        uint8_t previous=*dreq;*dreq=previous|1;
+        *(volatile uint8_t *)0xA130F3=(uint8_t)bank;
+        *dreq=previous;comm[1]=0x424B;
+    } else comm[1]=0;
+    comm[0]=0x5FFF;
+}
 RAM_CODE void main(void) {
     volatile uint16_t *const comm=(volatile uint16_t *)MARS_COMM0;
     volatile uint16_t *const status=(volatile uint16_t *)VDP_CTRL_PORT;
@@ -125,8 +140,8 @@ RAM_CODE void main(void) {
     comm[7]=(*(volatile uint8_t *)(IO_BASE+1)&0x40)?50:60;
     comm[6]=0;pal_audio=comm[7]==50;
     for(;;) {
-        while(*status&8) { ServiceSave();ServiceMusic(); }
-        while(!(*status&8)) { ServiceSave();ServiceMusic(); }
+        while(*status&8) { ServiceSave();ServiceMusic();ServiceMapper(); }
+        while(!(*status&8)) { ServiceSave();ServiceMusic();ServiceMapper(); }
         comm[6]=sequence+1; // Odd = snapshot being written.
         uint16_t pad1=read_joypad(0)&0xFF,pad2=read_joypad(1)&0xFF;
         toggle1^=pad1&~previous1;toggle2^=pad2&~previous2;

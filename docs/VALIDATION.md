@@ -1,3 +1,11 @@
+# Startup and banked graphics
+
+See [startup performance validation](validation/startup-performance.md) for
+current ROM/RAM figures, original-case text, entrance benchmarks and shared
+menu/font optimizations. [Initial startup validation](validation/startup.md)
+records the preceding full startup/arrival and save checks. Native NTSC/PAL
+PicoDrive checks pass; physical mapper/RV arbitration remains unvalidated.
+
 # Revision 15
 
 See [revision 15 validation](validation/v15-validation.md) for sound-command fixes, original music-cue mapping, native sound levels, document rendering and save compatibility. No new gameplay FPS benchmark is claimed for this revision. Historical measurements below remain version-specific.

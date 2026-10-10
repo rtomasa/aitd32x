@@ -1,10 +1,14 @@
-# AITD32X — revision 15 audio cues and original reading screens
+# AITD32X — original startup and arrival sequence
 
 Native Sega 32X conversion using the original Alone in the Dark 1 installation supplied by the user. Revision 15 corrects the window-collision script error, matches the CD scripts to their original AdLib music cues, balances music/effects, and restores original note/book/notebook artwork, proportional typography, illustrations and page sounds. Other game menus retain their gold bezels and four-pixel black text padding.
 
+Startup now includes the original animated Infogrames armadillo, title, timed credits, start menu, character portraits and biographies, and the scripted journey through Derceto to the attic. The console menu offers Replay Intro in place of Return to DOS. Both characters retain their original introduction text and arrival animations.
+
 ## Play
 
-Load `AITD32X.32x` in a 32X-capable emulator with cartridge SRAM saving enabled. The frontend retains saves in its battery/save file (usually `.srm`). On the title, C selects Edward/Emily, Start or A begins a new game, and B loads the latest valid save.
+Load `AITD32X.32x` in a 32X-capable emulator with cartridge SRAM saving enabled. The frontend retains saves in its battery/save file (usually `.srm`). Any button skips the logo/title/credits to the start menu. Up/Down selects Begin a New Game, Resume a Saved Game or Replay Intro; A/Start confirms. B loads the latest valid save directly from this menu.
+
+Character selection: Left chooses Emily, Right chooses Edward, C toggles, and A/Start opens the selected biography. B returns to the menu. In the biography, Up/Left and Down/Right change pages; A/Start/C advances and begins the arrival after the last page. B returns to character selection. A/B/C/Start skips the arrival to fresh gameplay. Credits turn pages automatically. The frog close-up pauses the arrival simulation, and completing or skipping the introduction starts a clean game without erasing a save.
 
 | Button | Gameplay |
 |---|---|
@@ -19,7 +23,9 @@ In the pause menu, Up/Down selects Resume, Save Game, Load Game or Return to Tit
 
 Inventory: Up/Down selects an object, A opens its actions, Up/Down selects, A confirms, C/B returns. The Actions entry selects Fight, Search, Close or Push through original scripts. Hold A while facing furniture to search/push; approach with a direction. In Fight, A + Up/Down/Left/Right selects attacks. Pickups use A to take or C/B to leave. Books use Up/Down, Left/Right or B for pages and A/C to close. Original arrows indicate available previous/next pages. Gameplay time freezes in these screens.
 
-The game remains a 25 Hz simulation with the approved 60 Hz animation clock. Native video is 320×224 with a 320×200 scene and black borders. FPS measures completed draws. A static pause/title can show zero FPS.
+The game remains a 25 Hz simulation with the approved 60 Hz animation clock. Native video is 320×224 with a 320×200 scene and black borders. FPS measures completed draws and is hidden during startup. A static paused game can show zero FPS.
+
+Static pause, inventory and action menus redraw on input or a changed FPS value. Document text shares the optimized proportional-font renderer used by startup.
 
 ## Audio
 
@@ -27,7 +33,7 @@ The game remains a 25 Hz simulation with the approved 60 Hz animation clock. Nat
 
 ## Reading
 
-Original ITD_RESS entries 6/7/8 provide paper, book and notebook backgrounds, entry 5 supplies the original proportional font, and entry 9 supplies the five document illustrations. Original mixed case, centered headings, paragraph indentation and explicit page breaks are retained. Layout is compiled offline; backgrounds are raw ROM copies. SAMPLE_PAGE uses original effect 49 on opening, paging and closing. The world pauses while reading and resumes with its scenery cache intact. No additional gameplay RAM or cartridge bank-switching is needed.
+Original ITD_RESS entries 6/7/8 provide paper, book and notebook backgrounds, entry 5 supplies the original proportional font, and entry 9 supplies the five document illustrations. Original mixed case, centered headings, paragraph indentation and explicit page breaks are retained. Layout is compiled offline; reading backgrounds use lossless ROM compression and are decoded for these screens. SAMPLE_PAGE uses original effect 49 on opening, paging and closing. The world pauses while reading and resumes with its scenery cache intact. No additional gameplay image buffer is needed.
 
 ## Build
 
@@ -44,25 +50,24 @@ make -j2
 
 See [development handoff](docs/DEVELOPMENT.md) for the Git baseline, local dependencies, focused checks and next work. Original DOS data, converted assets, builds and saves are ignored by Git.
 
-Identical converted payloads share aligned ROM storage, retaining asset IDs and avoiding image decompression. The ROM is 4,128,768 bytes (3.9375 MiB), within the 4 MiB SH2 window. The 68000 uses the standard 32X ROM bank window for music reads. SRAM supplies two 64 KiB journal records. Rare initialization/save/UI routines execute from ROM to preserve the 12 KiB master and 4 KiB slave stack reservations.
+Identical converted payloads share aligned ROM storage, retaining existing asset IDs. Gameplay camera images, panels and reading sprites remain raw for fast rendering. Logo, portrait, paper and picture images use lossless compression. Arrival camera images use raw banked pixels so the scenery cache can retain original occlusion masks. Static startup screens redraw when content changes; palette fades update without redrawing. Menu and arrival text preserve the original casing. This 4.875 MiB ROM requires 32X SSF2 mapper support, verified in PicoDrive. SRAM supplies two 64 KiB journal records. Rare initialization/save/UI routines execute from ROM to preserve the 12 KiB master and 4 KiB slave stack reservations. See [architecture](docs/ARCHITECTURE.md) for the current ROM layout and memory limits.
 
 ## Focused checks
 
 ```sh
-make host build/check_save_capacity
-python3 tools/check_save.py
-./build/check_save_capacity
-python3 tools/check_audio_save_native.py /path/to/picodrive_libretro.so --mars /path/to/mars
-python3 tools/check_audio_save_native.py /path/to/picodrive_libretro.so --mars /path/to/mars --region PAL
-python3 tools/check_audio_streams.py /path/to/picodrive_libretro.so --mars /path/to/mars
-python3 tools/check_audio_streams.py /path/to/picodrive_libretro.so --mars /path/to/mars --region PAL
-python3 tools/check_ui.py --core /path/to/picodrive_libretro.so
+make host
+# Startup changes only; use the preserved pre-startup host library for old-save checks:
+python3 tools/check_startup.py
+python3 tools/check_bank_layout.py
+python3 tools/check_startup_native.py /path/to/picodrive_libretro.so --mars /path/to/mars
+# Region-sensitive startup/banking changes:
+python3 tools/check_startup_native.py /path/to/picodrive_libretro.so --mars /path/to/mars --region PAL
 ```
 
-The native save check generates compiler-derived layout data used by the stream check. Debugger setup selects music/poses; controller input exercises the save/load/menu and movement paths. `docs/VALIDATION.md` records checks and limits, `docs/PERFORMANCE.md` records release timing, and `docs/ARCHITECTURE.md` describes memory/transport. Versioned reports preserve prior evidence. Floors 0 and 1 are imported; full-house progression and physical hardware validation remain unfinished.
+The native startup check uses controller input and private in-memory SRAM for save/core-restart/resume. Older gameplay checks assume immediate Start-to-gameplay and need startup navigation or the host fixture `host_startgame(character)` before reuse. `docs/VALIDATION.md` records historical checks, [startup performance validation](docs/validation/startup-performance.md) records this build, and `docs/ARCHITECTURE.md` describes memory/transport. Gameplay supports floors 0 and 1. Additional room/camera resources are imported only for the original arrival; full-house progression and physical hardware validation remain unfinished.
 
 Engine source is GPL; see LICENSE and third_party/NOTICES.md. Original resources retain their original ownership.
 
 ## Revision 15 validation
 
-Focused checks and limitations are recorded in docs/validation/v15-validation.md. Run tools/check_v15.py for both-character window collision and document paging; add --core /path/to/picodrive.so --mars /path/to/mars --region NTSC or PAL for actual-cartridge reading/audio checks. tools/check_mix.py compares native sound levels to a preserved v14 project. Original resources are not redistributed in the source archive.
+Historical checks and limitations are recorded in docs/validation/v15-validation.md. tools/check_v15.py covers window collision and document paging in that baseline; tools/check_mix.py compares native sound levels to a preserved v14 project. Their startup setup predates the new menus. Original resources are not redistributed in the source archive.

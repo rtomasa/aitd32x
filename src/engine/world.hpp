@@ -41,9 +41,13 @@ public:
     uint16_t pad;int action,click,music,next_music;
     int inventory[INVENTORY_CAPACITY],inventory_count,in_hand;
     int prompt,message,book,book_type;uint32_t message_until;
-    bool inventory_allowed,view_changed,finished;
+    // Presentation-only arrival cutscene request. Its display clock is owned
+    // by the startup UI while the world simulation is paused; never saved.
+    int picture_id,picture_duration;
+    bool inventory_allowed,view_changed,finished,intro;
     int fault_life,fault_pc,fault_code,peak_active;
-    void Init(Actor &protagonist,int selected);
+    void Init(Actor &protagonist,int selected,int initial_floor=0,int initial_room=0,int target=1);
+    void InitIntro(Actor &protagonist,int selected) { Init(protagonist,selected,7,1,286); }
     void Update(uint16_t controller,bool acting);
     void RefreshActors();
     Actor &Pose(int slot) { return active[slot].id==1?*player:poses[slot]; }

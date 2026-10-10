@@ -18,6 +18,89 @@ actor refresh caches room visibility per call. Detailed limits and current
 memory figures are in the follow-up report; revision-specific numbers below
 describe the inherited baseline.
 
+## Startup and cartridge banking
+
+The startup reproduces the original Infogrames model/logo animation, title,
+English credits, main menu, character portraits, half-page biographies and
+scripted arrival. The arrival starts at floor 7, room 1, camera 3, target 286;
+its original LIFE/track sequence visits floors 3, 2 and 1 before LIFE 539 ends.
+Only the required extra views are imported. `World::intro` permits those floors
+during presentation; gameplay still stops beyond floors 0 and 1. Completion
+and skipping initialize a fresh gameplay world. Intro flags and the temporary
+frog picture are not serialized; loading clears them explicitly. Existing
+asset IDs and save fingerprint `0x0eebc721` remain compatible.
+
+Startup time uses 1/1500-second units from the PAL/NTSC VBlank counter. Logo
+steps, palette fades and picture/credit holds use the original 60 Hz clock;
+the arrival world uses the existing 25 Hz simulation. The frog picture freezes
+world updates for its original 20 presentation ticks. The renderer reuses its
+64,000-byte background, with no additional image buffer or heap. Intro camera
+images copy once on changing views or rebuilding the scenery cache. Original
+mask pixels come from a scoped raw ROM mapping while RAM holds baked scenery.
+Settled intro doors without animation data use the same pose/mask hash as
+scenery; scripted movement invalidates their bake until they settle again.
+The arrival retains its original painter ordering and camera masks; gameplay
+continues to use contact-depth repair. Cache rebuilds preserve intro fade levels.
+Gameplay camera images and existing UI panels/sprites retain their raw paths.
+Credits and biographies decode their paper once. Biography composition reuses
+the hidden framebuffer to preserve the selected portrait, then caches the
+combined RAM background. Static fades update CRAM without restoring pixels,
+and hidden startup FPS statistics do not force draws. Original font glyphs
+write contiguous horizontal spans. A separate text asset preserves original
+casing and font glyph bytes, including copyright and I-Motion symbols, while
+keeping existing gameplay text unchanged.
+The FPS border is hidden throughout presentation and restored in gameplay.
+
+The current RELEASE ROM is **5,111,808 bytes (4.875 MiB)**, with 2,034 asset
+IDs, a 3,897,428-byte fixed bank and 908,288 bytes of extra image data. The
+83,812-byte BIOS module ends at physical byte 4,112,312, leaving 81,992 bytes
+below the direct-window limit. Static SDRAM is 243,992 bytes: module 83,812,
+BSS 160,176, and four bytes of linker overhead. It ends at `0x0603B918`, with
+1,768 bytes before the existing stack reservation. Startup adds 32 bytes of
+state; expanded world lookup tables move to fixed ROM to recover RAM. Figures
+and checks for this build are recorded in
+[startup performance validation](validation/startup-performance.md).
+
+The SH2 direct cartridge window is **32 Mbit / 4 MiB**, rather than 32 MiB.
+Larger ROMs require a cartridge mapper. This build implements the SSF2 mapper
+with 512 KiB pages and limits its physical ROM to 32 MiB. The asset directory
+starts at physical `0x20000`; fixed resources follow, and cold presentation
+images begin at physical `0x400000`. The BIOS module stays entirely below
+4 MiB. All executable ROM code stays below the asset origin. The importer
+generates `bank-main.bin`, `bank-extra.bin`, and the full logical `bank.bin` for
+host tools; its zero-filled gap is occupied partly by the BIOS module in the
+native ROM. Directory offsets remain relative to the fixed asset origin.
+
+Flag `0x8000` marks banked type-2 image payloads. Decode/Blit ask the 68000 RAM
+supervisor to set `A130F3`, temporarily mapping the source page into slot 1,
+physical `0x80000–0xFFFFF`. The supervisor briefly sets RV for the mapper write
+and restores its previous value before acknowledging. The SH2 decoder reads
+through uncached `0x22080000`, then restores bank 1 on success or decode failure.
+Raw intro originals can also remain mapped during `Game::DrawScene`. Camera
+binding/decoding completes before this scope; all actor and contact jobs fence
+before it ends. Only actors on the current intro floor are allowed. Original
+asset pointers and bank 1 are restored before UI drawing or world updates.
+Each image fits in one page. The importer and linked-layout checker protect
+all intro camera/room metadata, models, animations and static rasters from
+the aperture; old gameplay metadata in that slot is accessed after unmapping.
+Code, all sound payloads and music streams avoid the aperture, so slave PWM and
+the 68000 music reader keep their existing transport and timing.
+
+Bank format version 2 remains in use. Codec flags are 0 for raw, 1 for RLE,
+2 for a standard raw LZ4 block, and 3/4 for type-13 images with a raw four-byte
+width/height header followed by RLE/LZ4 pixels. The banked bit combines with
+the image codec. Framebuffer decompression uses word writes to preserve zero
+pixels and supports overlapping LZ4 matches without a scratch bitmap.
+
+The [Sega hardware manual](https://consolemods.org/wiki/images/e/e9/32X_Hardware_Manual_1994_Sega_text.pdf)
+describes the direct window and mapper arbitration. PicoDrive implements
+[32X SSF2 reads](https://github.com/notaz/picodrive/blob/master/pico/32x/memory.c),
+[mapper registers](https://github.com/notaz/picodrive/blob/master/pico/carthw/carthw.c),
+and [automatic mapper selection for ROMs larger than 4 MiB](https://github.com/notaz/picodrive/blob/master/pico/cart.c).
+Emulator checks cannot validate RV arbitration on physical hardware; a physical
+cartridge or flash cart must provide a compatible mapper. Use the focused
+startup and bank-layout checks in DEVELOPMENT.md when changing this flow.
+
 ## CPU and timing
 
 The 68000 boots the cartridge, detects PAL/NTSC and publishes coherent controller snapshots each VBlank. The master SH2 executes the 25 Hz simulation, LIFE/track, active objects, animation, collision, inventory and camera selection. It transforms and sorts geometry and presents completed frames. Shared-RAM wait reads are spaced by 24 NOPs to avoid a terminal-read polling-detector sleep in PicoDrive. Both SH2s rasterize: the master owns logical rows 0–99 and the slave owns 100–199, using the v6 cache-through eight-entry command ring.
@@ -35,6 +118,11 @@ The original scripts select action animations, offer/take/equip/read/reload/drop
 ## Rendering and static props
 
 The packed-pixel VDP presents 320×224 in both regions, with a 320×200 logical scene at `(0,12)`. Each bank has a valid native line table and separate damage bounds. Word writes restore palette index zero correctly. The FPS overlay occupies the upper border and counts completed draws against VBlanks.
+
+FPS sampling requests a repaint only when its displayed value or readiness
+changes. Once the counter settles, idle pause, inventory, action and document
+screens retain their pixels. Inventory/actions mark content dirty only on input
+edges; the world remains paused while those menus are open.
 
 Original FITD group geometry, Q15 arithmetic, flat primitives, stable depth order, camera projection, near clipping and conditional foreground masks remain in use. Type-2 eye points occupy one native pixel; small type-3 sphere eyes can shrink to one pixel instead of retaining a three-pixel minimum. Back-facing polygons are culled. Material 2 uses a fixed 50% screen-door pattern to show the scenery through glass. Actor translation/mask tests use the actor's own floor and room. A stable world-level painter sort orders multiple models before their own primitive sort. Vertically disjoint bounds use their camera-relative physical order before horizontal distance, keeping the attic hatch below the standing chest/player without broad height buckets.
 

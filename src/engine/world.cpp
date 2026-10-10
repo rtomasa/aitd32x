@@ -13,6 +13,9 @@ static Bounds ReadBox(const uint8_t *p) { return {{BS16(p),BS16(p+4),BS16(p+8)},
 static Bounds Offset(Bounds b,Vec3 d) { b.lo={b.lo.x+d.x,b.lo.y+d.y,b.lo.z+d.z};b.hi={b.hi.x+d.x,b.hi.y+d.y,b.hi.z+d.z};return b; }
 static void Clear(void *p,unsigned n) { uint8_t *b=(uint8_t*)p;while(n--) *b++=0; }
 Asset World::RoomAsset(int f,int r) const {
+    // Extra floors are imported only for the scripted arrival. Their presence
+    // must not remove the existing playable-floor boundary during gameplay.
+    if(!intro && f>=2) return {0,0,0,0,0};
     if(f<0 || f>=A32X_FLOOR_COUNT || r<0 || r>=room_counts[f]) return {0,0,0,0,0};
     return Platform_ReadAsset(floor_rooms[f][r]);
 }
@@ -69,10 +72,16 @@ bool World::Visible(int r) const {
     for(unsigned i=0;i<BE16(a.data+10);++i,b+=16) if(BE16(b+14)==0 && BS16(b+12)==r) return true;
     return false;
 }
-A32X_COLD void World::Init(Actor &protagonist,int selected) {
-    player=&protagonist;character=selected;floor=room=camera=0;camera_target=1;
+A32X_COLD void World::Init(Actor &protagonist,int selected,int initial_floor,int initial_room,int target) {
+    player=&protagonist;character=selected;floor=initial_floor;room=initial_room;camera_target=target;intro=initial_floor==7;
+    Asset initial=RoomAsset(floor,room);
+    if(!initial.data || !BE16(initial.data+6)) Platform_Fatal();
+    // Camera numbers are global within the floor. The original arrival starts
+    // in room 1's first view (camera 3), rather than floor 7's camera zero.
+    camera=BE16(initial.data+BE32(initial.data+12));
     ticks=now=0;rng=1;action=click=pad=0;music=next_music=-1;
     inventory_count=0;in_hand=-1;prompt=message=book=-1;message_until=0;
+    picture_id=-1;picture_duration=0;
     for(auto &e:effects) e.count=0;
     effect_serial=0;
     inventory_allowed=true;view_changed=true;finished=false;fault_code=fault_life=fault_pc=peak_active=0;
@@ -103,7 +112,12 @@ void World::Activate(int id,int s) {
     p.animation={0,0,0,0,0};p.frame=p.frame_phase=0;p.last_step={0,0,0};p.walking=false;p.end_frame=p.end_anim=false;
     int anim=a.value.v[O_ANIM];
     if(anim<0 && !(a.value.v[O_FLAGS]&F_DRAWABLE)) a.value.v[O_FLAGS]&=~F_ANIMATED;
-    if(anim>=0 && p.model.data) { Actor_SetAnimation(p,animation_assets[character][anim]);Actor_SetFrame(p,Max(0,a.value.v[O_FRAME])); }
+    if(anim>=0 && p.model.data) {
+        Actor_SetAnimation(p,animation_assets[character][anim]);Actor_SetFrame(p,Max(0,a.value.v[O_FRAME]));
+        // FITD InitObjet enables an installed animation. The arrival hatch's
+        // original object flags are zero, so its initial opening needs this.
+        if(intro) a.value.v[O_FLAGS]|=F_ANIMATED;
+    }
 }
 void World::Deactivate(int s) {
     ActiveObject &a=active[s];if(a.id<0) return;
@@ -488,18 +502,28 @@ void World::Update(uint16_t controller,bool acting) {
         Actor &p=Pose(target);
         if(floor!=p.floor || room!=p.room) { floor=p.floor;room=p.room;camera=0;view_changed=true; }
         Asset r=RoomAsset(floor,room);const uint8_t *ids=r.data+BE32(r.data+12);unsigned count=BE16(r.data+6);
-        bool current=false;for(unsigned i=0;i<count;++i) if(BE16(ids+2*i)==(unsigned)camera) current=true;
-        if(!current || !Camera_Contains(Platform_ReadAsset(floor_cameras[floor][camera]),room,p.pos.x+(p.collision_min.x+p.collision_max.x)/2,p.pos.z+(p.collision_min.z+p.collision_max.z)/2)) {
+        Asset current_camera={};
+        if((unsigned)camera<camera_counts[floor]) current_camera=Platform_ReadAsset(floor_cameras[floor][camera]);
+        bool current=false;
+        if(current_camera.data && current_camera.type==3)
+            for(unsigned i=0;i<count;++i) if(BE16(ids+2*i)==(unsigned)camera) current=true;
+        if(!current || !Camera_Contains(current_camera,room,p.pos.x+(p.collision_min.x+p.collision_max.x)/2,p.pos.z+(p.collision_min.z+p.collision_max.z)/2)) {
             // Keep the last valid view across uncovered zone edges. FITD does
             // this too; defaulting to ids[0] can select a neighbouring room.
-            int chosen=current?camera:BE16(ids),best=32000;
+            int chosen=current?camera:-1,best=32000;
             Bounds zv=Box(target);int x=(zv.lo.x/10+zv.hi.x/10)*5,z=(zv.lo.z/10+zv.hi.z/10)*5;
             for(unsigned i=0;i<count;++i) {
-                int id=BE16(ids+2*i);Asset cam=Platform_ReadAsset(floor_cameras[floor][id]);
+                int id=BE16(ids+2*i);if((unsigned)id>=camera_counts[floor]) continue;
+                Asset cam=Platform_ReadAsset(floor_cameras[floor][id]);
+                // Intro-only floors retain original global camera IDs with
+                // absent views in their sparse tables. Never inspect a hole.
+                if(!cam.data || cam.type!=3) continue;
+                if(chosen<0) chosen=id;
                 if(!Camera_Contains(cam,room,x,z)) continue;
                 int angle=Abs(p.beta+((BS16(cam.data+2)+512)&1023));
                 if(angle<best) { best=angle;chosen=id; }
             }
+            if(chosen<0) { Error(-1,room,920);return; }
             if(chosen!=camera) { camera=chosen;view_changed=true; }
         }
     }

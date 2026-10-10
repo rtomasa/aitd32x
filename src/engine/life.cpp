@@ -107,7 +107,8 @@ void World::RunLife(int life,int caller,bool found,int depth) {
             if(p.model.data) { Vec3 *points=Actor_GameplayScratch();Actor_Vertices(p,points);Vec3 lo={32000,32000,32000},hi={-32000,-32000,-32000};for(unsigned i=0;i<BE16(p.model.data+2);++i) { Vec3 v=points[i];lo={Min(lo.x,v.x),Min(lo.y,v.y),Min(lo.z,v.z)};hi={Max(hi.x,v.x),Max(hi.y,v.y),Max(hi.z,v.z)}; }p.collision_min=lo;p.collision_max=hi; }break;
         }
         case 39:Audio_Sample(r.Eval());break;case 40: { int type=r.Raw()&0x1d1;a.value.v[O_FLAGS]=(a.value.v[O_FLAGS]&~0x1d1)|type;break; }
-        case 41:case 86:cvars[15]=1;finished=true;return;case 42:ManualRotate(target,240);break;case 43:r.Raw();break;
+        case 41:case 86:if(!intro) cvars[15]=1;finished=true;return;
+        case 42:ManualRotate(target,240);break;case 43:r.Raw();break;
         case 44:music=r.Raw();break;case 45:case 56: { int angle=r.Raw(),duration=r.Raw();SetAngle(target,angle,duration,op==56);break; }
         case 46:SetBounds(target,3);break;case 47: { int f=r.Raw(),room=r.Raw(),x=r.Raw(),y=r.Raw(),z=r.Raw();Stage(target,f,room,{x,y,z});break; }
         case 48:set(O_NAME,r.Raw());break;case 49:set(O_FOUND_FLAGS,(Get(id,O_FOUND_FLAGS)&0xe000)|r.Raw());break;case 50:set(O_FOUND_LIFE,r.Raw());break;
@@ -132,7 +133,15 @@ void World::RunLife(int life,int caller,bool found,int depth) {
         case 73:break;case 74:p.alpha=r.Raw();p.beta=r.Raw();p.gamma=r.Raw();break;
         case 75: { int sound=r.Eval(),count=r.Raw();Audio_Sample(sound,-1,count?Max(0,count-1):-1);break; }
         case 76: { int anim=r.Raw(),frame=r.Raw(),group=r.Raw(),obj=r.Object(),range=r.Raw(),force=r.Raw(),next=r.Raw();Animate(target,anim,2,next);if(!range) objects[obj].v[O_GAMMA]-=256;objects[obj].v[O_FOUND_FLAGS]|=0x1000;a.hit_type=6;a.hit_anim=anim;a.hit_frame=frame;a.hit_group=group;a.throw_object=obj;a.hit_size=range;a.hit_force=force;break; }
-        case 77:r.Raw();break;case 78:r.Raw();r.Raw();r.Raw();break;case 79:Audio_StopSamples();break;
+        case 77:r.Raw();break;
+        case 78: {
+            int picture=r.Raw(),duration=r.Raw(),sample=r.Raw();
+            if(intro) {
+                picture_id=picture;picture_duration=Max(0,duration);Audio_Sample(sample);
+            }
+            break;
+        }
+        case 79:Audio_StopSamples();break;
         case 80: { int m=r.Raw();if(music==-1) music=m;else next_music=m;break; }case 81: { int next=r.Raw();if(music==-1) music=next;else { next_music=next;music=-2; }break; }
         case 82:if(a.hit_type==8) { a.hit_type=0;a.hit_force=0; }break;
         case 83: { int obj=r.Object();p.alpha=Get(obj,O_ALPHA);p.beta=Get(obj,O_BETA);p.gamma=Get(obj,O_GAMMA);break; }

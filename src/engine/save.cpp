@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "save.hpp"
+#include "startup.hpp"
 #include "game.hpp"
 #include "../platform/audio.hpp"
 #include "../platform/platform_api.hpp"
@@ -137,6 +138,7 @@ bool Game_Load(Game &g) {
     g.world.player=&g.player;Platform_SaveBegin(bank);Platform_SaveSeek(HEADER);Stream read(true,true);valid=Payload(read,g);Platform_SaveEnd();if(!valid) return false;
     Audio_Reset();Audio_UpdateMusic(g.world.music,g.world.next_music,g.tick);
     g.world.player=&g.player;g.world.pad=0;g.world.click=0;g.world.view_changed=false;g.world.fault_code=0;
+    g.world.intro=false;g.world.picture_id=-1;g.world.picture_duration=0;
     g.character=g.world.character;g.camera=g.world.camera;g.mode=1;g.paused=true;g.menu=3;g.selection=0;g.action_selection=2;g.book_line=0;
     g.held=g.pending_edges=0;g.action_blocked=true;g.ResetCache();g.dirty=true;return true;
 }
@@ -159,7 +161,7 @@ bool Game_SystemInput(Game &g,unsigned edges) {
     if(edges&PAD_A) {
         if(g.selection==0) { g.menu=0;g.paused=false;g.action_blocked=true; }
         else if(g.selection==1) g.action_selection=Game_Save(g)?1:3;
-        else if(g.selection==3) g.Init();
+        else if(g.selection==3) g.Init(false);
         else if(!Game_Load(g)) g.action_selection=4;
     }
     g.dirty=true;return true;

@@ -15,8 +15,10 @@ public:
     bool palette_changed,coverage_mode;
     bool full_restore[2];
     Rect damage[2],last_bounds;
-    bool SetCamera(unsigned id,unsigned floor=0,unsigned room_id=0);
+    bool SetCamera(unsigned id,unsigned floor=0,unsigned room_id=0,bool load_palette=true);
     bool SetTitle();
+    A32X_COLD bool SetImage(unsigned image,unsigned colors);
+    A32X_COLD bool DrawImage(unsigned image,int x=0,int y=0,unsigned width=320,unsigned height=200);
     void Restore();
     void BakeBackground();
     void RestoreOriginal(Rect area);
