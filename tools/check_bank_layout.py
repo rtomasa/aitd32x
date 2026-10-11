@@ -161,6 +161,7 @@ def check(rom, elf_data, bank, main, extra, manifest):
             functions += 1
     module_lma, module_bytes = elf.lma('.data'), elf.section('.data')[5]
     require(module_lma == elf.symbol('_stext') == ASSET_PHYSICAL + len(main), 'BIOS module LMA changed')
+    require(module_lma % 4 == 0, 'BIOS module source is not longword aligned')
     require(module_bytes == elf.symbol('_sdata'), 'BIOS module size mismatch')
     require(module_lma + module_bytes <= EXTRA_PHYSICAL, 'BIOS module exceeds direct ROM window')
     require(elf.symbol('__end') <= 0x0603C000, 'SDRAM overlaps reserved stacks')

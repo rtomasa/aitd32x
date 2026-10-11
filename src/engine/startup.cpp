@@ -29,8 +29,8 @@ static A32X_COLD void Palette(Game &g,unsigned level,bool white=false) {
         g.renderer.palette[i]=value;
     }
 }
-static A32X_COLD void Portrait(Game &g,bool half=false) {
-    int x=g.character?0:160,left=x+(half?0:10),right=x+(half?159:148),top=half?0:10,bottom=half?199:189;
+static A32X_COLD void Portrait(Game &g) {
+    int x=g.character?0:160,left=x+10,right=x+148,top=10,bottom=189;
     const uint16_t *source=(const uint16_t *)g.renderer.background;
     for(int y=top;y<=bottom;++y) {
         for(int p=left/2;p<(right+1)/2;++p) g.renderer.target[y*160+p]=source[y*160+p];
@@ -62,19 +62,22 @@ A32X_COLD void Game::StartupEnter(unsigned phase) {
     case STARTUP_MENU:
         Audio_Reset();startup_palette=AS_GAME_PALETTE;menu=selection=book_line=0;
         for(auto &pixel:renderer.background) pixel=0;
-        renderer.camera=renderer.room=renderer.original_background={};renderer.camera_id=0xffffffffu;break;
+        renderer.camera=renderer.room=renderer.original_background={};renderer.camera_id=0xffffffffu;
+        { BackgroundComposition compose(renderer);renderer.Panel(0,60,AS_UI_STARTUP_MENU); }
+        break;
     case STARTUP_CHARACTER:
         startup_palette=AS_GAME_PALETTE;menu=book_line=0;
         if(!renderer.SetImage(AS_STARTUP_SELECTION,startup_palette)) Platform_Fatal();
         break;
     case STARTUP_BIOGRAPHY: {
         book_line=0;
-        // Preserve the selected portrait in the existing hidden framebuffer,
+        // Preserve the framed portrait in the existing hidden framebuffer,
         // decode the paper into RAM once, then cache their composed background.
-        // Paging and palette fades need no further compressed image blits.
-        Portrait(*this,true);
+        // Paging and palette fades need no further portrait/frame image blits.
+        int x=character?0:160;
+        renderer.Panel(x,0,AS_UI_STARTUP_SELECTION);Portrait(*this);
         if(!renderer.SetImage(AS_STARTUP_BACKGROUND,startup_palette)) Platform_Fatal();
-        int x=character?0:160;renderer.BakeRegion({x,0,x+159,199});break;
+        renderer.BakeRegion({x,0,x+159,199});break;
     }
     case STARTUP_ARRIVAL:
         Audio_Reset();Actor_Init(player,character);world.InitIntro(player,character);camera=world.camera;ResetCache();
@@ -89,7 +92,9 @@ A32X_COLD void Game::StartupEnter(unsigned phase) {
     if(phase!=STARTUP_FLASH && phase!=STARTUP_ROTATE && phase!=STARTUP_PICTURE) Palette(*this,0);
 }
 A32X_COLD void Game::StartupAdvance(unsigned elapsed) {
-    if(mode || !elapsed) return;
+    if(startup_phase>=STARTUP_DEATH) { DeathAdvance(elapsed);return; }
+    if(mode) { if(world.prompt>=0) PickupAdvance(elapsed);else InventoryAdvance(elapsed);return; }
+    if(!elapsed) return;
     startup_time+=elapsed;unsigned age=startup_time-startup_since;
     if(startup_next!=NONE) {
         unsigned age=startup_time-startup_transition;
@@ -126,6 +131,7 @@ A32X_COLD void Game::StartupAdvance(unsigned elapsed) {
     }
 }
 A32X_COLD void Game::StartupUpdate(uint16_t edges) {
+    if(startup_phase>=STARTUP_DEATH) { DeathUpdate(edges);return; }
     if(startup_next!=NONE) return;
     if(menu==4) { if(edges) { menu=0;dirty=true; }return; }
     switch(startup_phase) {
@@ -175,8 +181,9 @@ A32X_COLD void Game::StartupUpdate(uint16_t edges) {
     }
 }
 A32X_COLD void Game::StartupDraw() {
+    if(startup_phase>=STARTUP_DEATH) { DeathDraw();return; }
     Renderer &r=renderer;
-    if(startup_phase!=STARTUP_ARRIVAL) { r.full_restore[r.buffer_index]=true;r.Restore(); }
+    if(startup_phase!=STARTUP_ARRIVAL) r.Restore();
     switch(startup_phase) {
     case STARTUP_ROTATE: {
         unsigned step=Min(142,(startup_time-startup_since)/PIT);int beta=(256-(int)step*8)&1023;
@@ -190,12 +197,12 @@ A32X_COLD void Game::StartupDraw() {
     }
     case STARTUP_CREDITS:Book_DrawLayout(r,book_assets[18],book_line);break;
     case STARTUP_MENU:
-        r.Panel(0,60,AS_UI_STARTUP_MENU);r.Box(10,76+selection*16,300,16,100);
+        r.Box(10,76+selection*16,300,16,100);
         for(int i=0;i<3;++i) Book_DrawText(r,160,76+i*16,i==2?"Replay Intro":StartupText(11+i),i==selection?15:4,true);
         break;
     case STARTUP_CHARACTER:case STARTUP_BIOGRAPHY: {
         int x=character?0:160;
-        r.Panel(x,0,AS_UI_STARTUP_SELECTION);Portrait(*this);
+        if(startup_phase==STARTUP_CHARACTER) { r.Panel(x,0,AS_UI_STARTUP_SELECTION);Portrait(*this); }
         if(startup_phase==STARTUP_BIOGRAPHY) {
             Book_DrawLayout(r,Biography(*this),book_line,15);
             if(book_line) Book_DrawText(r,character?172:12,185,"<",15);
@@ -204,11 +211,10 @@ A32X_COLD void Game::StartupDraw() {
     }
     case STARTUP_ARRIVAL:
         DrawScene();
-        if(world.message>=0 && world.now<world.message_until) Book_DrawText(r,160,180,StartupText(world.message),15,true);
+        DrawMessages();
         if(world.fault_code) { r.Panel(24,72,AS_UI_STATUS);r.DrawText(40,84,"INTRO SCRIPT ERROR");r.DrawText(40,118,"START:SKIP INTRO"); }
         break;
     default:break;
     }
-    if(startup_phase!=STARTUP_ARRIVAL) r.damage[r.buffer_index]={0,0,319,199};
     Game_DrawSystem(*this);dirty=false;
 }

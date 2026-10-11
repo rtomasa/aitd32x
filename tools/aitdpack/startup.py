@@ -13,6 +13,7 @@ BANK_EXTRA_ORIGIN = 0x400000 - BANK_PHYSICAL_BASE
 BANK_PAGE_BYTES = 0x80000
 BANK_APERTURE = (0x80000, 0x100000)
 INTRO_CAMERAS = {2: (28, 37), 3: (0, 1, 2, 3, 17), 7: (0, 1, 2, 3, 4)}
+DEATH_CAMERAS = (0, 8, 13)
 
 
 def lz4_block(data):
@@ -223,14 +224,51 @@ def compile_startup(get, defines_data, native_model, native_room, native_camera,
             # immutable scenery while the existing RAM background is baked.
             add(f'BACKGROUND_{floor}_{index}', 2, original, f'CAMERA{floor:02}', index,
                 original, 0x8000)
-    # Append rather than changing TEXT or shifting any existing resource ID.
+    # Retain the presentation table's existing ID; its original-glyph payload
+    # now deduplicates with the gameplay table.
     original = get('ENGLISH', 0)
     add('STARTUP_TEXT', 12, native_text(original, original_font=True), 'ENGLISH', 0, original)
+    # Append new gameplay presentation resources after the complete startup
+    # bank so existing IDs and save-linked models/animations stay unchanged.
+    from gameplay_ui import compile_gameplay_ui
+    inventory_assets, inventory_report = compile_gameplay_ui(get, encoded_panel, rle)
+    assets.extend(inventory_assets)
+    death_counts = []
+    for kind, entry, convert in [('ROOM', 0, native_room), ('CAMERA', 1, native_camera)]:
+        source = get('ETAGE06', entry)
+        entries = offsets(source)
+        death_counts.append(len(entries))
+        for index, position in enumerate(entries):
+            if kind == 'CAMERA' and index not in DEATH_CAMERAS:
+                continue
+            end = entries[index + 1] if index + 1 < len(entries) else len(source)
+            original = source[position:end]
+            native = arrival_room(original, native_room, DEATH_CAMERAS) if kind == 'ROOM' else convert(original)
+            add(f'{kind}_6_{index}', 4 if kind == 'ROOM' else 3,
+                native, 'ETAGE06', entry, original)
+    levels[6] = tuple(death_counts)
+    for index in DEATH_CAMERAS:
+        original = get('CAMERA06', index)
+        if len(original) != 64000:
+            raise ValueError('invalid original death background')
+        add(f'BACKGROUND_6_{index}', 2, original, 'CAMERA06', index, original, 0x8000)
+    original = get('ITD_RESS', 12)
+    if len(original) != 64000:
+        raise ValueError('invalid original death picture')
+    add('DEATH_PICTURE', 2, lz4_block(original), 'ITD_RESS', 12, original, 0x8002, len(original))
+    # Keep every existing gameplay/startup/death ID stable.
+    from gameplay_ui import compile_pickup_ui
+    pickup_asset, pickup_report = compile_pickup_ui(get, encoded_panel, rle)
+    assets.append(pickup_asset)
+    inventory_report['pickup'] = pickup_report
     return assets, levels, dict(sequence=['logo', 'title', 'credits', 'menu', 'selection',
                                                'biography', 'scripted_floor_7_arrival', 'gameplay'],
                                       credits_text=defines[3] + 1, biographies=biographies,
                                       arrival_cameras=INTRO_CAMERAS,
-                                      startup_text_case='original ENGLISH:0 casing and glyph bytes; gameplay TEXT remains uppercase ASCII',
+                                      death_cameras=DEATH_CAMERAS,
+                                      death_picture='ITD_RESS:12',
+                                      gameplay_ui=inventory_report,
+                                      startup_text_case='original ENGLISH:0 casing and glyph bytes shared with gameplay TEXT',
                                       resources=provenance,
                                       image_encoding='standard raw LZ4 block, asset flag 2',
                                       arrival_image_encoding='raw 64,000-byte image, banked asset flag 0x8000',
@@ -278,6 +316,10 @@ def build_bank(assets):
         struct.pack_into('>3I2H', main, 16 + index * 16, offset, len(data), unpacked, kind, flags)
         manifest.append(dict(id=index, name=name, offset=offset, packed_size=len(data),
                              unpacked_size=unpacked, type=kind, flags=flags))
+    # The BIOS copies the module immediately following this bank in longwords.
+    # A final compressed asset may have an odd byte length; align the bank end
+    # as well as each payload so every cartridge has an aligned module source.
+    main.extend(bytes((-len(main)) % 4))
     if len(main) > BANK_EXTRA_ORIGIN:
         raise ValueError('fixed assets exceed the direct ROM area')
     size = BANK_EXTRA_ORIGIN + len(extra) if extra else len(main)

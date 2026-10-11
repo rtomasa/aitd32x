@@ -1,6 +1,6 @@
 # AITD32X — original startup and arrival sequence
 
-Native Sega 32X conversion using the original Alone in the Dark 1 installation supplied by the user. Revision 15 corrects the window-collision script error, matches the CD scripts to their original AdLib music cues, balances music/effects, and restores original note/book/notebook artwork, proportional typography, illustrations and page sounds. Other game menus retain their gold bezels and four-pixel black text padding.
+Native Sega 32X conversion using the original Alone in the Dark 1 installation supplied by the user. Revision 15 corrects the window-collision script error, matches the CD scripts to their original AdLib music cues, balances music/effects, and restores original note/book/notebook artwork, proportional typography, illustrations and page sounds. Gameplay messages, pickups and menus now share the original proportional font, casing and symbols.
 
 Startup now includes the original animated Infogrames armadillo, title, timed credits, start menu, character portraits and biographies, and the scripted journey through Derceto to the attic. The console menu offers Replay Intro in place of Return to DOS. Both characters retain their original introduction text and arrival animations.
 
@@ -21,11 +21,13 @@ Character selection: Left chooses Emily, Right chooses Edward, C toggles, and A/
 
 In the pause menu, Up/Down selects Resume, Save Game, Load Game or Return to Title; A confirms. Start/B/C resumes. Loading opens this menu with gameplay paused. There is one visible save slot, backed by two alternating records; a damaged newest record falls back to the previous valid save. A new game does not erase the save. Save transfers can take a few seconds; wait for GAME SAVED. A load restores both characters, floor/room/camera, health, inventory, variables, enemies, doors, furniture, RNG and animation state. The music track restarts from its beginning when loading; exact audio playhead/sample voices are not saved. Saves use this port's own format. Revision 14 saves remain compatible; when using a versioned ROM filename, copy its existing .srm battery file to the new ROM's filename.
 
-Inventory: Up/Down selects an object, A opens its actions, Up/Down selects, A confirms, C/B returns. The Actions entry selects Fight, Search, Close or Push through original scripts. Hold A while facing furniture to search/push; approach with a direction. In Fight, A + Up/Down/Left/Right selects attacks. Pickups use A to take or C/B to leave. Books use Up/Down, Left/Right or B for pages and A/C to close. Original arrows indicate available previous/next pages. Gameplay time freezes in these screens.
+Inventory: Up/Down selects an object, A opens its actions, Up/Down selects, A confirms, C/B returns. The Actions entry selects Fight, Search, Close or Push through original scripts. Hold A while facing furniture to search/push; approach with a direction. In Fight, A + Up/Down/Left/Right selects attacks. Pickups show the original rotating 3D object and Leave/Take choices: Left/Right selects, A confirms (Take is selected initially), C/B leaves. Books use Up/Down, Left/Right or B for pages and A/C to close. Original arrows indicate available previous/next pages. Gameplay time freezes in these screens.
+
+Inventory uses the original three gold sections: five visible items with scrolling arrows, a rotating 3D item with its original quantity, and available actions. Health remains visible. On death, the original scripts play the graveyard cinematic and final picture, then return to the title menu. A/B/C/Start skips the death sequence to that menu; Resume can restore your existing save.
 
 The game remains a 25 Hz simulation with the approved 60 Hz animation clock. Native video is 320×224 with a 320×200 scene and black borders. FPS measures completed draws and is hidden during startup. A static paused game can show zero FPS.
 
-Static pause, inventory and action menus redraw on input or a changed FPS value. Document text shares the optimized proportional-font renderer used by startup.
+Information messages appear once, directly over the scene in the original proportional font. Menu input follows controller snapshots independently of the 25 Hz world clock. Static pause menus retain the paused scene. Inventory/pickup panels and labels compose in the existing RAM background; only the item preview and its damage need restoration during animation. Its original 60 Hz rotation clock is independent of the capped 30 FPS presentation rate and the paused gameplay clock. Compressed images share an optimized constant-run decoder throughout the game.
 
 ## Audio
 
@@ -33,7 +35,7 @@ Static pause, inventory and action menus redraw on input or a changed FPS value.
 
 ## Reading
 
-Original ITD_RESS entries 6/7/8 provide paper, book and notebook backgrounds, entry 5 supplies the original proportional font, and entry 9 supplies the five document illustrations. Original mixed case, centered headings, paragraph indentation and explicit page breaks are retained. Layout is compiled offline; reading backgrounds use lossless ROM compression and are decoded for these screens. SAMPLE_PAGE uses original effect 49 on opening, paging and closing. The world pauses while reading and resumes with its scenery cache intact. No additional gameplay image buffer is needed.
+Original ITD_RESS entries 6/7/8 provide paper, book and notebook backgrounds, entry 5 supplies the original proportional font, and entry 9 supplies the five document illustrations. Original mixed case, centered headings, paragraph indentation and explicit page breaks are retained. Layout is compiled offline; reading backgrounds use lossless ROM compression. Pages compose in the existing RAM image on opening or paging and retain their pixels while idle. SAMPLE_PAGE uses original effect 49 on opening, paging and closing. The world pauses while reading; closing restores the scenery cache. No additional gameplay image buffer is needed.
 
 ## Build
 
@@ -50,7 +52,7 @@ make -j2
 
 See [development handoff](docs/DEVELOPMENT.md) for the Git baseline, local dependencies, focused checks and next work. Original DOS data, converted assets, builds and saves are ignored by Git.
 
-Identical converted payloads share aligned ROM storage, retaining existing asset IDs. Gameplay camera images, panels and reading sprites remain raw for fast rendering. Logo, portrait, paper and picture images use lossless compression. Arrival camera images use raw banked pixels so the scenery cache can retain original occlusion masks. Static startup screens redraw when content changes; palette fades update without redrawing. Menu and arrival text preserve the original casing. This 4.875 MiB ROM requires 32X SSF2 mapper support, verified in PicoDrive. SRAM supplies two 64 KiB journal records. Rare initialization/save/UI routines execute from ROM to preserve the 12 KiB master and 4 KiB slave stack reservations. See [architecture](docs/ARCHITECTURE.md) for the current ROM layout and memory limits.
+Identical converted payloads share aligned ROM storage, retaining existing asset IDs. Gameplay camera images, existing panels and reading sprites remain raw for fast rendering; the original inventory panels are compressed and composed once per content change. Logo, portrait, paper and picture images use lossless compression. Arrival and death camera images use raw banked pixels so the scenery cache can retain original occlusion masks. Static startup screens redraw when content changes; palette fades update without redrawing. All player-facing text preserves the original casing and font symbols. This 5.125 MiB ROM requires 32X SSF2 mapper support, verified in PicoDrive. SRAM supplies two 64 KiB journal records. Rare initialization/save/UI routines execute from ROM to preserve the 12 KiB master and 4 KiB slave stack reservations. See [architecture](docs/ARCHITECTURE.md) for the current ROM layout and memory limits.
 
 ## Focused checks
 
@@ -59,12 +61,18 @@ make host
 # Startup changes only; use the preserved pre-startup host library for old-save checks:
 python3 tools/check_startup.py
 python3 tools/check_bank_layout.py
+python3 tools/check_gameplay_ui.py --core /path/to/picodrive_libretro.so
+python3 tools/check_pickup.py
+python3 tools/check_menu_messages.py
+python3 tools/check_menu_latency.py /path/to/picodrive_libretro.so
+python3 tools/check_death.py
+python3 tools/check_death_native.py /path/to/picodrive_libretro.so
 python3 tools/check_startup_native.py /path/to/picodrive_libretro.so --mars /path/to/mars
 # Region-sensitive startup/banking changes:
 python3 tools/check_startup_native.py /path/to/picodrive_libretro.so --mars /path/to/mars --region PAL
 ```
 
-The native startup check uses controller input and private in-memory SRAM for save/core-restart/resume. Older gameplay checks assume immediate Start-to-gameplay and need startup navigation or the host fixture `host_startgame(character)` before reuse. `docs/VALIDATION.md` records historical checks, [startup performance validation](docs/validation/startup-performance.md) records this build, and `docs/ARCHITECTURE.md` describes memory/transport. Gameplay supports floors 0 and 1. Additional room/camera resources are imported only for the original arrival; full-house progression and physical hardware validation remain unfinished.
+The native startup check uses controller input and private in-memory SRAM for save/core-restart/resume. Older gameplay checks assume immediate Start-to-gameplay and need startup navigation or the host fixture `host_startgame(character)` before reuse. `docs/VALIDATION.md` records historical checks, [gameplay UI/death validation](docs/validation/gameplay-ui-death.md) records the preceding feature build, [menu feedback validation](docs/validation/menu-feedback.md) records the latest fixes, and `docs/ARCHITECTURE.md` describes memory/transport. Gameplay supports floors 0 and 1. Additional room/camera resources are imported only for the original arrival and death sequences; full-house progression and physical hardware validation remain unfinished.
 
 Engine source is GPL; see LICENSE and third_party/NOTICES.md. Original resources retain their original ownership.
 

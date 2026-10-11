@@ -13,9 +13,10 @@ static Bounds ReadBox(const uint8_t *p) { return {{BS16(p),BS16(p+4),BS16(p+8)},
 static Bounds Offset(Bounds b,Vec3 d) { b.lo={b.lo.x+d.x,b.lo.y+d.y,b.lo.z+d.z};b.hi={b.hi.x+d.x,b.hi.y+d.y,b.hi.z+d.z};return b; }
 static void Clear(void *p,unsigned n) { uint8_t *b=(uint8_t*)p;while(n--) *b++=0; }
 Asset World::RoomAsset(int f,int r) const {
-    // Extra floors are imported only for the scripted arrival. Their presence
-    // must not remove the existing playable-floor boundary during gameplay.
-    if(!intro && f>=2) return {0,0,0,0,0};
+    // Extra floors belong to presentation only. The original death LIFE sets
+    // DEAD_PERSO before staging its cemetery movie on floor 6; permit that
+    // floor alone while dying without extending normal gameplay progression.
+    if(!intro && f>=2 && !(f==6 && cvars[15])) return {0,0,0,0,0};
     if(f<0 || f>=A32X_FLOOR_COUNT || r<0 || r>=room_counts[f]) return {0,0,0,0,0};
     return Platform_ReadAsset(floor_rooms[f][r]);
 }

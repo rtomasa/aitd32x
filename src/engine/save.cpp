@@ -4,6 +4,7 @@
 #include "game.hpp"
 #include "../platform/audio.hpp"
 #include "../platform/platform_api.hpp"
+#include "../render/book.hpp"
 // Both journal records must fit even with the complete active-actor pool.
 static constexpr unsigned HEADER=24,LIMIT=65536-HEADER;
 static constexpr uint32_t MAGIC=0x41495444,FORMAT=0x53313401;
@@ -139,7 +140,10 @@ bool Game_Load(Game &g) {
     Audio_Reset();Audio_UpdateMusic(g.world.music,g.world.next_music,g.tick);
     g.world.player=&g.player;g.world.pad=0;g.world.click=0;g.world.view_changed=false;g.world.fault_code=0;
     g.world.intro=false;g.world.picture_id=-1;g.world.picture_duration=0;
-    g.character=g.world.character;g.camera=g.world.camera;g.mode=1;g.paused=true;g.menu=3;g.selection=0;g.action_selection=2;g.book_line=0;
+    g.character=g.world.character;g.camera=g.world.camera;g.mode=1;
+    if(g.world.prompt>=0) g.PickupEnter();
+    g.paused=true;g.menu=3;g.selection=0;g.action_selection=2;g.book_line=0;
+    g.startup_phase=STARTUP_GAMEPLAY;g.startup_next=255;g.inventory_dirty=true;
     g.held=g.pending_edges=0;g.action_blocked=true;g.ResetCache();g.dirty=true;return true;
 }
 bool Game_SystemInput(Game &g,unsigned edges) {
@@ -150,16 +154,16 @@ bool Game_SystemInput(Game &g,unsigned edges) {
     }
     if(g.menu!=3) {
         if((edges&PAD_START) && !g.menu && g.world.prompt<0 && g.world.book<0) {
-            g.menu=3;g.paused=true;g.selection=g.action_selection=0;g.dirty=true;return true;
+            g.menu=3;g.paused=true;g.selection=g.action_selection=0;g.inventory_dirty=true;g.dirty=true;return true;
         }
         return false;
     }
     if(!edges) return true;
-    if(edges&(PAD_START|PAD_B|PAD_C)) { g.menu=0;g.paused=false;g.action_blocked=true;g.dirty=true;return true; }
+    if(edges&(PAD_START|PAD_B|PAD_C)) { g.menu=0;g.paused=false;g.action_blocked=true;g.ResetCache();if(g.world.prompt>=0) g.PickupEnter();g.dirty=true;return true; }
     if(edges&PAD_DOWN) { g.selection=(g.selection+1)%4;g.action_selection=0; }
     if(edges&PAD_UP) { g.selection=(g.selection+3)%4;g.action_selection=0; }
     if(edges&PAD_A) {
-        if(g.selection==0) { g.menu=0;g.paused=false;g.action_blocked=true; }
+        if(g.selection==0) { g.menu=0;g.paused=false;g.action_blocked=true;g.ResetCache();if(g.world.prompt>=0) g.PickupEnter(); }
         else if(g.selection==1) g.action_selection=Game_Save(g)?1:3;
         else if(g.selection==3) g.Init(false);
         else if(!Game_Load(g)) g.action_selection=4;
@@ -167,11 +171,14 @@ bool Game_SystemInput(Game &g,unsigned edges) {
     g.dirty=true;return true;
 }
 void Game_DrawSystem(Game &g) {
-    if(g.menu==4) { g.renderer.Panel(24,72,AS_UI_STATUS);g.renderer.DrawText(40,84,"NO VALID SAVE FOUND");g.renderer.DrawText(40,118,"A/B/C/START:BACK");return; }
+    if(g.menu==4) { g.renderer.Panel(24,72,AS_UI_STATUS);Book_DrawText(g.renderer,40,84,"No valid save found",15);Book_DrawText(g.renderer,40,110,"A/B/C/Start: back",4);return; }
     if(g.menu!=3) return;
-    g.renderer.Panel(24,48,AS_UI_PAUSE);g.renderer.DrawText(40,60,"PAUSED");
-    const char *rows[]={"RESUME","SAVE GAME","LOAD GAME","RETURN TO TITLE"};
-    for(int i=0;i<4;++i) { g.renderer.DrawText(40,80+i*14,i==g.selection?">":" ");g.renderer.DrawText(56,80+i*14,rows[i]); }
-    const char *notice[]={"A:CHOOSE   B/START:RESUME","GAME SAVED","GAME LOADED","SAVE FAILED","NO VALID SAVE FOUND"};
-    g.renderer.DrawText(40,150,notice[g.action_selection]);
+    g.renderer.Panel(24,48,AS_UI_PAUSE);Book_DrawText(g.renderer,160,60,"Paused",15,true);
+    const char *rows[]={GameText(48),GameText(45),GameText(46),"Return to Title"};
+    for(int i=0;i<4;++i) {
+        int y=80+i*16;if(i==g.selection) g.renderer.Box(38,y,244,16,100);
+        Book_DrawClippedText(g.renderer,160,y,rows[i],236,i==g.selection?15:4,true);
+    }
+    const char *notice[]={"A: choose   B/Start: resume","Game saved","Game loaded","Save failed","No valid save found"};
+    Book_DrawClippedText(g.renderer,160,150,notice[g.action_selection],240,15,true);
 }

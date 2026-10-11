@@ -60,6 +60,13 @@ struct MemoryPixels {
     uint8_t *data;
     A32X_COLD uint8_t Read(unsigned i) const { return data[i]; }
     A32X_COLD void Write(unsigned i,uint8_t value) { data[i]=value; }
+    A32X_COLD void Fill(unsigned i,unsigned count,uint8_t value) {
+        while(count--) data[i++]=value;
+    }
+    A32X_COLD void Copy(unsigned i,unsigned offset,unsigned count) {
+        // Sequential reads preserve LZ4's overlapping-match semantics.
+        for(unsigned n=0;n<count;++n) { data[i]=data[i-offset];++i; }
+    }
 };
 struct FramePixels {
     volatile uint16_t *data;unsigned width,stride;
@@ -93,6 +100,24 @@ struct FramePixels {
             if(n) Write(i++,value);
         }
     }
+    A32X_COLD void Copy(unsigned i,unsigned offset,unsigned count) {
+        if((width|stride|offset)&1) {
+            for(unsigned n=0;n<count;++n) { uint8_t value=Read(i-offset);Write(i++,value); }
+            return;
+        }
+        if((i&1) && count) { uint8_t value=Read(i-offset);Write(i++,value);--count; }
+        while(count) {
+            unsigned n=Min(count,Min(width-i%width,width-(i-offset)%width));
+            volatile uint16_t *to=data+Position(i)/2;
+            const volatile uint16_t *from=data+Position(i-offset)/2;
+            unsigned pairs=n/2;
+            // Even offsets are at least two pixels, so each paired source
+            // has already been written when a short match overlaps itself.
+            for(unsigned word=0;word<pairs;++word) to[word]=from[word];
+            i+=pairs*2;count-=pairs*2;
+            if(n&1) { uint8_t value=Read(i-offset);Write(i++,value);--count; }
+        }
+    }
 };
 static A32X_COLD bool Length(const Asset &a,unsigned &input,unsigned base,unsigned limit,unsigned &length) {
     length=base;if(length>limit) return false;
@@ -117,8 +142,10 @@ template<class Pixels> static A32X_COLD bool LZ4(const Asset &a,Pixels &pixels) 
         if(!offset || offset>output || a.unpacked-output<4) return false;
         if(!Length(a,input,token&15,a.unpacked-output-4,length)) return false;
         length+=4;
-        // Read after each write: short, overlapping matches repeat correctly.
-        for(unsigned n=0;n<length;++n) { uint8_t value=pixels.Read(output-offset);pixels.Write(output++,value); }
+        // Offset-one matches are constant runs. Fill words on framebuffer
+        // destinations instead of reading and modifying every repeated pixel.
+        if(offset==1) { pixels.Fill(output,length,pixels.Read(output-1));output+=length; }
+        else { pixels.Copy(output,offset,length);output+=length; }
     }
     return output==a.unpacked;
 }

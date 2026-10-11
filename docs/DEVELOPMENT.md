@@ -115,7 +115,29 @@ New asset IDs are appended; save schema, existing model/animation IDs and the
 original game fingerprint are preserved. The picture request fields are
 presentation state and are excluded from saves.
 
-UI retains simplified controls, original gold bezels and black text margins. Reading uses original paper/book/notebook art, proportional font, illustrations and page sound. Audio includes 101 effects through two-voice 8 kHz ADPCM/PWM and eight AdLib songs adapted to YM2612/PSG. CD LIFE cue IDs map to audited floppy themes. Window script error LIFE 20 word 59 is fixed.
+UI retains the console controls with original proportional text and the three-section inventory, animated 3D found-body previews, quantities and scrolling arrows. Reading uses original paper/book/notebook art, proportional font, illustrations and page sound. Death plays the original scripted cemetery movie and final picture, with skip/title return and existing saves preserved. Audio includes 101 effects through two-voice 8 kHz ADPCM/PWM and eight AdLib songs adapted to YM2612/PSG. CD LIFE cue IDs map to audited floppy themes. Window script error LIFE 20 word 59 is fixed.
+
+For gameplay text/inventory/death changes, use the focused checks in
+`tools/check_gameplay_ui.py`, `tools/check_death.py` and
+`tools/check_death_native.py` as documented in
+[gameplay UI/death validation](validation/gameplay-ui-death.md).
+The inventory host check compares legacy save payloads with the preserved
+`build/gameplay-ui-reference/libaitd32x.so` and its asset bank. Preserve those
+preceding-release files before rebuilding if that comparison is needed.
+Host SRAM is private memory; native checks alter only private emulator RAM
+to acquire test items or shorten combat and never access battery-save files.
+
+For information-overlay, pickup or menu-response changes, use
+`tools/check_menu_messages.py`, `tools/check_pickup.py` and
+`tools/check_menu_latency.py .local/tools/picodrive_libretro.so`.
+The decoder's constant-match fast path is covered by `make build/check_decode`
+and `./build/check_decode`; linked memory/bank constraints use
+`tools/check_bank_layout.py`. Menu compositions must write into the existing
+RAM background through `BackgroundComposition`, preserving both framebuffer
+damage histories. Pause snapshots invalidate the scenery cache on exit.
+Presentation input consumes an edge once without advancing world time;
+arrival/death scripts retain their 25 Hz update path. Current evidence and
+limits are in [menu feedback validation](validation/menu-feedback.md).
 
 One visible save slot uses two 64 KiB SRAM journals; v14 saves remain compatible. A frontend usually associates `.srm` with the ROM basename. Copy an existing battery file when changing ROM names; do not overwrite it with an empty file. The user tests on a separate device and confirmed no local save backup is needed. Preserve battery saves on that device when changing ROM filenames.
 

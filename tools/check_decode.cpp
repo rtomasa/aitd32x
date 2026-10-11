@@ -30,9 +30,9 @@ static void Compare(const std::vector<uint8_t> &packed,const std::vector<uint8_t
         for(auto c:dest) Check(c==0xed);
     }
 }
-static void Framebuffer(const std::vector<uint8_t> &packed,const std::vector<uint8_t> &plain,unsigned flags) {
+static void Framebuffer(const std::vector<uint8_t> &packed,const std::vector<uint8_t> &plain,unsigned flags,
+                        unsigned width=5,unsigned height=3,unsigned stride=8) {
     // Odd image widths and overlapping LZ4 matches cross physical row padding.
-    constexpr unsigned width=5,height=3,stride=8;
     std::vector<uint16_t> dest(stride*height/2+4,0xeded);
     Asset a={packed.data(),(uint32_t)packed.size(),(uint32_t)plain.size(),2,(uint16_t)flags};
     Check(Platform_Blit(a,dest.data()+2,width,height,stride));
@@ -57,6 +57,32 @@ int main() {
     for(unsigned i=0;i<541;++i) plain.push_back(plain[plain.size()-3]);
     for(unsigned i=0;i<31;++i) { packed.push_back((uint8_t)(i*13));plain.push_back((uint8_t)(i*13)); }
     Compare(packed,plain,2);
+    // Offset-one fill must preserve zero pixels, unaligned outputs and row
+    // padding when a constant match crosses an odd-width framebuffer row.
+    for(uint8_t color:{uint8_t(0),uint8_t(9)}) {
+        packed={0x1a,color,1,0,0};plain.assign(15,color);
+        Compare(packed,plain,2);Framebuffer(packed,plain,2);
+    }
+    // Paired copies: odd starting/output lengths, short overlap, and the
+    // large offset used by portrait frames, with independent row padding.
+    for(unsigned offset:{2u,3200u}) {
+        unsigned literals=offset+1,total=offset==2?48:9600,match=total-literals-2;
+        packed.clear();plain.clear();
+        packed.push_back((Min(literals,15)<<4)|Min(match-4,15));
+        auto extension=[&](unsigned length) {
+            while(length>=255) { packed.push_back(255);length-=255; }
+            packed.push_back(length);
+        };
+        if(literals>=15) extension(literals-15);
+        for(unsigned i=0;i<literals;++i) { uint8_t color=i%3?uint8_t(i*13):0;plain.push_back(color);packed.push_back(color); }
+        packed.push_back(offset&255);packed.push_back(offset>>8);
+        if(match-4>=15) extension(match-19);
+        for(unsigned i=0;i<match;++i) plain.push_back(plain[plain.size()-offset]);
+        packed.insert(packed.end(),{0x20,0,9});plain.insert(plain.end(),{0,9});
+        Compare(packed,plain,2);
+        if(offset==2) Framebuffer(packed,plain,2,16,3,20);
+        else Framebuffer(packed,plain,2,160,60,320);
+    }
     uint8_t lz_bad[]={0x10,7,0,0,0x00};
     uint8_t lz_out[16]={};
     Check(!Platform_Decode({lz_bad,sizeof(lz_bad),5,2,2},lz_out,4));

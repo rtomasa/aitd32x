@@ -47,19 +47,54 @@ the hidden framebuffer to preserve the selected portrait, then caches the
 combined RAM background. Static fades update CRAM without restoring pixels,
 and hidden startup FPS statistics do not force draws. Original font glyphs
 write contiguous horizontal spans. A separate text asset preserves original
-casing and font glyph bytes, including copyright and I-Motion symbols, while
-keeping existing gameplay text unchanged.
+casing and font glyph bytes, including copyright and I-Motion symbols. Gameplay
+now uses the same original text/font; both directory IDs share one ROM payload.
 The FPS border is hidden throughout presentation and restored in gameplay.
 
-The current RELEASE ROM is **5,111,808 bytes (4.875 MiB)**, with 2,034 asset
-IDs, a 3,897,428-byte fixed bank and 908,288 bytes of extra image data. The
-83,812-byte BIOS module ends at physical byte 4,112,312, leaving 81,992 bytes
-below the direct-window limit. Static SDRAM is 243,992 bytes: module 83,812,
-BSS 160,176, and four bytes of linker overhead. It ends at `0x0603B918`, with
-1,768 bytes before the existing stack reservation. Startup adds 32 bytes of
+The current RELEASE ROM is **5,373,952 bytes (5.125 MiB)**, with 2,053 asset
+IDs, a 3,911,420-byte fixed bank and 1,161,242 bytes of extra image data. The
+83,108-byte BIOS module ends at physical byte 4,125,600, leaving 68,704 bytes
+below the direct-window limit. Static SDRAM is 243,288 bytes: module 83,108,
+BSS 160,176, and four bytes of linker overhead. It ends at `0x0603B658`, with
+2,472 bytes before the existing stack reservation. Startup adds 32 bytes of
 state; expanded world lookup tables move to fixed ROM to recover RAM. Figures
 and checks for this build are recorded in
-[startup performance validation](validation/startup-performance.md).
+[menu feedback validation](validation/menu-feedback.md).
+
+The original inventory has a 320×100 list and two 160×100 lower sections.
+Compressed panels and proportional labels are composed on content changes,
+directly into the existing 64,000-byte RAM background. `BackgroundComposition`
+restores the framebuffer target and merges the changed region into both bank
+histories, avoiding framebuffer readback. Preview animation restores
+only damaged pixels, uses the existing geometry/face-sort scratch and clips
+to the original item viewport. The stable merge sort is shared with gameplay;
+fully visible preview faces bypass clipping and disjoint faces are rejected.
+The 60 Hz orbit clock comes from region-adjusted VBlank time, with draws capped
+at 30 Hz. The world remains paused. Closing invalidates the scenery bake so
+the next draw restores the original room. No new image, vertex or depth buffer
+is allocated. Cold presentation code/strings remain in fixed ROM.
+
+Pickups use the original centered 240×120 panel, black surround, Leave/Take
+choices and rotating found-body model. The same preview scratch uses the
+original 15000-unit orbit, projection 300×298 and center (160,100). Loading a
+pending prompt restores Take after the load pause menu closes. Pause menus
+capture the room once and compose subsequent option changes in RAM; closing
+invalidates the scenery bake. Information text shares one unframed native
+overlay at (160,184), color 16, across gameplay, arrival and death.
+
+Menu edges dispatch from coherent VBlank controller snapshots without
+advancing the world. Simulation and cinematic scripts remain at 25 Hz;
+presentation rotation remains 60 Hz. The shared LZ4 decoder fills offset-one
+constant matches directly, preserving zero pixels, row padding and overlapping
+matches. This applies to every compressed presentation image/panel path.
+
+Death continues the existing player/enemy LIFE and track state, including
+scripts 39, 555–558 and 554. Only DEAD_PERSO permits floor 6; normal playable
+floor limits remain unchanged. Three banked cemetery cameras (0, 8, 13) and
+ITD_RESS:12 complete the movie. Picture/end holds stop world updates and use
+the existing presentation clock, with idle pixels retained. Death can return
+or skip to the title without modifying SRAM. Loading explicitly resets the
+presentation phase; the save schema and fingerprint remain unchanged.
 
 The SH2 direct cartridge window is **32 Mbit / 4 MiB**, rather than 32 MiB.
 Larger ROMs require a cartridge mapper. This build implements the SSF2 mapper
@@ -145,7 +180,7 @@ The static cache key hashes camera-mask activation rather than raw collision coo
 
 ## Memory and diagnostics
 
-The RELEASE module occupies 85,252 SDRAM bytes; BSS uses 160,120. Static SDRAM ends at `0x0603BE80` (245,376 bytes), leaving 384 bytes below the stack reservation. The master reserves 12 KiB and the slave 4 KiB at the top of 256 KiB SDRAM. The linker rejects static allocations at or above `0x0603C000`. Framebuffer RAM is separate. This is a tight budget; later systems need measured reuse, fewer live poses, or overlays rather than unchecked additions.
+The RELEASE module occupies 83,108 SDRAM bytes; BSS uses 160,176. Static SDRAM ends at `0x0603B658` (243,288 bytes), leaving 2,472 bytes below the stack reservation. The master reserves 12 KiB and the slave 4 KiB at the top of 256 KiB SDRAM. The linker rejects static allocations at or above `0x0603C000`. Framebuffer RAM is separate. This is a tight budget; later systems need measured reuse, fewer live poses, or overlays rather than unchecked additions.
 
 COMM registers retain the v6 coherent input, sequence, region and heartbeat protocol. `debug_state[32]` preserves its first sixteen timing/player/render words and adds floor, room, menu, script-fault LIFE/word/code, inventory/in-hand/prompt, actor-pool peak, world ticks, selected action, health, book, finish and camera-target state. PROFILE builds retain SH7604 FRC scopes; RELEASE removes timer instrumentation. See the v6 architecture report for the inherited mailbox details and `PERFORMANCE.md` for the current measurements.
 

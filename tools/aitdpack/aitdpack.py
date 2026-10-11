@@ -332,8 +332,9 @@ def main():
     variables=(args.game/'VARS.ITD').read_bytes()
     add('VARS_INITIAL',11,b''.join(struct.pack('>h',v) for (v,) in struct.iter_unpack('<h',variables)))
     add('DEFINES_INITIAL',11,defines_data)
-    # Preserve the approved uppercase gameplay labels byte-for-byte.
-    add('TEXT',12,native_text(get('ENGLISH',0)))
+    # Gameplay and presentation share the original font's case and glyph IDs.
+    # The two directory IDs remain stable and their identical payload deduplicates.
+    add('TEXT',12,native_text(get('ENGLISH',0),original_font=True))
     book_count=len(paks['ENGLISH'])-1
     from books import compile_books
     books,reading_assets,reading_report=compile_books(get,book_count)
@@ -346,7 +347,7 @@ def main():
     # Keep the title image's own palette, matching gold to its nearest colors.
     colors=list(zip(*[iter(title_palette)]*3))
     remap=[0]+[min(range(1,256),key=lambda j:sum((palette[i*3+k]-colors[j][k])**2 for k in range(3))) for i in range(1,256)]
-    for name,width,height in [('TITLE',304,68),('MESSAGE',304,42),('PROMPT',272,82),('INVENTORY',288,177),('BOOK',2,2),('PAUSE',272,132),('STATUS',272,66)]:
+    for name,width,height in [('TITLE',304,68),('MESSAGE',304,58),('PROMPT',272,82),('INVENTORY',288,177),('BOOK',2,2),('PAUSE',272,132),('STATUS',272,66)]:
         panel=struct.pack('>2H',2,2)+bytes(4) if name=='BOOK' else native_panel(bezel,width,height,remap if name=='TITLE' else None)
         # Preserve existing gameplay overlays' direct aligned-copy fast path.
         add('UI_'+name,13,panel)

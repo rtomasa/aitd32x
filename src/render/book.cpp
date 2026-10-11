@@ -11,15 +11,33 @@ A32X_COLD unsigned Book_LayoutPages(unsigned asset) {
     if(!a.data || a.type!=17 || a.flags || a.size<8) return 0;
     unsigned count=BE16(a.data+2);return count && count<=(a.size-8)/4?count:0;
 }
-static A32X_COLD unsigned GlyphWidth(const uint8_t *font,unsigned c) {
-    return c>=font[0]?BE16(font+BE16(font+6)+(c-font[0])*2)>>12:0;
+namespace {
+struct OriginalFont {
+    const uint8_t *data;
+    unsigned table,count,first,height,stride;
+    A32X_COLD OriginalFont():data(nullptr),table(0),count(0),first(0),height(16),stride(0) {
+        Asset a=Platform_ReadAsset(AS_READ_FONT);
+        if(!a.data || a.type!=18 || a.flags || a.size<8) return;
+        table=BE16(a.data+6);first=a.data[0];height=a.data[2];
+        stride=a.data[3]?a.data[3]:a.data[4]|(a.data[5]<<8);
+        if(!height || height>GAME_HEIGHT || !stride || table<8 || table>a.size || height*stride>table-8) return;
+        count=Min((a.size-table)/2,256-first);data=a.data;
+    }
+    A32X_COLD unsigned Glyph(unsigned c) const {
+        if(!data || c<first || c-first>=count) return 0;
+        unsigned glyph=BE16(data+table+(c-first)*2);
+        return (glyph&4095)+(glyph>>12)<=stride*8?glyph:0;
+    }
+    A32X_COLD unsigned Advance(unsigned c) const { unsigned width=Glyph(c)>>12;return width?width:2; }
+};
+static A32X_COLD unsigned TextWidth(const OriginalFont &font,const char *begin,const char *end=nullptr) {
+    unsigned width=0;while(begin!=end && *begin) width+=font.Advance((uint8_t)*begin++);return width;
 }
-static A32X_COLD void Glyph(Renderer &r,const uint8_t *font,int x,int y,unsigned c,uint8_t color) {
-    unsigned first=font[0],height=font[2],stride=font[3]?font[3]:font[4]|(font[5]<<8);
-    if(c<first) return;
-    unsigned glyph=BE16(font+BE16(font+6)+(c-first)*2),width=glyph>>12,bit=glyph&4095;
-    const uint8_t *pixels=font+8+(bit>>3);bit&=7;
-    for(unsigned row=0;row<height;++row) {
+static A32X_COLD unsigned Glyph(Renderer &r,const OriginalFont &font,int x,int y,unsigned c,uint8_t color) {
+    unsigned glyph=font.Glyph(c),width=glyph>>12,bit=glyph&4095;
+    if(!width) return 2;
+    const uint8_t *pixels=font.data+8+(bit>>3);bit&=7;
+    for(unsigned row=0;row<font.height;++row) {
         unsigned col=0;
         while(col<width) {
             while(col<width && !(pixels[(bit+col)>>3]&(128>>((bit+col)&7)))) ++col;
@@ -27,16 +45,62 @@ static A32X_COLD void Glyph(Renderer &r,const uint8_t *font,int x,int y,unsigned
             while(col<width && (pixels[(bit+col)>>3]&(128>>((bit+col)&7)))) ++col;
             if(first_col<col) r.Span(y+row,x+first_col,x+col-1,color);
         }
-        pixels+=stride;
+        pixels+=font.stride;
     }
+    return width;
 }
-A32X_COLD void Book_DrawText(Renderer &r,int x,int y,const char *text,uint8_t color,bool center) {
-    const uint8_t *font=Platform_ReadAsset(AS_READ_FONT).data;if(!font || !text) return;
-    if(center) {
-        unsigned total=0;for(const char *s=text;*s;++s) { unsigned width=GlyphWidth(font,(uint8_t)*s);total+=width?width:2; }
-        x-=(int)total/2;
+static A32X_COLD void DrawRange(Renderer &r,const OriginalFont &font,int x,int y,const char *begin,const char *end,uint8_t color,bool center,int limit=0,bool more=false) {
+    unsigned total=center || limit>0?TextWidth(font,begin,end):0,dots=more?font.Advance('.')*3:0;
+    if(limit>0 && total+dots>(unsigned)limit) {
+        const char *p=begin;total=0;
+        while(p!=end && *p) {
+            unsigned advance=font.Advance((uint8_t)*p);
+            if(total+advance+dots>(unsigned)limit) break;
+            total+=advance;++p;
+        }
+        end=p;
     }
-    while(*text) { unsigned c=(uint8_t)*text++,width=GlyphWidth(font,c);Glyph(r,font,x,y,c,color);x+=width?width:2; }
+    if(dots && dots>(unsigned)Max(0,limit)) dots=0;
+    if(center) x-=(int)(total+dots)/2;
+    while(begin!=end && *begin) x+=Glyph(r,font,x,y,(uint8_t)*begin++,color);
+    if(dots) for(unsigned i=0;i<3;++i) x+=Glyph(r,font,x,y,'.',color);
+}
+}
+A32X_COLD unsigned Book_TextWidth(const char *text) {
+    OriginalFont font;return text?TextWidth(font,text):0;
+}
+A32X_COLD unsigned Book_TextHeight() { OriginalFont font;return font.height; }
+A32X_COLD void Book_DrawText(Renderer &r,int x,int y,const char *text,uint8_t color,bool center) {
+    OriginalFont font;if(font.data && text) DrawRange(r,font,x,y,text,nullptr,color,center);
+}
+A32X_COLD void Book_DrawClippedText(Renderer &r,int x,int y,const char *text,int width,uint8_t color,bool center,bool ellipsis) {
+    OriginalFont font;if(!font.data || !text || width<=0) return;
+    DrawRange(r,font,x,y,text,nullptr,color,center,width,ellipsis && TextWidth(font,text)>(unsigned)width);
+}
+A32X_COLD unsigned Book_DrawLines(Renderer &r,int x,int y,const char *text,int width,unsigned rows,uint8_t color,bool center,unsigned skip) {
+    OriginalFont font;if(!font.data || !text || width<=0 || !rows) return 0;
+    unsigned line=0;
+    while(*text && line<skip+rows) {
+        while(*text==' ') ++text;
+        if(!*text) break;
+        const char *begin=text,*space=nullptr;unsigned used=0;
+        while(*text && *text!='\r' && *text!='\n') {
+            unsigned advance=font.Advance((uint8_t)*text);
+            if(used+advance>(unsigned)width) break;
+            if(*text==' ') space=text;
+            used+=advance;++text;
+        }
+        const char *end=text;
+        if(*text && *text!='\r' && *text!='\n' && space && space>begin) { end=space;text=space+1; }
+        else if(text==begin && *text!='\r' && *text!='\n') ++text; // A wider-than-panel glyph cannot stall wrapping.
+        while(end>begin && end[-1]==' ') --end;
+        while(*text==' ') ++text;
+        if(*text=='\r') { ++text;if(*text=='\n') ++text; }
+        else if(*text=='\n') ++text;
+        if(line>=skip) DrawRange(r,font,x,y+(line-skip)*font.height,begin,end,color,center,width,line+1==skip+rows && *text);
+        ++line;
+    }
+    return line;
 }
 static A32X_COLD void Sprite(Renderer &r,unsigned id,int x,int y) {
     Asset a=Platform_ReadAsset(id);if(!a.data || a.size<4 || a.unpacked<4) return;
@@ -73,8 +137,8 @@ A32X_COLD void Book_DrawLayout(Renderer &r,unsigned asset,unsigned page,uint8_t 
     Asset a=Platform_ReadAsset(asset);
     unsigned start=BE32(a.data+4+page*4),end=BE32(a.data+8+page*4);
     if(start>end || end>a.size || end-start<2) return;
-    const uint8_t *font=Platform_ReadAsset(AS_READ_FONT).data,*p=a.data+start,*limit=a.data+end;
-    if(!font) return;
+    OriginalFont font;const uint8_t *p=a.data+start,*limit=a.data+end;
+    if(!font.data) return;
     unsigned n=BE16(p);p+=2;
     for(unsigned i=0;i<n;++i) {
         if(limit-p<4) return;
@@ -82,8 +146,7 @@ A32X_COLD void Book_DrawLayout(Renderer &r,unsigned asset,unsigned page,uint8_t 
         if(!length) { if(p==limit || *p>5) return;Sprite(r,AS_READ_GRAPHIC_0+*p++,x,y);continue; }
         if((unsigned)(limit-p)<length) return;
         for(unsigned j=0;j<length;++j) {
-            unsigned c=*p++,width=GlyphWidth(font,c);
-            Glyph(r,font,x,y,c,color);x+=width?width:2;
+            x+=Glyph(r,font,x,y,*p++,color);
         }
     }
 }

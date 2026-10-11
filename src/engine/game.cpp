@@ -28,26 +28,6 @@ static A32X_COLD void Number(char *s,unsigned n) {
     for(int i=0;i<count;++i) s[i]=reverse[count-1-i];
     s[count]=0;
 }
-static A32X_COLD int TextLines(Renderer &r,int x,int y,const char *text,int width,int rows,int skip=0) {
-    int line=0;while(*text) {
-        while(*text=='\r' || *text==' ') ++text;
-        char output[40];int n=0,last_space=-1;const char *start=text;
-        while(*text && *text!='\n' && *text!='\r' && n<width) { output[n]=*text++;if(output[n]==' ') last_space=n;++n; }
-        if(n==width && *text && *text!='\n' && *text!='\r' && last_space>0) { n=last_space;text=start+n+1; }
-        else if(*text=='\r') { ++text;if(*text=='\n') ++text; }
-        else if(*text=='\n') ++text;
-        output[n]=0;
-        if(line>=skip && line<skip+rows) r.DrawText(x,y+(line-skip)*10,output);
-        ++line;
-        if(line>=skip+rows) break;
-    }
-    return line;
-}
-static A32X_COLD int InventoryActions(const World &w,int object,int *bits) {
-    int count=0;unsigned flags=(uint16_t)w.objects[object].v[O_FOUND_FLAGS];
-    for(int bit=0;bit<11;++bit) if(flags&(1u<<bit)) bits[count++]=bit;
-    return count;
-}
 void Game::ResetCache() {
     static_signature=dynamic_slots=static_slots=0;for(auto &hash:static_hash) hash=0;
     for(int s=0;s<MAX_ACTIVE;++s) { static_owner[s]=-1;static_quiet_since[s]=0; }
@@ -91,6 +71,7 @@ A32X_COLD void Game::Init(bool boot) {
     Audio_Reset();ResetCache();
     tick=0;static_signature=0;held=pending_edges=0;mode=0;camera=0;character=0;paused=false;help=false;dirty=true;resync_clock=true;
     menu=selection=action_selection=book_line=0;action_blocked=false;
+    inventory_dirty=true;
     world.intro=false;world.picture_id=-1;world.picture_duration=0;
     Actor_Init(player,character);Asset spawn=Platform_ReadAsset(AS_PLAYER_SPAWN);
     if(spawn.size!=16) Platform_Fatal();
@@ -98,54 +79,52 @@ A32X_COLD void Game::Init(bool boot) {
     startup_time=startup_since=startup_transition=0;StartupEnter(boot?STARTUP_LOGO:STARTUP_MENU);
 }
 void Game::Input(uint16_t pad) { pending_edges|=pad&~held;held=pad; }
-void Game::Update() {
-    ++tick;uint16_t edges=pending_edges;pending_edges=0;
+A32X_COLD void Game::PresentationInput() {
+    // UI edges need no simulation tick. Gameplay action input remains queued
+    // for the independent 25 Hz world; each presentation edge is consumed once.
+    if(pending_edges && HandlePresentationInput(pending_edges)) pending_edges=0;
+}
+A32X_COLD bool Game::HandlePresentationInput(uint16_t edges) {
     if(!mode) {
-        StartupUpdate(edges);return;
+        if(startup_phase>STARTUP_BIOGRAPHY) return false;
+        StartupUpdate(edges);return true;
     }
-    if(Game_SystemInput(*this,edges)) return;
-    if(!(held&PAD_A)) action_blocked=false;
-    if(world.fault_code || world.finished) {
-        if(edges&PAD_START) Init(false);
-        return;
-    }
+    if(Game_SystemInput(*this,edges)) return true;
+    if(world.fault_code || world.finished || (world.cvars[15] && !paused && !menu)) return false;
     if(world.prompt>=0) {
-        if(edges&PAD_A) { int object=world.prompt;world.prompt=-1;world.Take(object);action_blocked=true; }
-        else if(edges&(PAD_C|PAD_B)) { world.objects[world.prompt].v[O_TRACK]=(int16_t)Max(1,world.now);world.prompt=-1;action_blocked=true; }
-        dirty=true;return;
+        PickupUpdate(edges);return true;
     }
     if(world.book>=0) {
-        if(!edges) return;
+        if(!edges) return true;
         int previous=book_line;
-        if(edges&(PAD_A|PAD_C)) { world.book=-1;book_line=0;action_blocked=true;Audio_Sample(world.cvars[0]); }
+        if(edges&(PAD_A|PAD_C)) { world.book=-1;book_line=0;action_blocked=true;ResetCache();Audio_Sample(world.cvars[0]); }
         else {
             unsigned pages=Book_Pages(world.book);
             if((edges&(PAD_DOWN|PAD_RIGHT|PAD_B)) && book_line+1<(int)pages) ++book_line;
             if(edges&(PAD_UP|PAD_LEFT)) book_line=Max(0,book_line-1);
             if(previous!=book_line) Audio_Sample(world.cvars[0]);
         }
-        dirty=true;return;
+        dirty=true;return true;
     }
-    if(menu) {
-        if(!edges) return;
-        if(edges&(PAD_C|PAD_B|PAD_START)) { if(menu==2) menu=1;else menu=0;action_blocked=true;dirty=true;return; }
-        if(menu==1) {
-            if(edges&PAD_DOWN) selection=(selection+1)%Max(1,world.inventory_count);
-            if(edges&PAD_UP) selection=(selection+Max(1,world.inventory_count)-1)%Max(1,world.inventory_count);
-            if((edges&PAD_A) && world.inventory_count) { menu=2;action_selection=0; }
-        } else {
-            int bits[11],object=world.inventory[selection],count=InventoryActions(world,object,bits);
-            if(edges&PAD_DOWN) action_selection=(action_selection+1)%Max(1,count);
-            if(edges&PAD_UP) action_selection=(action_selection+Max(1,count)-1)%Max(1,count);
-            if((edges&PAD_A) && count) { world.FoundLife(object,1<<bits[action_selection]);menu=0;book_line=0;action_blocked=true; }
-        }
-        dirty=true;return;
+    if(menu==1 || menu==2) { InventoryUpdate(edges);return true; }
+    if(paused) return true;
+    if((edges&PAD_C) && world.inventory_allowed) { InventoryEnter();return true; }
+    return false;
+}
+void Game::Update() {
+    ++tick;uint16_t edges=pending_edges;pending_edges=0;
+    if(!mode) { StartupUpdate(edges);return; }
+    if(HandlePresentationInput(edges)) return;
+    if(!(held&PAD_A)) action_blocked=false;
+    if(world.cvars[15] && !world.fault_code && !paused && !menu) { StartDeath();return; }
+    if(world.fault_code || world.finished) {
+        if(edges&PAD_START) Init(false);
+        return;
     }
-    if(edges&PAD_START) { paused=!paused;dirty=true; }
-    if(paused) return;
-    if((edges&PAD_C) && world.inventory_allowed) { menu=1;selection=0;dirty=true;return; }
     world.Update(held,(held&PAD_A) && !action_blocked);
     Audio_UpdateMusic(world.music,world.next_music,tick);
+    if(world.cvars[15] && !world.fault_code) { StartDeath();return; }
+    if(world.prompt>=0) PickupEnter();
     camera=world.camera;
     if(world.view_changed) {
         // A room link can retain the same camera and scenery. Bind its room
@@ -176,7 +155,7 @@ void Game::DrawScene() {
         // Intro doors retain F_ANIMATED while idle with no animation asset.
         // Track their complete pose like other scenery; any scripted movement
         // invalidates the bake and keeps them dynamic until they settle.
-        if((flags&F_MOVABLE) || ((flags&F_ANIMATED) && !(world.intro && !a.animation.data))) {
+        if((flags&F_MOVABLE) || ((flags&F_ANIMATED) && !((world.intro || startup_phase>=STARTUP_DEATH) && !a.animation.data))) {
             dynamic_slots|=1u<<s;static_quiet_since[s]=(uint16_t)world.ticks;continue;
         }
         signature=2166136261u;
@@ -256,7 +235,7 @@ void Game::DrawScene() {
     // while the character is idle. Resolve nearby prop intersections for
     // every character pose, including the reach of search/push limbs.
     // The original arrival uses its scripted painter order and camera masks.
-    for(int i=0;!world.intro && i<count;++i) {
+    for(int i=0;!world.intro && startup_phase<STARTUP_DEATH && i<count;++i) {
         int s=order[i];if(!(world.active[s].value.v[O_FLAGS]&F_ANIMATED) || (world.active[s].value.v[O_FLAGS]&F_MOVABLE)) continue;
         if(!(world.active[s].value.v[O_FLAGS]&F_TRIGGER)) continue;
         Bounds a=world.Box(s,world.room);uint32_t group_mask=1u<<s;Rect area={320,200,-1,-1};
@@ -287,45 +266,41 @@ void Game::DrawScene() {
     }
     renderer.DrawEffects(world);
 }
+A32X_COLD void Game::DrawMessages() {
+    if(world.message>=0 && world.now<world.message_until)
+        Book_DrawText(renderer,160,184,GameText(world.message),16,true);
+}
 void Game::Draw() {
     if(!mode) { StartupDraw();return; }
-    if(mode && world.book>=0 && menu<3) { Book_Draw(renderer,world.book,book_line);dirty=false;return; }
+    if(menu==3) {
+        if(inventory_dirty) {
+            // Freeze the already paused room once. Later option changes only
+            // replace the opaque menu rectangle in the same RAM image.
+            DrawScene();renderer.BakeBackground();inventory_dirty=false;
+        }
+        if(dirty) { BackgroundComposition composition(renderer);Game_DrawSystem(*this); }
+        renderer.Restore();dirty=false;return;
+    }
+    if(world.book>=0 && menu<3) {
+        if(dirty) { BackgroundComposition composition(renderer);Book_Draw(renderer,world.book,book_line); }
+        renderer.Restore();dirty=false;return;
+    }
+    if(world.prompt>=0) { PickupDraw();return; }
+    if(menu==1 || menu==2) { InventoryDraw();return; }
     {
         DrawScene();
         if(world.message>=0 && world.now<world.message_until && !menu && world.prompt<0 && world.book<0) {
-            renderer.Panel(8,158,AS_UI_MESSAGE);TextLines(renderer,20,170,GameText(world.message),35,2);
-        }
-        if(world.prompt>=0) {
-            renderer.Panel(24,61,AS_UI_PROMPT);renderer.DrawText(40,73,"YOU FOUND:");
-            TextLines(renderer,40,87,GameText(world.objects[world.prompt].v[O_NAME]),30,3);
-            renderer.DrawText(40,121,"A:TAKE   C:LEAVE");
-        }
-        if(menu==1 || menu==2) {
-            renderer.Panel(16,16,AS_UI_INVENTORY);renderer.DrawText(32,28,"INVENTORY");
-            char health[12];Number(health,(unsigned)Max(0,world.vars[21]));renderer.DrawText(208,28,"HEALTH");renderer.DrawText(264,28,health);
-            if(menu==1) {
-                int start=Max(0,selection-7);
-                for(int i=start;i<Min(start+10,world.inventory_count);++i) {
-                    int y=44+(i-start)*12;renderer.DrawText(28,y,i==selection?">":" ");
-                    TextLines(renderer,40,y,GameText(world.objects[world.inventory[i]].v[O_NAME]),31,1);
-                }
-                renderer.DrawText(32,172,"A:SELECT   C:RETURN");
-            } else {
-                int object=world.inventory[selection],bits[11],count=InventoryActions(world,object,bits);
-                TextLines(renderer,32,44,GameText(world.objects[object].v[O_NAME]),32,2);
-                for(int i=0;i<count;++i) { int y=72+i*10;renderer.DrawText(28,y,i==action_selection?">":" ");TextLines(renderer,40,y,GameText(bits[i]+23),31,1); }
-                renderer.DrawText(32,172,"A:CHOOSE   C:BACK");
-            }
+            DrawMessages();
         }
         if(world.book>=0) Book_Draw(renderer,world.book,book_line);
-        if(paused && menu!=3) { renderer.Panel(24,48,AS_UI_PAUSE);renderer.DrawText(40,60,"PAUSED"); }
+        if(paused && menu!=3) { renderer.Panel(24,48,AS_UI_PAUSE);Book_DrawText(renderer,40,60,"Paused",15); }
         if(world.fault_code) {
             renderer.Panel(24,72,AS_UI_STATUS);renderer.DrawText(40,84,"SCRIPT ERROR");
             char code[12];Number(code,world.fault_life);renderer.DrawText(40,96,"LIFE");renderer.DrawText(88,96,code);
             Number(code,world.fault_pc);renderer.DrawText(136,96,"WORD");renderer.DrawText(184,96,code);
             renderer.DrawText(40,118,"START:MENU");
         }
-        if(world.finished) { renderer.Panel(24,72,AS_UI_STATUS);renderer.DrawText(40,88,world.cvars[15]?"YOU DIED":"END OF THIS BUILD");renderer.DrawText(40,112,"START:MENU"); }
+        if(world.finished) { renderer.Panel(24,72,AS_UI_STATUS);Book_DrawText(renderer,40,84,world.cvars[15]?GameText(40):"End of this build",15);Book_DrawText(renderer,40,110,"Start: return to title",15); }
     }
     Game_DrawSystem(*this);
     dirty=false;

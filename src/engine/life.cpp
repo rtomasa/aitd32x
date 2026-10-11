@@ -136,7 +136,7 @@ void World::RunLife(int life,int caller,bool found,int depth) {
         case 77:r.Raw();break;
         case 78: {
             int picture=r.Raw(),duration=r.Raw(),sample=r.Raw();
-            if(intro) {
+            if(intro || picture==12) {
                 picture_id=picture;picture_duration=Max(0,duration);Audio_Sample(sample);
             }
             break;

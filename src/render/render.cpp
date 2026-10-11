@@ -113,7 +113,11 @@ A32X_COLD bool Renderer::DrawImage(unsigned image,int x,int y,unsigned width,uns
         a={a.data+4,a.size-4,a.unpacked-4,a.type,(uint16_t)(a.flags==3?1:a.flags==4?2:0)};
     } else if(a.type!=2) return false;
     if(x<0 || (x&1) || y<0 || x>GAME_WIDTH || y>GAME_HEIGHT || width>(unsigned)(GAME_WIDTH-x) || height>(unsigned)(GAME_HEIGHT-y)) return false;
-    if(!Platform_Blit(a,target+y*(GAME_WIDTH/2)+x/2,width,height)) return false;
+    if(target==(volatile uint16_t *)background && x==0 && width==GAME_WIDTH) {
+        // Full-width RAM compositions are contiguous. Decode bytes directly,
+        // avoiding framebuffer-style read/modify/write for every literal.
+        if(!Platform_Decode(a,background+y*GAME_WIDTH,width*height)) return false;
+    } else if(!Platform_Blit(a,target+y*(GAME_WIDTH/2)+x/2,width,height)) return false;
     Rect &d=damage[buffer_index];
     d={Min(d.x1,x),Min(d.y1,y),Max(d.x2,x+(int)width-1),Max(d.y2,y+(int)height-1)};
     return true;
@@ -136,6 +140,20 @@ void Renderer::Restore() {
         }
     }
     damage[buffer_index]={320,200,-1,-1};
+}
+A32X_COLD BackgroundComposition::BackgroundComposition(Renderer &r):renderer(r),output(r.target) {
+    previous_damage[0]=r.damage[0];previous_damage[1]=r.damage[1];
+    renderer.target=(volatile uint16_t *)renderer.background;
+    renderer.damage[renderer.buffer_index]={320,200,-1,-1};
+}
+A32X_COLD BackgroundComposition::~BackgroundComposition() {
+    Rect area=renderer.damage[renderer.buffer_index];
+    renderer.target=output;
+    for(unsigned bank=0;bank<2;++bank) {
+        Rect old=previous_damage[bank];
+        renderer.damage[bank]={Min(old.x1,area.x1),Min(old.y1,area.y1),Max(old.x2,area.x2),Max(old.y2,area.y2)};
+        if(area.x1==0 && area.y1==0 && area.x2==319 && area.y2==199) renderer.full_restore[bank]=true;
+    }
 }
 void Renderer::BakeBackground() {
     // FITD's background incrustation: static actors become part of the restore
@@ -288,6 +306,31 @@ static Vec3 ClipNear(Vec3 a,Vec3 b) {
     int dz=b.z-a.z;
     return {a.x+RenderDivide((b.x-a.x)*(51-a.z),dz),a.y+RenderDivide((b.y-a.y)*(51-a.z),dz),51};
 }
+void Renderer::SortFaces(const uint8_t *m) {
+    const uint8_t *prim=m+BE32Aligned(m+32);unsigned np=BE16Aligned(m+6);
+    for(unsigned i=0;i<np;++i) {
+        const uint8_t *p=m+BE32Aligned(prim+i*4);int depth=-32768;
+        for(unsigned v=0;v<p[1];++v) depth=Max(depth,single.vertices[BE16Aligned(p+6+v*2)].z);
+        Face face={i,depth};unsigned j=i,base=i&~3u;
+        while(j>base && ordering.faces[j-1].depth<depth) { ordering.faces[j]=ordering.faces[j-1];--j; }
+        ordering.faces[j]=face;
+    }
+    Face *source=ordering.faces,*dest=ordering.sort_scratch;
+    for(unsigned width=4;width<np;width*=2) {
+        for(unsigned base=0;base<np;base+=width*2) {
+            unsigned middle=Min(base+width,np),end=Min(base+width*2,np);
+            unsigned left=base,right=middle,out=base;
+            while(left<middle && right<end) {
+                if(source[left].depth>=source[right].depth) dest[out++]=source[left++];
+                else dest[out++]=source[right++];
+            }
+            while(left<middle) dest[out++]=source[left++];
+            while(right<end) dest[out++]=source[right++];
+        }
+        Face *old=source;source=dest;dest=old;
+    }
+    if(source!=ordering.faces) for(unsigned i=0;i<np;++i) ordering.faces[i]=source[i];
+}
 void Renderer::DrawActor(const Actor &a) {
     last_bounds={320,200,-1,-1};
     if(!camera.data || !a.model.data) return;
@@ -316,30 +359,7 @@ void Renderer::DrawActor(const Actor &a) {
     // Stable far-to-near ordering. No z-buffer consumes SDRAM.
     {
     ProfileScope timing(PROFILE_SORT);
-    for(unsigned i=0;i<np;++i) {
-        const uint8_t *p=m+BE32Aligned(prim+i*4);int depth=-32768;
-        for(unsigned v=0;v<p[1];++v) depth=Max(depth,single.vertices[BE16Aligned(p+6+v*2)].z);
-        // Sort four-face runs before merging to avoid the smallest merge passes.
-        Face face={i,depth};unsigned j=i,base=i&~3u;
-        while(j>base && ordering.faces[j-1].depth<depth) { ordering.faces[j]=ordering.faces[j-1];--j; }
-        ordering.faces[j]=face;
-    }
-    Face *source=ordering.faces,*dest=ordering.sort_scratch;
-    for(unsigned width=4;width<np;width*=2) {
-        for(unsigned base=0;base<np;base+=width*2) {
-            unsigned middle=Min(base+width,np),end=Min(base+width*2,np);
-            unsigned left=base,right=middle,out=base;
-            while(left<middle && right<end) {
-                // Equal depths retain the original primitive order.
-                if(source[left].depth>=source[right].depth) dest[out++]=source[left++];
-                else dest[out++]=source[right++];
-            }
-            while(left<middle) dest[out++]=source[left++];
-            while(right<end) dest[out++]=source[right++];
-        }
-        Face *old=source;source=dest;dest=old;
-    }
-    if(source!=ordering.faces) for(unsigned i=0;i<np;++i) ordering.faces[i]=source[i];
+    SortFaces(m);
     }
     uint16_t face_order[MAX_PRIMITIVES];
     RasterSurface surface={target,0,GAME_HEIGHT,damage[buffer_index]};

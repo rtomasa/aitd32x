@@ -26,6 +26,10 @@ public:
     unsigned DrawCachedActor(const Actor &actor,CachedSpan *spans,unsigned capacity);
     void DrawCoverage(const CachedSpan *spans,unsigned count,Rect clip={0,0,319,199});
     void DrawActor(const Actor &a);
+    // Original item presentation; shares geometry scratch without a world actor.
+    A32X_COLD void DrawPreview(int character,int body,int beta,Rect viewport={8,108,151,191},
+                               int distance=24000,int projection_x=400,int projection_y=390,
+                               Point projection_center={-1,-1});
     void DrawEffects(const World &world);
     bool ResolveOverlap(const Actor *const *actors,unsigned count,Rect area);
     void DrawText(int x,int y,const char *s,uint8_t color=1);
@@ -45,6 +49,7 @@ private:
         uint16_t contact_depth[64*64];
     };
     void Polygon(Point *pts,unsigned count,uint8_t color);
+    void SortFaces(const uint8_t *model);
     void Triangle(Point *pts,uint8_t color);
     void PolygonGeneral(Point *pts,unsigned count,uint8_t color);
     void Mask(const Actor &a,Rect bounds);
@@ -55,6 +60,18 @@ private:
     bool DrawCompiledActor(const Actor &a);
     volatile uint8_t *CoverageBits();
     void BackgroundSpan(int y,int left,int right,bool original=false);
+};
+// Compose fixed presentation pixels in the existing RAM image. Compressed
+// panels and glyphs never need a slow framebuffer readback before upload.
+class BackgroundComposition {
+    Renderer &renderer;
+    volatile uint16_t *output;
+    Rect previous_damage[2];
+public:
+    A32X_COLD explicit BackgroundComposition(Renderer &r);
+    A32X_COLD ~BackgroundComposition();
+    BackgroundComposition(const BackgroundComposition &)=delete;
+    BackgroundComposition &operator=(const BackgroundComposition &)=delete;
 };
 // Presentation-layer overlay. screen points to physical pixel row zero.
 void Renderer_DrawFPS(volatile uint16_t *screen,unsigned fps_tenths,bool ready);

@@ -66,7 +66,10 @@ extern "C" void host_draw_all() {
     int order[MAX_ACTIVE],count=game.world.DrawList(order);
     for(int i=0;i<count;++i) game.renderer.DrawActor(game.world.Pose(order[i]));
 }
-extern "C" void host_clear_message() { game.world.message=-1;game.world.prompt=-1;game.world.book=-1;game.menu=0;game.paused=false; }
+extern "C" void host_clear_message() {
+    if(game.menu || game.world.prompt>=0 || game.world.book>=0) game.ResetCache();
+    game.world.message=-1;game.world.prompt=-1;game.world.book=-1;game.menu=0;game.paused=false;
+}
 
 extern "C" void host_animate(int id,int anim,int type,int next) { int s=game.world.Slot(id);if(s>=0) game.world.Animate(s,anim,type,next); }
 extern "C" void host_bounds(int id,int type) { int s=game.world.Slot(id);if(s>=0) game.world.SetBounds(s,type); }
@@ -144,15 +147,15 @@ extern "C" void host_ui(int kind,int value) {
     host_clear_message();game.world.finished=false;game.world.fault_code=0;
     switch(kind) {
     case 0:game.world.message=value;game.world.message_until=game.world.now+100;break;
-    case 1:game.world.prompt=value;break;
-    case 2:game.menu=1;game.selection=0;break;
-    case 3:game.menu=2;game.selection=0;game.action_selection=0;break;
+    case 1:game.world.prompt=value;game.PickupEnter();break;
+    case 2:game.InventoryEnter();break;
+    case 3:game.InventoryEnter();game.menu=2;game.action_selection=0;break;
     case 4:game.world.book=value;game.book_line=0;break;
-    case 5:game.paused=true;game.menu=3;game.selection=game.action_selection=0;break;
+    case 5:game.paused=true;game.menu=3;game.selection=game.action_selection=0;game.inventory_dirty=true;break;
     case 6:game.world.finished=true;game.world.cvars[15]=1;break;
     case 7:game.world.fault_code=1;break;
     }
-    game.Draw();
+    game.dirty=true;game.Draw();
 }
 
 // Fixed-prop differential renderer check; never linked into the cartridge.

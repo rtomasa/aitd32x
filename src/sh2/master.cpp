@@ -54,12 +54,15 @@ extern "C" int m_main(void) {
     Profile_Init();
     for(;;) {
         InputSnapshot input=ReadInput();
+        int previous_mode=game.mode;
         uint16_t toggles=input.pad>>8;
         game.InputSnapshot(input.pad&255,toggles^last_toggles);last_toggles=toggles;
+        // Menu edges follow coherent VBlank input, independently of the
+        // fixed 25 Hz world clock and the presentation animation clock.
+        game.PresentationInput();
         unsigned elapsed=(uint16_t)(input.sequence-clock_state.last)/2;
         game.StartupAdvance(elapsed*(1500/refresh));
         unsigned ticks=clock_state.Advance(input.sequence,refresh);
-        int previous_mode=game.mode;
         if(ticks) {
             ProfileScope timing(PROFILE_UPDATE);
             for(unsigned i=0;i<ticks;++i) game.Update();
@@ -103,7 +106,7 @@ extern "C" int m_main(void) {
         debug_state[13]=(int32_t)game.player.frame;
         debug_state[14]=(int32_t)game.player.frame_phase;
         debug_state[15]=(int32_t)game.player.anim_asset;
-        bool world_active=game.mode || game.startup_phase==STARTUP_ARRIVAL || game.startup_phase==STARTUP_PICTURE;
+        bool world_active=game.mode || game.startup_phase==STARTUP_ARRIVAL || game.startup_phase==STARTUP_PICTURE || game.startup_phase>=STARTUP_DEATH;
         debug_state[16]=world_active?game.world.floor:0;debug_state[17]=world_active?game.world.room:0;
         debug_state[18]=game.menu;debug_state[19]=world_active?game.world.fault_code:0;
         debug_state[20]=world_active?game.world.fault_life:0;debug_state[21]=world_active?game.world.fault_pc:0;

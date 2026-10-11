@@ -14,6 +14,8 @@ SECTIONS {
         build/src/engine/save.o(.text .text.* .rodata .rodata.*)
         build/src/platform/save_bridge.o(.text .text.* .rodata .rodata.*)
         build/src/engine/startup.o(.rodata .rodata.*)
+        build/src/engine/death.o(.rodata .rodata.*)
+        build/src/engine/inventory.o(.rodata .rodata.*)
         /* Expanded intro floor/asset lookup tables need no SDRAM copy. */
         build/src/engine/world.o(.rodata .rodata.*)
         . = ALIGN(4);
@@ -55,4 +57,5 @@ ASSERT(__end <= 0x0603C000, "SDRAM overlaps master stack reserve")
 ASSERT(_sdata < 0x0003C000, "SH-2 startup module exceeds SDRAM")
 ASSERT(SIZEOF(.text) <= 0x00020000, "ROM code overlaps fixed asset origin")
 ASSERT(_stext + _sdata <= 0x00400000, "BIOS module exceeds fixed cartridge window")
+ASSERT((_stext & 3) == 0, "BIOS module source must be longword aligned")
 ASSERT(SIZEOF(.romextra) <= 0x01C00000, "Cartridge exceeds 32 MiB mapper limit")

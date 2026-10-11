@@ -19,6 +19,7 @@ struct Game {
     uint16_t held,pending_edges;
     int mode,camera,character;
     bool paused,help,dirty,resync_clock;
+    bool inventory_dirty;
     // Presentation time is in 1/1500 s, independent of the 25 Hz world.
     uint32_t startup_time,startup_since,startup_transition;
     uint16_t startup_palette;
@@ -29,14 +30,29 @@ struct Game {
     void Init(bool boot=true);
     void Input(uint16_t pad);
     void InputSnapshot(uint16_t pad,uint16_t pressed) { pending_edges|=pressed;held=pad; }
+    A32X_COLD void PresentationInput();
+    A32X_COLD bool HandlePresentationInput(uint16_t edges);
     void Update();
     void DrawScene();
+    A32X_COLD void DrawMessages();
     void Draw();
     A32X_COLD void StartupEnter(unsigned phase);
     A32X_COLD void StartupAdvance(unsigned elapsed);
     A32X_COLD void StartupUpdate(uint16_t edges);
     A32X_COLD void StartupDraw();
     A32X_COLD void StartGameplay();
+    A32X_COLD void InventoryEnter();
+    A32X_COLD void InventoryUpdate(uint16_t edges);
+    A32X_COLD void InventoryAdvance(unsigned elapsed);
+    A32X_COLD void InventoryDraw();
+    A32X_COLD void PickupEnter();
+    A32X_COLD void PickupAdvance(unsigned elapsed);
+    A32X_COLD void PickupUpdate(uint16_t edges);
+    A32X_COLD void PickupDraw();
+    A32X_COLD void StartDeath();
+    A32X_COLD void DeathUpdate(uint16_t edges);
+    A32X_COLD void DeathAdvance(unsigned elapsed);
+    A32X_COLD void DeathDraw();
 };
 // Region-independent fixed-tick scheduler. A frame counter is measured by MD.
 struct Clock {
