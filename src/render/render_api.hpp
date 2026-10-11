@@ -25,6 +25,7 @@ public:
     void BakeRegion(Rect area);
     unsigned DrawCachedActor(const Actor &actor,CachedSpan *spans,unsigned capacity);
     void DrawCoverage(const CachedSpan *spans,unsigned count,Rect clip={0,0,319,199});
+    void DrawCachedCoverage(const Actor &actor,const CachedSpan *spans,unsigned count,Rect bounds,Rect clip);
     void DrawActor(const Actor &a);
     // Original item presentation; shares geometry scratch without a world actor.
     A32X_COLD void DrawPreview(int character,int body,int beta,Rect viewport={8,108,151,191},

@@ -92,6 +92,7 @@ A32X_COLD void Game::StartupEnter(unsigned phase) {
     if(phase!=STARTUP_FLASH && phase!=STARTUP_ROTATE && phase!=STARTUP_PICTURE) Palette(*this,0);
 }
 A32X_COLD void Game::StartupAdvance(unsigned elapsed) {
+    if(startup_phase>=STARTUP_ENDING) { EndingAdvance(elapsed);return; }
     if(startup_phase>=STARTUP_DEATH) { DeathAdvance(elapsed);return; }
     if(mode) { if(world.prompt>=0) PickupAdvance(elapsed);else InventoryAdvance(elapsed);return; }
     if(!elapsed) return;
@@ -131,6 +132,7 @@ A32X_COLD void Game::StartupAdvance(unsigned elapsed) {
     }
 }
 A32X_COLD void Game::StartupUpdate(uint16_t edges) {
+    if(startup_phase>=STARTUP_ENDING) { EndingUpdate(edges);return; }
     if(startup_phase>=STARTUP_DEATH) { DeathUpdate(edges);return; }
     if(startup_next!=NONE) return;
     if(menu==4) { if(edges) { menu=0;dirty=true; }return; }
@@ -181,6 +183,7 @@ A32X_COLD void Game::StartupUpdate(uint16_t edges) {
     }
 }
 A32X_COLD void Game::StartupDraw() {
+    if(startup_phase>=STARTUP_ENDING) { EndingDraw();return; }
     if(startup_phase>=STARTUP_DEATH) { DeathDraw();return; }
     Renderer &r=renderer;
     if(startup_phase!=STARTUP_ARRIVAL) r.Restore();

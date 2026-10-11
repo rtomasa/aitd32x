@@ -126,13 +126,22 @@ def check(rom, elf_data, bank, main, extra, manifest):
         require(offset % 4 == 0 and offset >= 16 + count * 16 and offset + packed <= size,
                 f'invalid payload bounds/alignment: {name}')
         physical = ASSET_PHYSICAL + offset
-        if name.startswith('BACKGROUND_') and int(name.split('_')[1]) >= 2:
+        if name.startswith('BACKGROUND_'):
             require(kind == 2 and flags == 0x8000 and packed == unpacked == 64000,
-                    f'intro background is not raw/banked: {name}')
+                    f'camera background is not raw/banked: {name}')
         if flags & 0x8000:
-            require(kind == 2 and flags in (0x8000, 0x8002) and packed and unpacked == 64000,
+            require(kind in (2, 19) and flags in ((0x8000, 0x8002) if kind == 2 else (0x8000,)) and packed and unpacked == 64000,
                     f'unsupported banked asset: {name}')
-            require(flags != 0x8000 or packed == unpacked, f'invalid raw banked image: {name}')
+            require(kind != 2 or flags != 0x8000 or packed == unpacked, f'invalid raw banked image: {name}')
+            if kind == 19:
+                require(packed >= 4, f'truncated delta: {name}')
+                commands = struct.unpack_from('>I', bank, offset)[0]
+                require(packed == 4 + 6 * commands, f'invalid delta length: {name}')
+                previous_end = 0
+                for command in range(commands):
+                    start, length, color, pad = struct.unpack_from('>HHBB', bank, offset + 4 + 6 * command)
+                    require(length and start >= previous_end and start + length <= 64000 and not pad, f'invalid delta command: {name}')
+                    previous_end = start + length
             require(physical >= EXTRA_PHYSICAL and physical + packed <= len(rom),
                     f'banked asset outside ROM: {name}')
             require(physical // PAGE_BYTES == (physical + packed - 1) // PAGE_BYTES,
@@ -141,9 +150,10 @@ def check(rom, elf_data, bank, main, extra, manifest):
                                packed_bytes=packed, codec='raw' if flags == 0x8000 else 'lz4'))
         else:
             require(offset + packed <= len(main), f'fixed asset outside fixed section: {name}')
-        if kind in (5, 6, 14) or kind in (3, 4) and int(name.split('_')[1]) >= 2:
+            require(not intersects(physical, packed, APERTURE), f'fixed asset intersects retained mapper aperture: {name}')
+        if kind in (3, 4, 5, 6, 14):
             require(flags == 0 and not intersects(physical, packed, APERTURE),
-                    f'intro rendering source leaves fixed ROM: {name}')
+                    f'rendering source leaves fixed ROM: {name}')
             render_sources.append(kind)
         if kind in (15, 16):
             require(flags == 0 and physical + packed <= EXTRA_PHYSICAL,

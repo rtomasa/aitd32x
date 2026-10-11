@@ -96,7 +96,7 @@ intentionally changed mixed-case messages, and requires geometry/palette parity.
 
 ## Implemented behaviour and limits
 
-Gameplay runs at 25 Hz with the approved 60 Hz animation clock. Gameplay is limited to floors 0 and 1; full-house progression is unfinished. Their camera backgrounds remain raw ROM data; static rendering, transparency dithering, door/window/furniture ordering and transition caches have received fixes.
+Gameplay runs at 25 Hz with the approved 60 Hz animation clock. All eight original floors, 58 rooms and 144 camera views are imported and enabled. Full playthrough validation remains pending. Their camera backgrounds remain raw banked ROM data; static rendering, transparency dithering, door/window/furniture ordering and transition caches have received fixes.
 
 The original startup now runs through the animated Infogrames logo, title,
 automatically paged credits, New Game/Resume/Replay Intro menu, original Emily
@@ -107,12 +107,12 @@ with A/B/C/Start. Presentation timing does not advance the world during the
 frog close-up. Arrival completion or skipping calls fresh gameplay initialization;
 intro state and death flags do not carry into the playable world.
 
-Arrival-only geometry includes floors 2, 3 and 7, with a selected set of camera
-images retaining their original global IDs. Missing views use invalid asset IDs;
-camera selection skips these holes. `World::intro` enables these resources only
-for the cinematic, and normal gameplay retains its previous floor boundary.
-New asset IDs are appended; save schema, existing model/animation IDs and the
-original game fingerprint are preserved. The picture request fields are
+All room and camera tables now contain the complete original resources.
+`World::intro` selects cinematic behaviour, rather than limiting resource access.
+Two auxiliary collision/NPC rooms have no camera in the original data.
+New asset IDs are appended; existing model/animation IDs and the original
+game fingerprint are preserved. The expanded save format reads old saves.
+The picture request fields are
 presentation state and are excluded from saves.
 
 UI retains the console controls with original proportional text and the three-section inventory, animated 3D found-body previews, quantities and scrolling arrows. Reading uses original paper/book/notebook art, proportional font, illustrations and page sound. Death plays the original scripted cemetery movie and final picture, with skip/title return and existing saves preserved. Audio includes 101 effects through two-voice 8 kHz ADPCM/PWM and eight AdLib songs adapted to YM2612/PSG. CD LIFE cue IDs map to audited floppy themes. Window script error LIFE 20 word 59 is fixed.
@@ -139,7 +139,7 @@ Presentation input consumes an edge once without advancing world time;
 arrival/death scripts retain their 25 Hz update path. Current evidence and
 limits are in [menu feedback validation](validation/menu-feedback.md).
 
-One visible save slot uses two 64 KiB SRAM journals; v14 saves remain compatible. A frontend usually associates `.srm` with the ROM basename. Copy an existing battery file when changing ROM names; do not overwrite it with an empty file. The user tests on a separate device and confirmed no local save backup is needed. Preserve battery saves on that device when changing ROM filenames.
+One visible save slot uses two 64 KiB SRAM journals. New format `0x53313601` stores 50 actor slots, signed-word bone channels and lighting state; it reads legacy `0x53313401` saves with 24 slots and 32-bit channels. Older builds cannot read the new format; preserve backups. A frontend usually associates `.srm` with the ROM basename. Copy an existing battery file when changing ROM names; do not overwrite it with an empty file. The user tests on a separate device and confirmed no local save backup is needed. Preserve battery saves on that device when changing ROM filenames.
 
 The historical v15 ROM was near the 4 MiB direct SH2 ROM window. Startup now uses an extension bank for raw arrival cameras and compressed presentation images, reusing existing framebuffer/background scratch. SH2 RAM remains 256 KiB with 12 KiB master and 4 KiB slave stack reservations. Avoid adding global buffers casually. See docs/ARCHITECTURE.md for current layout details and limits. Physical 32X hardware and CD narration remain unvalidated/unimplemented respectively.
 
@@ -164,7 +164,43 @@ Full new-camera bakes and contact work still limit FPS; preserve the documented
 mask/order dependencies, scratch ownership and worker completion fences.
 
 1. Keep the playable v15 tag available while fixing any user-reported audio, reading or save regressions.
-2. Extend original game progression beyond floors 0 and 1; expand banked graphics while respecting the fixed code/model/audio window and RAM budget.
+2. Play through both characters across the whole game and fix progression, combat, rendering or performance regressions using focused evidence.
 3. Validate real hardware audio, SRAM, region timing and sustained performance when hardware is available.
 
 Use small feature/fix branches and reviewable commits. Record build commands and decisions in repository documentation so a new Codex chat can continue from files. Desktop and VS Code may use this same checkout; coordinate active edits.
+
+## Full-game development
+
+See [full-game validation](validation/full-game.md) for current build figures,
+coverage and unverified behaviour. Focused checks are
+`tools/check_full_game_world.py --reference build/full-game-reference`,
+`tools/check_full_game_scripts.py`, `tools/check_full_game_save.py`,
+`tools/check_ending.py`, `tools/check_lighting.py`, and
+`tools/check_full_game_native.py .local/tools/picodrive_libretro.so`.
+For native ending mapping/playback, use
+`tools/check_ending_native.py .local/tools/picodrive_libretro.so`;
+`--region PAL` selects its PAL run.
+Keep `build/full-game-reference/` intact for comparisons. It preserves the
+pre-full-game ROM, ELF, host library and bank; user battery saves are never
+used as fixtures. Original startup/death and inventory behaviour remains
+part of regression coverage.
+
+For shared rendering order or scenery-cache changes, use the focused suite in
+[draw-order validation](validation/draw-order.md): `check_world_order.py`,
+`check_draw_order_cache.py --sweep`, `check_contact_order.py`,
+`check_partial_cache.py`, and `check_draw_order_native.py` with the local core.
+The latter compares frozen host/ROM scenes in both physical framebuffer banks;
+`--region PAL` selects PAL. These checks use private memory and preserve saves.
+The historical `check_reported_bugs.py` still assumes the old startup/interaction
+fixtures and does not pass unchanged in this complete-game checkout; its old
+report is historical evidence. Current hallway/hatch checks are recorded in the
+draw-order report.
+
+For the reported pushed attic cupboard and nearby bedroom door, see
+[window/door validation](validation/window-door.md). Use
+`check_window_furniture.py` and `check_door_projection.py` for independent
+visibility expectations, `check_raster_parity.py --ordinary` after regenerating
+prepared props, and `check_window_door_native.py` for frozen cartridge pixels.
+Regenerate assets when changing shared world projection/visibility: existing
+static programs contain the preceding renderer's output. Cache parity alone
+cannot establish correct visibility when both paths share the same mistake.

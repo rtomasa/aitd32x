@@ -18,7 +18,7 @@ ifeq ($(BUILD),PROFILE)
 OPT := -O2 -g -DPROFILE
 endif
 SHFLAGS := -m2 -mb -std=c++17 -ffreestanding -fno-exceptions -fno-rtti -fno-threadsafe-statics -fno-unwind-tables -fno-asynchronous-unwind-tables -fno-builtin -Wall -Wextra $(OPT) -MMD -MP
-CORE := src/render/book.cpp src/render/preview.cpp src/platform/audio.cpp src/engine/save.cpp src/engine/startup.cpp src/engine/death.cpp src/engine/inventory.cpp src/platform/save_bridge.cpp src/engine/math.cpp src/engine/trig.cpp src/engine/actor.cpp src/engine/collision.cpp src/engine/game.cpp src/engine/world.cpp src/engine/life.cpp src/platform/storage.cpp src/render/render.cpp src/render/raster.cpp src/render/worker.cpp src/render/font.cpp
+CORE := src/render/book.cpp src/render/preview.cpp src/platform/audio.cpp src/engine/save.cpp src/engine/startup.cpp src/engine/death.cpp src/engine/ending.cpp src/engine/lighting.cpp src/engine/inventory.cpp src/platform/save_bridge.cpp src/engine/math.cpp src/engine/trig.cpp src/engine/actor.cpp src/engine/collision.cpp src/engine/game.cpp src/engine/world.cpp src/engine/life.cpp src/platform/storage.cpp src/render/render.cpp src/render/raster.cpp src/render/worker.cpp src/render/font.cpp
 SHSRC := $(CORE) src/sh2/master.cpp src/sh2/slave.cpp src/sh2/memory.cpp src/sh2/profile.cpp
 SHOBJ := $(patsubst %.cpp,build/%.o,$(SHSRC))
 .PHONY: all assets clean host check FORCE

@@ -12,6 +12,9 @@ BANK_PHYSICAL_BASE = 0x20000
 BANK_EXTRA_ORIGIN = 0x400000 - BANK_PHYSICAL_BASE
 BANK_PAGE_BYTES = 0x80000
 BANK_APERTURE = (0x80000, 0x100000)
+# Leave space for the BIOS-loaded SH2 module after the immutable asset bank.
+# The linked-layout check remains authoritative for the actual module size.
+BANK_MODULE_RESERVE = 0x18000
 INTRO_CAMERAS = {2: (28, 37), 3: (0, 1, 2, 3, 17), 7: (0, 1, 2, 3, 4)}
 DEATH_CAMERAS = (0, 8, 13)
 
@@ -276,7 +279,7 @@ def compile_startup(get, defines_data, native_model, native_room, native_camera,
 
 
 def build_bank(assets):
-    """Keep immutable gameplay payloads fixed and page-isolate banked images."""
+    """Keep rendering/audio resources fixed and page-isolate banked images."""
     main = bytearray(16 + len(assets) * 16)
     if BANK_PHYSICAL_BASE + len(main) > BANK_APERTURE[0]:
         raise ValueError('asset directory overlaps mapper aperture')
@@ -284,13 +287,16 @@ def build_bank(assets):
     struct.pack_into('>4s3I', main, 0, b'A32X', 2, len(assets), 0)
     shared, manifest = {}, []
     for index, (name, kind, data, unpacked, flags) in enumerate(assets):
+        # Keep every immutable fixed payload outside the temporary window, so
+        # a camera mapping can safely survive script/audio/UI work as well.
+        protected = not flags & 0x8000
         key = (kind, flags, data)
         offset = shared.get(key)
         if offset is None:
             if flags & 0x8000:
-                if kind != 2 or flags not in (0x8000, 0x8002) or unpacked != 64000:
+                if kind not in (2, 19) or flags not in (0x8000, 0x8002) or unpacked != 64000 or (kind == 19 and flags != 0x8000):
                     raise ValueError(f'unsupported banked image: {name}')
-                if flags == 0x8000 and len(data) != unpacked:
+                if kind == 2 and flags == 0x8000 and len(data) != unpacked:
                     raise ValueError(f'invalid raw banked image: {name}')
                 if len(data) > BANK_PAGE_BYTES:
                     raise ValueError('banked payload exceeds one mapper page')
@@ -302,17 +308,19 @@ def build_bank(assets):
                 extra.extend(data)
             else:
                 main.extend(bytes((-len(main)) % 4))
+                physical = BANK_PHYSICAL_BASE + len(main)
+                if protected and physical < BANK_APERTURE[1] and physical + len(data) > BANK_APERTURE[0]:
+                    # A camera can remain mapped while either SH2 reads any
+                    # floor's geometry, masks, poses, drawing programs or audio.
+                    main.extend(bytes(BANK_APERTURE[1] - physical))
                 offset = len(main)
                 main.extend(data)
             shared[key] = offset
         # Rendering can hold slot 1 mapped until both SH2 row jobs complete.
         # Every source accessed then must remain in an unchanged ROM window.
-        protected = kind in (5, 6, 14, 15, 16) or (
-            kind in (3, 4) and int(name.split('_')[1]) >= 2)
         physical = BANK_PHYSICAL_BASE + offset
-        if protected and (flags or
-                          physical < BANK_APERTURE[1] and physical + len(data) > BANK_APERTURE[0]):
-            raise ValueError(f'intro rendering resource is not fixed outside mapper aperture: {name}')
+        if protected and physical < BANK_APERTURE[1] and physical + len(data) > BANK_APERTURE[0]:
+            raise ValueError(f'rendering resource is not fixed outside mapper aperture: {name}')
         struct.pack_into('>3I2H', main, 16 + index * 16, offset, len(data), unpacked, kind, flags)
         manifest.append(dict(id=index, name=name, offset=offset, packed_size=len(data),
                              unpacked_size=unpacked, type=kind, flags=flags))

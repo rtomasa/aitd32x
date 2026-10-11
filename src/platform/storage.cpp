@@ -5,11 +5,23 @@
 #endif
 static const uint8_t *bank;
 static uint32_t bank_size,bank_count;
+static bool retain_mapping;
+static unsigned mapper_page=0xffff;
 void Platform_SetAssetBank(const uint8_t *data,uint32_t size) {
-    bank=data; bank_size=size; bank_count=0;
+    bank=data; bank_size=size; bank_count=0;retain_mapping=false;mapper_page=0xffff;
     if(size>=16 && BE32(data)==0x41333258 && BE32(data+4)==2 && BE32(data+12)==size) {
         uint32_t n=BE32(data+8);
         if(n<=(size-16)/16) bank_count=n;
+    }
+    // Complete-game banks reserve the whole aperture. Retaining its current
+    // image page avoids two 68000 handshakes on every rendered frame. Older
+    // banks with fixed payloads in that slot still restore their identity map.
+    if(bank_count) {
+        retain_mapping=true;
+        for(unsigned i=0;i<bank_count;++i) {
+            const uint8_t *e=data+16+i*16;uint32_t start=BE32(e)+0x20000,bytes=BE32(e+4);
+            if(!(BE16(e+14)&0x8000) && start<0x100000 && bytes && (start>=0x80000u || bytes>0x80000u-start)) retain_mapping=false;
+        }
     }
 }
 Asset Platform_ReadAsset(unsigned id) {
@@ -34,18 +46,22 @@ static A32X_COLD uint16_t MapperCommand(unsigned command,unsigned value=0) {
 static A32X_COLD Asset MapImage(const Asset &a) {
     Asset mapped=a;mapped.flags&=~BANKED;
 #if defined(__sh__)
-    // Only immutable images use the extension. Decode/Blit and the scoped
-    // intro renderer restore bank 1 before returning to world updates.
+    // Only immutable images/deltas use the extension. Complete-game banks
+    // retain their page; older banks restore slot 1 before world updates.
     unsigned physical=(uintptr_t)a.data-0x02000000u,offset=physical&0x7ffffu;
-    if(a.type!=2 || physical<0x400000u || a.size>0x80000u-offset || physical>>19>255) return {};
-    if(MapperCommand(0x5020,physical>>19)!=0x424b) return {};
+    if((a.type!=2 && a.type!=19) || physical<0x400000u || a.size>0x80000u-offset || physical>>19>63) return {};
+    unsigned page=physical>>19;
+    if(mapper_page!=page) {
+        if(MapperCommand(0x5020,page)!=0x424b) return {};
+        mapper_page=page;
+    }
     mapped.data=(const uint8_t *)(0x22080000u+offset);
 #endif
     return mapped;
 }
 static A32X_COLD void UnmapImage() {
 #if defined(__sh__)
-    MapperCommand(0x5021);
+    if(!retain_mapping && mapper_page!=1) { MapperCommand(0x5021);mapper_page=1; }
 #endif
 }
 static A32X_COLD __attribute__((noinline)) bool BankDecode(const Asset &a,uint8_t *dest,uint32_t capacity,uint16_t *row_offsets,uint8_t *row_skips) {
@@ -168,6 +184,26 @@ A32X_COLD Asset Platform_MapImage(const Asset &a) {
     return MapImage(a);
 }
 A32X_COLD void Platform_UnmapImage() { UnmapImage(); }
+A32X_COLD bool Platform_ApplyDelta(const Asset &source,uint8_t *dest,uint32_t capacity,Rect &damage) {
+    if(!dest || source.type!=19 || source.unpacked!=GAME_WIDTH*GAME_HEIGHT || capacity<source.unpacked || source.size<4 || (source.flags!=0 && source.flags!=BANKED)) return false;
+    Asset a=source;
+    if(source.flags&BANKED) { a=MapImage(source);if(!a.data) return false; }
+    unsigned count=BE32Aligned(a.data);bool ok=count<=(a.size-4)/6 && 4+count*6==a.size;
+    // Validate the complete command list before modifying the retained image.
+    for(unsigned i=0;ok && i<count;++i) {
+        const uint8_t *p=a.data+4+i*6;unsigned start=BE16Aligned(p),length=BE16Aligned(p+2);
+        ok=length && start<source.unpacked && length<=source.unpacked-start && p[5]==0;
+    }
+    if(ok) for(unsigned i=0;i<count;++i) {
+        const uint8_t *p=a.data+4+i*6;unsigned start=BE16Aligned(p),length=BE16Aligned(p+2);
+        MemoryPixels pixels={dest};pixels.Fill(start,length,p[4]);
+        unsigned end=start+length-1,first=start/GAME_WIDTH,last=end/GAME_WIDTH;
+        int left=first==last?start%GAME_WIDTH:0,right=first==last?end%GAME_WIDTH:GAME_WIDTH-1;
+        damage={Min(damage.x1,left&~1),Min(damage.y1,first),Max(damage.x2,right|1),Max(damage.y2,last)};
+    }
+    if(source.flags&BANKED) UnmapImage();
+    return ok;
+}
 bool Platform_Decode(const Asset &a,uint8_t *dest,uint32_t capacity,uint16_t *row_offsets,uint8_t *row_skips) {
     if(!a.data || a.unpacked>capacity) return false;
     if(a.flags&BANKED) return BankDecode(a,dest,capacity,row_offsets,row_skips);

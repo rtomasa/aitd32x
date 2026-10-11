@@ -127,7 +127,7 @@ def native_checks(core,mars,region):
         check.press(A);assert check.read('menu')==2
         check.e.capture(f'gameplay-ui-{region}-actions.png')
         check.press(B);check.press(B);assert check.read('menu')==0
-        check.advance(check.hz);assert not check.state()['fault'] and check.banks[1]==1
+        check.advance(check.hz);assert not check.state()['fault'] and check.mapper_valid()
         return dict(region=region,emulator_only=True,previews=previews,
                     both_framebuffers=True,paused_world=True,menu_back=True)
     finally:check.close()

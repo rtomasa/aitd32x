@@ -1,8 +1,18 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #pragma once
 #include "types.hpp"
-enum { MAX_VERTICES=384, MAX_GROUPS=40, MAX_PRIMITIVES=384, MAX_POLY=66 };
-struct GroupState { int type; Vec3 delta; };
+enum { MAX_VERTICES=384, MAX_GROUPS=28, MAX_PRIMITIVES=384, MAX_POLY=66 };
+// Original model and animation channels are signed words. Keep each live
+// bone in that representation: the complete 50-slot original actor pool
+// must fit alongside the renderer in 256 KiB of SH2 SDRAM.
+struct GroupDelta {
+    int16_t x,y,z;
+    GroupDelta()=default;
+    GroupDelta(int x,int y,int z):x((int16_t)x),y((int16_t)y),z((int16_t)z) {}
+    operator Vec3() const { return {x,y,z}; }
+};
+struct GroupState { int16_t type; GroupDelta delta; };
+static_assert(sizeof(GroupState)==8,"Original bone channels must remain compact");
 struct Actor {
     Vec3 pos; int alpha,beta,gamma,character;
     int room,floor;

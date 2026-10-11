@@ -50,7 +50,7 @@ def main():
                 view=(state['floor'],state['camera'])
                 if not views or views[-1]!=view:views.append(view)
                 if check.settled() and state['rendered']!=last_rendered:
-                    assert check.banks[1]==1,'mapper not restored after cemetery draw'
+                    assert check.mapper_valid(),'invalid mapper page after cemetery draw'
                     completed_draws+=1;last_rendered=state['rendered']
                 if state['floor']==6 and state['camera']==8 and check.settled() and not drag_captured:
                     check.capture('death-drag');drag_captured=True
@@ -70,7 +70,7 @@ def main():
                 phase_frames+=1
                 if check.settled():
                     assert check.scene()==expected,'death picture indexed pixels differ from original'
-                    assert check.banks[1]==1;restored=True
+                    assert check.mapper_valid();restored=True
                 if video_image(check,expected):
                     visible_frames+=1
                     if not picture_captured:
@@ -87,7 +87,7 @@ def main():
             state=check.state()
             if state['phase']==5:break
             assert state['phase']==13 and state['world_ticks']==picture_tick,state
-            assert check.banks[1]==1,'mapper remained active during GAME_OVER hold'
+            assert check.mapper_valid(),'invalid mapper page during GAME_OVER hold'
             check.advance()
         assert check.state()['phase']==5,'death did not return to title menu'
         phases.append(5)
@@ -98,11 +98,11 @@ def main():
         idle_draws=check.state()['rendered']-rendered
         assert idle_draws<=2,('GAME_OVER hold redrew repeatedly',idle_draws)
         check.wait(check.settled);check.capture('death-title')
-        assert check.banks[1]==1
+        assert check.mapper_valid()
         assert hashlib.sha256(rom.read_bytes()).hexdigest()==sha,'ROM changed during death validation'
         report=dict(passed=True,region='NTSC',emulator_only=True,rom_sha256=sha,
                     character=0,phases=phases,views=views,biography_pages=pages,
-                    death_world_ticks=picture_tick,mapper_bank_restored=1,
+                    death_world_ticks=picture_tick,mapper_retained_safe=check.retained_mapper,
                     completed_cemetery_draws=completed_draws,banked_frame_samples=mapped_frames,
                     original_picture_pixels=True,picture_world_paused=True,
                     picture_phase_seconds=phase_frames/check.hz,

@@ -78,8 +78,8 @@ int main(int argc,char **argv) {
         require(frog_sound,"frog picture sound missing");
         world.Init(player,character);Actor_Init(clean_player,character);clean.Init(clean_player,character);
         require(Snapshot(world)==Snapshot(clean),"fresh gameplay retained intro state");
-        require(!world.RoomAsset(2,2).data && !world.RoomAsset(3,1).data,"intro assets extended normal gameplay floors");
-        std::printf("%s{\"character\":%d,\"world_ticks\":%u,\"pictures\":%d,\"sound_requests\":%u,\"death\":false,\"script_fault\":false,\"fresh_gameplay_reset\":true,\"gameplay_floor_boundary\":true,\"cameras\":[",character?",":"",character,ticks,pictures,sounds);
+        require(world.RoomAsset(2,2).data && world.RoomAsset(3,1).data && world.RoomAsset(4,0).data && world.RoomAsset(5,10).data,"full gameplay floors unavailable after arrival reset");
+        std::printf("%s{\"character\":%d,\"world_ticks\":%u,\"pictures\":%d,\"sound_requests\":%u,\"death\":false,\"script_fault\":false,\"fresh_gameplay_reset\":true,\"full_gameplay_floors\":true,\"cameras\":[",character?",":"",character,ticks,pictures,sounds);
         bool comma=false;
         for(int floor=0;floor<8;++floor) for(int camera=0;camera<64;++camera) if(cameras[floor][camera]) {
             std::printf("%s[%d,%d]",comma?",":"",floor,camera);comma=true;

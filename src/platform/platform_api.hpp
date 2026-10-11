@@ -10,10 +10,13 @@ bool Platform_Decode(const Asset &a,uint8_t *dest,uint32_t capacity,
 // The destination starts on an even pixel; rows can have a wider stride.
 A32X_COLD bool Platform_Blit(const Asset &a,volatile uint16_t *dest,unsigned width,
                              unsigned height,unsigned stride=GAME_WIDTH);
-// Scoped raw intro-image access. Bind cameras before mapping; only fixed
-// rendering resources outside the aperture may be read until UnmapImage.
+// Scoped raw camera-image access. Complete banks keep every fixed resource
+// outside the aperture and can retain a page between draws. Legacy banks
+// restore bank 1; neither form keeps mapped pointers across page changes.
 A32X_COLD Asset Platform_MapImage(const Asset &a);
 A32X_COLD void Platform_UnmapImage();
+// Offline-compiled ending deltas update only changed pixels in the RAM image.
+A32X_COLD bool Platform_ApplyDelta(const Asset &a,uint8_t *dest,uint32_t capacity,Rect &damage);
 extern "C" void Platform_Fatal(void);
 // Sequential cartridge SRAM transport. Each journal bank contains 65536 bytes.
 bool Platform_SaveBegin(unsigned bank);

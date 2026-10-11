@@ -1,197 +1,367 @@
-# Native architecture — revision 13
+# Native architecture
 
-This document records the inherited architecture. For current code/RAM figures,
-aligned asset reads, contact-depth arithmetic and the review of CPU allocation,
-see the [performance follow-up](validation/performance-followup.md) and
-[initial review](validation/performance-review.md).
-The [reported-bugs changes](validation/reported-bugs.md) extend contact repair
-to idle poses and moving doors/hatches and apply each actor's masks before depth.
-
-Current additions: unchanged static geometry with a changed painter order uses
-a partial repair enclosing intersecting props and mask writes. Geometry,
-membership and camera changes keep full rebuilds. Contact primitives/gradients
-are prepared in idle gameplay scratch; larger jobs use disjoint SH2 row bands
-with two 64×32 halves of the existing depth buffer and an explicit CONTACT/END
-fence. Near-clipped or oversized prepared groups retain the original depth path.
-Audio interrupts remain available. The 68000 now caches its music-bank selection;
-actor refresh caches room visibility per call. Detailed limits and current
-memory figures are in the follow-up report; revision-specific numbers below
-describe the inherited baseline.
-
-## Startup and cartridge banking
-
-The startup reproduces the original Infogrames model/logo animation, title,
-English credits, main menu, character portraits, half-page biographies and
-scripted arrival. The arrival starts at floor 7, room 1, camera 3, target 286;
-its original LIFE/track sequence visits floors 3, 2 and 1 before LIFE 539 ends.
-Only the required extra views are imported. `World::intro` permits those floors
-during presentation; gameplay still stops beyond floors 0 and 1. Completion
-and skipping initialize a fresh gameplay world. Intro flags and the temporary
-frog picture are not serialized; loading clears them explicitly. Existing
-asset IDs and save fingerprint `0x0eebc721` remain compatible.
-
-Startup time uses 1/1500-second units from the PAL/NTSC VBlank counter. Logo
-steps, palette fades and picture/credit holds use the original 60 Hz clock;
-the arrival world uses the existing 25 Hz simulation. The frog picture freezes
-world updates for its original 20 presentation ticks. The renderer reuses its
-64,000-byte background, with no additional image buffer or heap. Intro camera
-images copy once on changing views or rebuilding the scenery cache. Original
-mask pixels come from a scoped raw ROM mapping while RAM holds baked scenery.
-Settled intro doors without animation data use the same pose/mask hash as
-scenery; scripted movement invalidates their bake until they settle again.
-The arrival retains its original painter ordering and camera masks; gameplay
-continues to use contact-depth repair. Cache rebuilds preserve intro fade levels.
-Gameplay camera images and existing UI panels/sprites retain their raw paths.
-Credits and biographies decode their paper once. Biography composition reuses
-the hidden framebuffer to preserve the selected portrait, then caches the
-combined RAM background. Static fades update CRAM without restoring pixels,
-and hidden startup FPS statistics do not force draws. Original font glyphs
-write contiguous horizontal spans. A separate text asset preserves original
-casing and font glyph bytes, including copyright and I-Motion symbols. Gameplay
-now uses the same original text/font; both directory IDs share one ROM payload.
-The FPS border is hidden throughout presentation and restored in gameplay.
-
-The current RELEASE ROM is **5,373,952 bytes (5.125 MiB)**, with 2,053 asset
-IDs, a 3,911,420-byte fixed bank and 1,161,242 bytes of extra image data. The
-83,108-byte BIOS module ends at physical byte 4,125,600, leaving 68,704 bytes
-below the direct-window limit. Static SDRAM is 243,288 bytes: module 83,108,
-BSS 160,176, and four bytes of linker overhead. It ends at `0x0603B658`, with
-2,472 bytes before the existing stack reservation. Startup adds 32 bytes of
-state; expanded world lookup tables move to fixed ROM to recover RAM. Figures
-and checks for this build are recorded in
-[menu feedback validation](validation/menu-feedback.md).
-
-The original inventory has a 320×100 list and two 160×100 lower sections.
-Compressed panels and proportional labels are composed on content changes,
-directly into the existing 64,000-byte RAM background. `BackgroundComposition`
-restores the framebuffer target and merges the changed region into both bank
-histories, avoiding framebuffer readback. Preview animation restores
-only damaged pixels, uses the existing geometry/face-sort scratch and clips
-to the original item viewport. The stable merge sort is shared with gameplay;
-fully visible preview faces bypass clipping and disjoint faces are rejected.
-The 60 Hz orbit clock comes from region-adjusted VBlank time, with draws capped
-at 30 Hz. The world remains paused. Closing invalidates the scenery bake so
-the next draw restores the original room. No new image, vertex or depth buffer
-is allocated. Cold presentation code/strings remain in fixed ROM.
-
-Pickups use the original centered 240×120 panel, black surround, Leave/Take
-choices and rotating found-body model. The same preview scratch uses the
-original 15000-unit orbit, projection 300×298 and center (160,100). Loading a
-pending prompt restores Take after the load pause menu closes. Pause menus
-capture the room once and compose subsequent option changes in RAM; closing
-invalidates the scenery bake. Information text shares one unframed native
-overlay at (160,184), color 16, across gameplay, arrival and death.
-
-Menu edges dispatch from coherent VBlank controller snapshots without
-advancing the world. Simulation and cinematic scripts remain at 25 Hz;
-presentation rotation remains 60 Hz. The shared LZ4 decoder fills offset-one
-constant matches directly, preserving zero pixels, row padding and overlapping
-matches. This applies to every compressed presentation image/panel path.
-
-Death continues the existing player/enemy LIFE and track state, including
-scripts 39, 555–558 and 554. Only DEAD_PERSO permits floor 6; normal playable
-floor limits remain unchanged. Three banked cemetery cameras (0, 8, 13) and
-ITD_RESS:12 complete the movie. Picture/end holds stop world updates and use
-the existing presentation clock, with idle pixels retained. Death can return
-or skip to the title without modifying SRAM. Loading explicitly resets the
-presentation phase; the save schema and fingerprint remain unchanged.
-
-The SH2 direct cartridge window is **32 Mbit / 4 MiB**, rather than 32 MiB.
-Larger ROMs require a cartridge mapper. This build implements the SSF2 mapper
-with 512 KiB pages and limits its physical ROM to 32 MiB. The asset directory
-starts at physical `0x20000`; fixed resources follow, and cold presentation
-images begin at physical `0x400000`. The BIOS module stays entirely below
-4 MiB. All executable ROM code stays below the asset origin. The importer
-generates `bank-main.bin`, `bank-extra.bin`, and the full logical `bank.bin` for
-host tools; its zero-filled gap is occupied partly by the BIOS module in the
-native ROM. Directory offsets remain relative to the fixed asset origin.
-
-Flag `0x8000` marks banked type-2 image payloads. Decode/Blit ask the 68000 RAM
-supervisor to set `A130F3`, temporarily mapping the source page into slot 1,
-physical `0x80000–0xFFFFF`. The supervisor briefly sets RV for the mapper write
-and restores its previous value before acknowledging. The SH2 decoder reads
-through uncached `0x22080000`, then restores bank 1 on success or decode failure.
-Raw intro originals can also remain mapped during `Game::DrawScene`. Camera
-binding/decoding completes before this scope; all actor and contact jobs fence
-before it ends. Only actors on the current intro floor are allowed. Original
-asset pointers and bank 1 are restored before UI drawing or world updates.
-Each image fits in one page. The importer and linked-layout checker protect
-all intro camera/room metadata, models, animations and static rasters from
-the aperture; old gameplay metadata in that slot is accessed after unmapping.
-Code, all sound payloads and music streams avoid the aperture, so slave PWM and
-the 68000 music reader keep their existing transport and timing.
-
-Bank format version 2 remains in use. Codec flags are 0 for raw, 1 for RLE,
-2 for a standard raw LZ4 block, and 3/4 for type-13 images with a raw four-byte
-width/height header followed by RLE/LZ4 pixels. The banked bit combines with
-the image codec. Framebuffer decompression uses word writes to preserve zero
-pixels and supports overlapping LZ4 matches without a scratch bitmap.
-
-The [Sega hardware manual](https://consolemods.org/wiki/images/e/e9/32X_Hardware_Manual_1994_Sega_text.pdf)
-describes the direct window and mapper arbitration. PicoDrive implements
-[32X SSF2 reads](https://github.com/notaz/picodrive/blob/master/pico/32x/memory.c),
-[mapper registers](https://github.com/notaz/picodrive/blob/master/pico/carthw/carthw.c),
-and [automatic mapper selection for ROMs larger than 4 MiB](https://github.com/notaz/picodrive/blob/master/pico/cart.c).
-Emulator checks cannot validate RV arbitration on physical hardware; a physical
-cartridge or flash cart must provide a compatible mapper. Use the focused
-startup and bank-layout checks in DEVELOPMENT.md when changing this flow.
+This document describes the complete-house engine and resource layout. Current
+build evidence and remaining validation limits are recorded in
+[window/door validation](validation/window-door.md),
+[draw-order validation](validation/draw-order.md) and
+[full-game validation](validation/full-game.md). Earlier rendering decisions
+remain documented in the [performance follow-up](validation/performance-followup.md),
+[initial review](validation/performance-review.md) and
+[reported-bugs validation](validation/reported-bugs.md).
 
 ## CPU and timing
 
-The 68000 boots the cartridge, detects PAL/NTSC and publishes coherent controller snapshots each VBlank. The master SH2 executes the 25 Hz simulation, LIFE/track, active objects, animation, collision, inventory and camera selection. It transforms and sorts geometry and presents completed frames. Shared-RAM wait reads are spaced by 24 NOPs to avoid a terminal-read polling-detector sleep in PicoDrive. Both SH2s rasterize: the master owns logical rows 0–99 and the slave owns 100–199, using the v6 cache-through eight-entry command ring.
+The 68000 boots the cartridge, detects PAL/NTSC and publishes coherent controller
+snapshots each VBlank. It also services cartridge mapping, SRAM and YM2612/PSG
+music from its own RAM. The master SH2 executes the 25 Hz simulation, LIFE/track,
+active objects, animation, collision, inventory and camera selection; it
+transforms/sorts geometry and presents completed frames. Both SH2s rasterize:
+the master owns logical rows 0–99 and the slave owns rows 100–199 through a
+cache-through eight-entry command ring. The slave also owns autonomous PWM
+sample mixing; audio interrupts remain available during rendering.
 
-The runtime is freestanding C++17 with no heap, OS, filesystem, SDL, STL, RTTI or exceptions. A VBlank phase accumulator catches up simulation ticks independently of rendering. The approved animation clock remains 60 Hz with fractional phase units of 1/1500 second: each logic update consumes 60 units and each original key lasts `duration * 25` units. Walk/run root displacement and pose interpolation carry remainder across keys. Pause, inventory, prompts and books stop the world clock.
+The runtime is freestanding C++17 with no heap, OS, filesystem, SDL, STL, RTTI
+or exceptions. Shared-RAM polling reads are spaced by 24 NOPs to avoid a
+terminal-read polling-detector sleep in PicoDrive. A VBlank phase accumulator
+catches up simulation independently of completed draws. The approved animation
+clock remains 60 Hz with fractional phase units of 1/1500 second: each logic
+update consumes 60 units and each original key lasts `duration * 25` units.
+Walk/run displacement and interpolation carry their remainder across keys.
+Pause, inventory, pickups, books and cinematic picture/movie holds stop the
+world clock. Presentation input consumes controller edges without advancing it.
 
-## World and script state
+## Complete world and script state
 
-The bank supplies 292 original 26-word object records, 207 variables and 45 CVars. Found-item metadata stays in its world record; an active slot owns body, flags, position, angles, LIFE, animation and track state until deactivation writes it back. The imported models use at most 379 vertices, so the single-model scratch bound is 384. The actor pool has 24 slots, each with a bone pose and collision bounds. Activation follows floor/life mode/room visibility and original object order. A capacity error stops with a diagnostic rather than overwriting memory.
+All eight original floors are available: 58 room records and 144 camera views.
+Two auxiliary rooms have no original camera; their metadata remains available
+for collision/script links and no synthetic view is imported. Floors 2–6 are ordinary
+gameplay resources. Floor 7 also supplies the original arrival. There is no
+floor-1 staging cutoff or special death-only access to floor 6.
 
-LIFE operands and track data are big-endian native words. The interpreter checks cursor/branch/variable/object bounds, caps recursion at eight and caps each invocation at 2048 instructions. It preserves the original caller for expressions on targeted opcodes. Unsupported instructions raise an on-screen LIFE/word error. Sound and music playback remain deferred. SPECIAL now emits bounded presentation effects: death evaporation, hit particles and smoke. Three effect slots each hold at most 30 points, with their own presentation RNG; they do not alter LIFE random choices. Music state remains available to scripts.
+The bank supplies 292 original 26-word object records, 207 variables, 45 CVars,
+563 LIFE scripts and 45 tracks. Found-item metadata stays in the world record;
+an active slot owns body, flags, position, angles, LIFE, animation and track
+state until deactivation writes it back. Activation retains the original
+floor/life-mode/visibility rules and object order. Room visibility is prepared
+once per refresh, including adjacent rooms. A capacity error stops with a
+diagnostic rather than overwriting memory.
 
-The original scripts select action animations, offer/take/equip/read/reload/drop/throw items, schedule enemy arrivals, update health/ammunition and drive stair transitions. The console maps B+Up to run and C to inventory. The first loaded-floor boundary is deliberate: attempts to stage the camera target beyond floor 1 show END OF THIS BUILD.
+The active pool has the original 50 slots. The imported bodies use at most 379
+vertices and 28 groups, within the 384-vertex/384-primitive workspaces. Each
+`GroupState` stores its type and three deltas as signed 16-bit words: eight
+bytes rather than the previous 16-byte representation. Both current and
+previous bone poses retain the original resource bounds; this reduces per-actor
+pose memory enough to expand the pool without a second geometry buffer.
+Renderer membership, dynamic/static selection and contact groups use 64-bit
+masks so slots 32–49 remain distinct. Resource and capacity evidence is in the
+full-game validation report.
+
+LIFE operands and track data use big-endian native words. The interpreter checks
+cursor/branch/variable/object bounds, caps recursion at eight and caps each
+invocation at 2048 instructions. Expressions on targeted commands preserve
+the original caller. Unsupported commands raise a LIFE/word diagnostic. The
+original scripts implement item actions, pickups, reading, weapons, ammunition,
+enemies, puzzles, room/floor transitions, the Pregzt ritual and escape.
+Follow tracks use the original walking speed and movement timing.
+
+`LIGHT` changes a separate darkness flag; it preserves `C_VAR 13`, the original
+lantern source object. Corridor/library scripts toggle full illumination.
+Underground LIFE selects either the held lantern/player or a dropped lantern
+as its local source. After Pregzt dies, the original killed-sorcerer guard stops
+further darkness changes. `END_SEQUENCE` requests the ending movie and continues
+its LIFE command tail, which installs escape state. `GAME_OVER` and
+`WAIT_GAME_OVER` terminate their sequence without manufacturing a death flag;
+original death scripts set `DEAD_PERSO` themselves.
+
+The inherited source leaves `RND_FREQ`, `SHAKING` and `WATER` effects as cosmetic
+stubs. `GET_HARD_CLIP` prepares clipping for primitive type 5 in FITD, whose own
+drawing path is ignored; none of the imported AITD1 bodies uses that primitive.
+It has no collision/progression effect in this port. These limits do not imply
+full playthrough or original visual parity. SPECIAL effects use three bounded
+slots of up to 30 points for evaporation, hit particles and smoke. Their
+presentation RNG does not alter LIFE random choices.
+
+## Startup, inventory and cinematics
+
+Startup reproduces the original Infogrames model/logo animation, title, English
+credits, start menu, character portraits, biographies and scripted arrival.
+Arrival starts at floor 7, room 1, camera 3, target 286; LIFE/track visits floors
+3, 2 and 1 before LIFE 539 ends. Completion or skipping initializes a fresh
+gameplay world. `World::intro` identifies that presentation sequence; it no
+longer grants access to otherwise blocked floors. Intro flags and picture
+requests are transient and loading clears them explicitly.
+
+Startup time uses 1/1500-second units from PAL/NTSC VBlank. Logo animation,
+palette fades, credits and pictures use the independent presentation clock;
+the arrival world remains at 25 Hz. The frog picture freezes world updates
+for its original 20 presentation ticks. Credits/biographies decode paper once
+and compose in the existing RAM background. Static fades update CRAM without
+redrawing pixels. Original proportional glyphs write contiguous spans and
+preserve source casing, copyright A9 and I-Motion FA glyph indices. Gameplay
+and presentation text directory IDs share the same original payload. Startup
+hides the FPS border; gameplay restores it.
+
+The original inventory uses a 320×100 list and two 160×100 lower sections.
+Compressed panels and labels compose on content changes directly into the
+64,000-byte RAM background. `BackgroundComposition` restores the framebuffer
+target and merges changed regions into both damage histories, avoiding
+framebuffer readback. Preview animation restores damaged pixels, shares
+geometry/face-sort scratch, and clips to the original item viewport. Fully
+visible faces bypass clipping; disjoint faces are rejected. The 60 Hz orbit
+clock uses region-adjusted VBlank time, with draws capped at 30 Hz. Closing
+invalidates the scenery bake. No extra image, vertex or depth buffer is used.
+
+Pickups use the original 240×120 panel, black surround, Leave/Take options and
+rotating found-body model. Shared preview scratch preserves the 15000-unit
+orbit, projection 300×298 and center (160,100). Loading a pending prompt restores
+Take after the load pause closes. Pause menus capture the room once and compose
+option changes in RAM. Reading retains original paper/book/notebook artwork,
+illustrations, proportional text and page sounds. Information text uses one
+unframed native overlay at (160,184), color 16, across gameplay and cinematics.
+
+Death continues player/enemy LIFE and track state, including scripts 39,
+555–558 and 554, the cemetery views and ITD_RESS:12. Picture/end holds retain
+idle pixels and stop world updates. Skip/title return never writes SRAM.
+
+The original ending movie has 32 frames. Frame zero is a compressed type-2
+image; the other 31 frames are banked type-19 changed-span programs. Each
+program patches the existing RAM background, with outstanding changes merged
+into both framebuffer damage histories. Playback uses five 60 Hz presentation
+ticks per frame and requires no second bitmap; exact DOS timing remains to be
+compared. Finishing or skipping resumes
+the original escape world after the ritual; the later completion hold returns
+to the title. Ending state is presentation-only and is cleared on load.
+
+## Cartridge banking
+
+The SH2 direct cartridge window is 32 Mbit / 4 MiB. Larger ROMs require a
+compatible cartridge mapper; this build uses SSF2 512 KiB pages and bounds
+physical ROM to 32 MiB. The asset directory starts at physical `0x20000`.
+Fixed data and the BIOS-loaded SH2 module remain below 4 MiB; executable ROM
+code stays below the asset origin. Banked images/movie deltas begin at
+physical `0x400000`. Directory offsets remain relative to the asset origin.
+The importer writes `bank-main.bin`, `bank-extra.bin` and the full logical
+`bank.bin` for host tools; native linking places the BIOS module in the gap
+before the extension.
+
+All protected data avoids physical `0x80000–0xFFFFF`, the complete 512 KiB mapper
+aperture. That includes camera/room metadata, models, animations, LIFE/track,
+static drawing programs, font data, sound effects and music streams. Thus
+world reads, slave audio and contact jobs never depend on the selected image
+page. Every banked payload fits within one page.
+
+Flag `0x8000` marks banked type-2 images and type-19 deltas. Decode/Blit ask the
+68000 RAM supervisor to write `A130F3` when the requested page changes. It
+briefly sets RV for the register write and restores its previous value before
+acknowledging. SH2 reads use uncached `0x22080000`. Raw original backgrounds
+also map through a scoped view while RAM holds baked scenery; camera binding
+finishes first and actor/contact jobs fence before the scope ends.
+
+Complete-game banks retain the selected page after image work. Selection is
+cached, eliminating two supervisor exchanges when successive images share a
+page. Older banks with fixed resources in the aperture are detected from their
+directory and restore identity page 1 before world reads. Scoped mappings
+restore asset pointers in either case. Mapping policy is shared by gameplay
+cameras, UI images, startup/death images and ending deltas.
+
+The [Sega hardware manual](https://consolemods.org/wiki/images/e/e9/32X_Hardware_Manual_1994_Sega_text.pdf)
+describes the direct window and arbitration. PicoDrive implements
+[32X SSF2 reads](https://github.com/notaz/picodrive/blob/master/pico/32x/memory.c),
+[mapper registers](https://github.com/notaz/picodrive/blob/master/pico/carthw/carthw.c)
+and [mapper selection for ROMs larger than 4 MiB](https://github.com/notaz/picodrive/blob/master/pico/cart.c).
+Emulator evidence does not validate physical RV arbitration. A flash cartridge
+must provide compatible 32X mapper support and sufficient ROM storage.
 
 ## Rendering and static props
 
-The packed-pixel VDP presents 320×224 in both regions, with a 320×200 logical scene at `(0,12)`. Each bank has a valid native line table and separate damage bounds. Word writes restore palette index zero correctly. The FPS overlay occupies the upper border and counts completed draws against VBlanks.
+Packed-pixel video is 320×224 in both regions, with a 320×200 logical scene at
+(0,12). Each framebuffer has a native line table and independent damage bounds.
+Word writes restore palette index zero correctly. FPS counts completed draws
+against VBlank and requests a repaint only when its displayed value changes;
+idle static presentation screens retain their pixels.
 
-FPS sampling requests a repaint only when its displayed value or readiness
-changes. Once the counter settles, idle pause, inventory, action and document
-screens retain their pixels. Inventory/actions mark content dirty only on input
-edges; the world remains paused while those menus are open.
+Original FITD group geometry, Q15 arithmetic, flat primitives, stable depth
+order, projection and conditional foreground masks remain. World primitives
+are rejected in full when any referenced vertex has camera Z <=100, matching
+FITD's visibility rule. Ordinary drawing, prepared props and contact depth use
+the same policy; crossing faces are not turned into new clipped polygons.
+Type-2 eye points occupy one pixel; small type-3 spheres can also shrink to one
+pixel. Back faces are culled. Material 2 uses fixed 50% screen-door transparency.
+Translation/mask tests use each actor's floor and room. A stable world painter
+sort orders models before their primitive sort. The original pair-dependent
+distance heuristic supplies a preference; a stable bounded graph pass enforces
+separated camera-depth intervals across the complete list. Compatible vertical
+precedence keeps floor hatches below standing actors. X/Z separating planes
+also constrain overlapping camera-depth ranges, including windows behind pushed
+furniture. Contradictory X/Z preferences retain the preceding stable order.
+Cyclic plane preferences are broken deterministically without dropping
+separated-depth constraints.
+Equal zero-thickness intervals retain stable ties. The graph uses 400 bytes
+temporary stack and executes from protected ROM; an already valid order skips
+its selection pass. Interpenetrating geometry still needs local per-pixel depth.
 
-Original FITD group geometry, Q15 arithmetic, flat primitives, stable depth order, camera projection, near clipping and conditional foreground masks remain in use. Type-2 eye points occupy one native pixel; small type-3 sphere eyes can shrink to one pixel instead of retaining a three-pixel minimum. Back-facing polygons are culled. Material 2 uses a fixed 50% screen-door pattern to show the scenery through glass. Actor translation/mask tests use the actor's own floor and room. A stable world-level painter sort orders multiple models before their own primitive sort. Vertically disjoint bounds use their camera-relative physical order before horizontal distance, keeping the attic hatch below the standing chest/player without broad height buckets.
+One 64,000-byte RAM image holds scenery with static props baked in. All 144
+camera backgrounds retain raw storage and aligned word copies, with banked
+mapping shared across floors. View changes reset the bake and slot history;
+same-camera room links retain it. Binding/copy happens once per rebuild. CRAM
+reload follows actual palette changes. Movable props and deforming animations
+remain dynamic. Missing-animation props and bodies with no deformable child
+groups use the shared pose/mask quiet timer throughout the game, caching after
+25 unchanged world ticks. Slot ownership
+resets history when an actor slot is recycled.
 
-One 64,000-byte RAM image stores the current background with static props baked in. Changed camera assets reset the bake and per-slot history; same-camera room links retain them and update the room binding. A cache rebuild binds/copies its camera once. All 20 camera backgrounds use raw ROM storage and aligned word copies. Compressed camera assets are rejected; the unused 600-byte row index is removed. CRAM reload is conditional on actual palette changes and occurs after drawing but before presenting the frame. Animated/movable models leave the bake, and stationary flags still remain dynamic until their rendered-pose/mask hash has stayed unchanged for 25 world ticks. This keeps sustained pushing out of the bake while allowing settled doors and stopped ghosts to return to it. Per-slot object ownership resets cache history when activation recycles a slot; owners and quiet timestamps use 96 bytes total. Static props must still appear in front of farther moving actors: at rebuild, their colored draw also records visible pixel coverage into an uncached 8000-byte bitmap shared by the row-owning SH2s, including black model pixels, screen-door glass and camera-mask clipping. The bitmap reuses contact/face-sort scratch after up to 384 face indices move to a 768-byte local array. Its bits generate a bounded 3072-span cache without a second monochrome draw or framebuffer scan; scanning reads each bitmap byte once and skips uniform runs. Full restores use direct aligned word reads, and baking copies only the static damage rectangle into the original RAM background. Each span is a four-byte `(u16 pixel start, u16 length)` record. Overlapping foreground props copy only their cached pixels; an exhausted span pool falls back to a normal model draw. A separate gameplay geometry scratch array is shared by combat and LIFE bounds calculations. The renderer shares a union between normal geometry scratch and compact contact-group vertices. At physical model contacts it resolves reciprocal depth per pixel in 64×64 tiles. The 8 KiB tile reuses the 6 KiB face-sort workspace and adds only 2 KiB. Search/Push animations activate physically touching prop groups; flat floor patches are excluded; groups are bounded to 768 vertices and fall back to existing painter output if that bound is exceeded. Near clipping and conditional architectural masks remain applied. Masks read the original raw camera asset rather than composite bake pixels. Unrelated foreground models retain their normal painter position after the contact repair. All-front contact vertices reuse camera-space X for cached reciprocal depth; near-crossing groups retain X for clipping.
+A changed static painter order repairs the region enclosing intersecting props
+and mask writes. Geometry/membership/camera changes keep full rebuilds. Colored
+static drawing records coverage, including black pixels, glass and mask
+clipping, into an uncached 8000-byte bitmap shared by the row-owning SH2s. This
+reuses contact/face-sort scratch after face indices move to a local array.
+Bitmap runs form a bounded 3072-span cache without a second draw or framebuffer
+scan. Each cached span is `(u16 pixel start, u16 length)`; exhausted pools fall
+back to regular model drawing. Baking copies only changed static rectangles.
+Foreground replay copies cached colored spans and reapplies the actor's original
+architectural masks, including background erasures absent from its silhouette.
+Both operations are clipped to the overwritten region. A regular full-draw
+fallback expands that region so subsequent cached props repair all its writes.
+
+Combat/LIFE bounds share separate gameplay geometry scratch. Rendering shares
+a union between ordinary vertices and compact contact vertices. Physical
+contacts resolve reciprocal depth per pixel in 64×64 tiles; the 8 KiB tile
+reuses 6 KiB face-sort scratch and adds 2 KiB. Nearby character/prop overlaps
+activate correction in idle poses as well as Search/Push. Initial selection
+excludes flat floor patches. Screen-overlapping models between the first and
+last selected painter ranks join the same group, including foundable items;
+only later models replay afterward. Full foreground draws expand the repair
+footprint, preserving untouched pixels beyond the original contact area.
+Groups remain bounded to 768 vertices; exceeding that limit retains painter
+order rather than allocating a larger buffer.
+Prepared primitives/gradients share idle gameplay scratch. Larger jobs use
+disjoint SH2 bands and two 64×32 halves of the depth workspace, with explicit
+CONTACT/END fences. Oversized groups or models with near-rejected vertices use
+the fallback, which retains valid primitives. Original camera masks and unrelated foreground ordering survive
+contact repair. Audio interrupts remain available.
+
+Dark rooms apply a bounded lamp mask after normal scene drawing. LIFE selects
+its source; the renderer projects that source's current collision center
+through the active camera, and requires it in the current draw list. A prepared
+ellipse table avoids per-row division/square roots. Mask writes cover only
+restored/drawn damage; each physical buffer retains black pixels outside the
+light and restores the union of its previous and current lit footprints.
+Lighting changes request a full restore, while ordinary lamp motion preserves
+partial repairs. This adds no bitmap and does not alter simulation clocks.
+The light footprint is this port's rendering implementation; original visual
+parity still needs playthrough comparison.
 
 ## Asset bank version 2
 
-Header: `A32X`, `u32 version`, `u32 count`, `u32 size`. Directory entries: `u32 offset`, `u32 packed size`, `u32 unpacked size`, `u16 type`, `u16 flags`. Assets are four-byte aligned with big-endian fields. Flag 1 means `(u8 count, u8 palette index)` RLE; the generic decoder understands it, but all current assets are raw and the camera renderer requires flag zero.
+Header: `A32X`, u32 version/count/size. Four-byte-aligned big-endian directory
+entries contain u32 offset/packed size/unpacked size and u16 type/flags. Codec
+flags are 0 raw, 1 RLE, 2 raw LZ4, and 3/4 type-13 raw width/height headers
+followed by RLE/LZ4 pixels; `0x8000` combines with the codec for banked payloads.
+The shared LZ4 decoder accelerates offset-one constant runs while preserving
+zero pixels, padding and overlapping matches. Framebuffer decoding uses word
+writes and requires no scratch bitmap.
 
-This bank contains 1957 assets, 3,788,160 bytes: floor 0 (one room/five cameras), floor 1 (eight rooms/fifteen cameras), both 272-model/305-animation banks, 563 LIFE scripts, 45 tracks, object/variable/define state, title/palettes, item text and 21 English book entries. Names identify floor and room/camera. Models keep the original 36-byte header; the primitive offset points to an array of u32 offsets, followed by compact variable-length primitives `(u8 type,count,color,material; u16 size; u16 indices[count])`. The largest supported model has 384 vertices, 40 groups and 384 primitives. Text/book control codes are converted to uppercase printable text and line breaks for the small native font. Copyright (source byte A9) becomes `(C)` and the I-Motion separator (FA) becomes `-`, avoiding unsupported glyphs. Seven type-13 UI assets contain `u16 width, u16 height` followed by raw indexed pixels. The host importer precomposes the original ITD_RESS:4 corners, repeating rails and 44×8 title plaque. The title panel matches their colors to the existing title palette; gameplay panels retain the original indices. Runtime panels use aligned word copies, including black pixels, and merge their rectangle into per-bank damage. They require no additional RAM bitmap, decompressor or palette changes. Panel coordinates and widths are even and within the logical scene. The single-panel console layout and controls remain intact.
+The bank has 2316 asset IDs. Existing 2053 IDs and the imported-game save
+fingerprint `0x0eebc721` remain unchanged; new rooms/views and the ending are
+appended. Both 272-body/305-animation banks, all LIFE/track, original text,
+21 English books, startup/UI/death resources, 101 effects and eight music tracks
+remain available. Models keep a 36-byte header and a u32 primitive-offset table;
+primitives are compact `(u8 type,count,color,material; u16 size; indices[])`.
+Original proportional text preserves glyph bytes rather than forcing uppercase.
+UI panels precompose ITD_RESS:4 rails/corners/plaque; runtime restores raw or
+compressed pixels through the same RAM composition/damage paths.
 
-`assets/manifest.json` records original input and bank hashes. The importer reads the supplied installation without modifying it. Converted game resources are separate from the engine license and are excluded from the source ZIP.
+Type-14 fixed-prop programs contain a u32 count and sorted `(view, pose key,
+program offset)` records, where view is `(floor << 8) | camera`. Pose FNV-1a
+includes model identity, floor/room, position and angles; skeleton-free geometry
+is required. Programs store screen bounds and literal `(start,length,color)`
+spans captured with two sentinel backgrounds using the native integer renderer.
+They cover eligible poses throughout the house, subject to the fixed-ROM
+budget. Current collision bounds apply architectural masks on replay.
+Missing/moved/rotating/skeletal poses use regular rendering.
 
+Static keys hash mask activation rather than raw collision coordinates;
+painter order remains in the scene key. Group-zero animation is excluded
+because actor angles replace it in geometry. Child states and real geometry
+changes remain dependencies, preserving ordering without needless rebakes.
 
-## Fixed prop drawing programs
-
-AS_STATIC_RASTERS is a raw type-14 asset. Its u32 entry count is followed by sorted `(u32 view, u32 pose key, u32 program offset)` records. View is `(floor << 8) | camera`. Pose FNV-1a hashes model offset relative to GAME_PALETTE, floor/room, position and actor angles; skeleton-free geometry is required. Shared programs contain four i16 screen bounds, u32 command count, then `(u16 start pixel, u16 length, u8 color, u8 pad)` literal drawing spans. The importer captures unmasked output using two sentinel backgrounds and the same native integer renderer. Runtime spans maintain damage and optional coverage, then use the actual current ZV to apply architectural masks. Missing/moved/rotating/skeletal poses fall back to normal drawing.
-
-The static cache key hashes camera-mask activation rather than raw collision coordinates. The scene key preserves static painter order because collision bounds also influence ordering. Group-zero animation state is excluded because actor angles replace it during vertex generation. Child states and real geometry changes remain dependencies. These rules prevent unnecessary dynamic classification and a second bake after the quiet timer, while retaining required order changes.
+`assets/manifest.json` records input/bank hashes; `full_game_manifest.json`
+records complete-floor coverage and appended resources. The importer reads
+original installations without modifying them. Converted resources remain
+separate from the engine license and are excluded from source archives/Git.
 
 ## Memory and diagnostics
 
-The RELEASE module occupies 83,108 SDRAM bytes; BSS uses 160,176. Static SDRAM ends at `0x0603B658` (243,288 bytes), leaving 2,472 bytes below the stack reservation. The master reserves 12 KiB and the slave 4 KiB at the top of 256 KiB SDRAM. The linker rejects static allocations at or above `0x0603C000`. Framebuffer RAM is separate. This is a tight budget; later systems need measured reuse, fewer live poses, or overlays rather than unchecked additions.
+The complete-game RELEASE ROM is 14,155,776 bytes (13.5 MiB). Fixed bank data
+uses 3,964,720 bytes and the extension 9,932,868 bytes. The 84,420-byte BIOS
+module ends at physical byte 4,180,212, leaving 14,092 bytes below the 4 MiB
+direct-window limit. BSS uses 160,640 bytes; module/BSS/linker overhead total
+245,064 bytes, ending at `0x0603BD48`. The static margin below the reserved
+stacks is 696 bytes. `build/bank-layout.json` is the authoritative
+generated layout report for this build; later changes require fresh figures.
 
-COMM registers retain the v6 coherent input, sequence, region and heartbeat protocol. `debug_state[32]` preserves its first sixteen timing/player/render words and adds floor, room, menu, script-fault LIFE/word/code, inventory/in-hand/prompt, actor-pool peak, world ticks, selected action, health, book, finish and camera-target state. PROFILE builds retain SH7604 FRC scopes; RELEASE removes timer instrumentation. See the v6 architecture report for the inherited mailbox details and `PERFORMANCE.md` for the current measurements.
+SH2 SDRAM remains 256 KiB. The master reserves 12 KiB and the slave 4 KiB at
+its top; the linker rejects static allocations at or above `0x0603C000`.
+Framebuffer RAM is separate. No additional image/depth buffers or heap are
+introduced; the remaining static margin must be measured after changes.
+
+COMM retains coherent input, sequence, region and heartbeat. `debug_state[32]`
+preserves the initial timing/render words and exposes floor, room, menu,
+LIFE/word/code fault, inventory/hand/prompt, actor peak, world ticks, action,
+health, book, finish and camera target. PROFILE uses SH7604 FRC scopes;
+RELEASE removes timer instrumentation. Diagnostics and host fixture helpers
+remain outside the cartridge where applicable.
 
 ## Persistent saves
 
-The RA header advertises 128 KiB cartridge SRAM at 0x200000–0x21FFFF. The SH2 transports sequential bytes through blocking COMM0/1 commands serviced by the 68000, batching two bytes per exchange. SRAM is enabled only for a transaction. A record has six big-endian u32 words: magic AITD, schema S14/01, generation, length, FNV-1a payload checksum and an imported-game fingerprint. Fingerprinting includes object/variable/define data and original LIFE/track PAKs. Two 64 KiB records alternate; the older valid record remains while writing. Magic is cleared first and committed last, then read back. A newer damaged record is rejected. Length and schema/resource bounds are validated before applying state. Loading first parses into bounded local scratch, then rebinds original asset IDs and applies the payload. Renderer caches and pointers are reconstructed. Native scheduling rebases once after save/load so SRAM time cannot advance gameplay on Resume. No heap or full-save RAM buffer is used.
+The RA header advertises 128 KiB SRAM at `0x200000–0x21FFFF`. SH2 transports
+sequential bytes through blocking COMM commands serviced by the 68000, batching
+two bytes per exchange. SRAM is enabled only during a transaction. Six u32
+header words store magic AITD, schema, generation, length, FNV-1a checksum and
+the original imported-game fingerprint. Two 64 KiB journal records alternate;
+magic clears first and commits last, followed by readback. A damaged newest
+record falls back to the older valid record.
+
+New writes use S16/01 (`0x53313601`): 50 actor slots, signed 16-bit bone states
+and a trailing darkness flag. Loading also accepts S14/01 (`0x53313401`): 24
+slots and signed 32-bit bone states; remaining slots clear and darkness is
+reconstructed from original saved room/script variables. The fingerprint and
+original resource IDs remain stable. Older ROMs cannot read S16 records.
+Migration preserves the valid old journal until a later normal save reuses it.
+The expanded pool's worst-case record remains within the 65512-byte payload
+limit; measured evidence belongs in the full-game validation report.
+
+Loads validate length/schema/resource bounds in bounded scratch before applying
+state, then rebuild pointers and renderer caches. Scheduling rebases after
+SRAM operations so time spent saving cannot advance gameplay on Resume. No
+heap or full-save RAM buffer is used. Compatibility checks compare every saved
+world/actor/bone/effect field using isolated host SRAM; they never read or write
+user battery files. Music restarts at its restored track; active sample voices
+and exact audio playheads are presentation state.
 
 ## Autonomous audio
 
-Type 15 stores u32 PCM sample count, i16 initial predictor, u8 initial IMA step index, one reserved byte and low-nibble-first ADPCM. Two slave-owned voice states mix at 8 kHz. A cache-through eight-request ring carries sample, next sample and repeat state from the master. PWM level-6 IRQ refills three samples per interrupt and preserves ABI registers/PR/MACH/MACL. Voice updates are protected briefly against the ISR. The idle slave polls requests; interrupts remain available during rasterization. The IRQ is disabled after centered silence when voices finish. Sample headers are read directly from immutable asset_bank so slave audio does not depend on master-cached platform globals.
+Type 15 stores u32 PCM count, i16 predictor, u8 IMA step index, one reserved
+byte and low-nibble-first ADPCM. Two slave-owned voices mix at 8 kHz. A
+cache-through eight-request ring carries sample/next/repeat state from the
+master. PWM level-6 IRQ refills three samples per interrupt and preserves
+ABI registers/PR/MACH/MACL. Voice updates briefly protect against the ISR;
+the idle slave polls requests while rendering interrupts remain available.
+IRQ disables after centered silence when voices finish. Sample headers come
+from immutable protected bank data, independent of master-cached globals.
 
-Type 16 stores driver duration and command count as two u32 values, then four-byte `(delta ticks, port, register, value)` commands. Ports 0/1 target YM2612, 2 PSG, 3 a wait and 4 the end marker. The 68000 reads through the standard 1 MiB bank window, executes from its own RAM and advances a rational 294/(5×refresh) phase per VBlank. It owns the Z80 bus with reset released, including across controller reads. Music selection/status/stop/fade use COMM commands 0x5010–0x5014. Music pauses while SRAM is mapped, avoiding ROM/SRAM access conflicts. The game polls completion and preserves queued LIFE music transitions. Loading restarts the selected song rather than serializing chip/playhead state. FM two-operator patches use YM algorithm 4 (or additive 7), with the unused operator pair muted. OPL multipliers/pitch are translated; envelope, waveform and PSG percussion behavior are approximations.
+Type 16 stores driver duration/count followed by four-byte
+`(delta ticks, port, register, value)` commands: ports 0/1 YM2612, 2 PSG,
+3 wait and 4 end. The 68000 executes from RAM through its 1 MiB ROM window,
+caches bank selection and advances rational `294/(5×refresh)` timing per
+VBlank. It owns the Z80 bus with reset released, including controller reads.
+COMM `0x5010–0x5014` handles selection/status/stop/fade. Music pauses while
+SRAM is mapped and preserves queued LIFE transitions. FM two-operator patches
+use algorithm 4 or additive 7 with unused operators muted. OPL multipliers
+and pitch translate; envelopes, waveforms and percussion remain approximations.
+CD narration is not implemented.
 
-The offline importer shares identical `(type, flags, payload)` blocks, preserves old asset IDs and appends 101 effect / 8 music assets. Shared model payloads reduce prepared-prop keys to 216 entries while retaining the 169 distinct drawing programs. Prior fixed camera, mask and renderer paths remain unchanged. Source IDs/raster programs are regenerated with the final bank layout.
+The importer shares identical type/flags/payload blocks. Source IDs and static
+programs regenerate against the final bank layout without changing original
+resource identities. Mapper image-page changes cannot replace audio payloads,
+and neither rendering nor presentation changes the 25/60 Hz clocks.

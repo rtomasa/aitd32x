@@ -10,7 +10,7 @@ import struct
 import subprocess
 from pathlib import Path
 
-def compile_rasters(root, out, objects, levels):
+def compile_rasters(root, out, objects, levels, max_bytes=None):
     here=Path(__file__).resolve().parent
     sources=['engine/math','engine/trig','engine/actor','engine/collision',
              'engine/world','engine/life','platform/audio','platform/storage','render/render',
@@ -26,7 +26,7 @@ def compile_rasters(root, out, objects, levels):
     lib.raster_init(buf,len(bank))
     manifest=json.loads((out/'manifest.json').read_text())
     assets={a['name']:bank[a['offset']:a['offset']+a['packed_size']] for a in manifest['assets']}
-    entries={};skipped=0
+    entries={};benefits={};skipped=0
     for floor,(rooms,cameras) in enumerate(levels):
         for cam in range(cameras):
             data=assets[f'CAMERA_{floor}_{cam}'];views=struct.unpack_from('>I',data,20)[0]
@@ -62,12 +62,32 @@ def compile_rasters(root, out, objects, levels):
                         if (view,key) in entries and entries[view,key]!=program:
                             raise ValueError('raster pose hash collision')
                         entries[view,key]=program
+                        # Prefer transforms with more vertices/primitives per
+                        # stored command byte after retaining the old floors.
+                        nv,_,np=struct.unpack_from('>3H',assets[f'MODEL_{character}_{body}'],2)
+                        benefits[view,key]=max(benefits.get((view,key),0),nv+np*3)
+    candidates=len(entries)
+    if max_bytes is not None:
+        if max_bytes<4:raise ValueError('no fixed-ROM budget remains for static drawing programs')
+        selected={};shared_programs=set();used=4
+        def priority(item):
+            (view,key),program=item
+            return (view//256>1,-benefits[view,key]/max(len(program),1),view,key)
+        for identity,program in sorted(entries.items(),key=priority):
+            cost=12 if program in shared_programs else 12+(len(program)+3)//4*4
+            if used+cost>max_bytes:
+                if identity[0]//256<=1:
+                    raise ValueError('static drawing budget cannot retain existing floor 0/1 optimizations')
+                continue
+            selected[identity]=program;shared_programs.add(program);used+=cost
+        entries=selected
     result=bytearray(4+12*len(entries));struct.pack_into('>I',result,0,len(entries));shared={}
     for i,((view,key),program) in enumerate(sorted(entries.items())):
         if program not in shared:
             result.extend(bytes((-len(result))%4));shared[program]=len(result);result.extend(program)
         struct.pack_into('>3I',result,4+i*12,view,key,shared[program])
-    report={'entries':len(entries),'distinct_programs':len(shared),'bytes':len(result),'oversized_poses_skipped':skipped,'scope':'fixed skeleton-free props; current masks applied at runtime'}
+    if max_bytes is not None and len(result)>max_bytes:raise ValueError('static drawing programs exceeded fixed-ROM budget')
+    report={'entries':len(entries),'candidate_entries':candidates,'distinct_programs':len(shared),'bytes':len(result),'budget_bytes':max_bytes,'budget_poses_skipped':candidates-len(entries),'entries_by_floor':{floor:sum(view//256==floor for view,_ in entries) for floor in range(len(levels))},'oversized_poses_skipped':skipped,'scope':'fixed skeleton-free props across all floors; current masks applied at runtime; uncached poses retain regular rendering'}
     (out/'raster_manifest.json').write_text(json.dumps(report,indent=2)+'\n')
     print('Static raster commands:',json.dumps(report))
     return bytes(result)

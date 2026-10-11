@@ -7,10 +7,10 @@
 #include "../render/book.hpp"
 // Both journal records must fit even with the complete active-actor pool.
 static constexpr unsigned HEADER=24,LIMIT=65536-HEADER;
-static constexpr uint32_t MAGIC=0x41495444,FORMAT=0x53313401;
+static constexpr uint32_t MAGIC=0x41495444,LEGACY_FORMAT=0x53313401,FORMAT=0x53313601;
 struct Stream {
-    bool reading,apply,ok;unsigned count;uint32_t checksum;
-    Stream(bool read,bool change):reading(read),apply(change),ok(true),count(0),checksum(2166136261u) {}
+    bool reading,apply,ok,legacy;unsigned count;uint32_t checksum;
+    Stream(bool read,bool change,bool old=false):reading(read),apply(change),ok(true),legacy(old),count(0),checksum(2166136261u) {}
     uint8_t Byte(uint8_t value) {
         if(count==LIMIT) { ok=false;return 0; }
         if(reading) value=Platform_SaveRead();else Platform_SaveWrite(value);
@@ -25,14 +25,14 @@ struct Stream {
         if(reading && apply) value=(T)result;
         return result;
     }
-    void Vector(Vec3 &v) { Field(v.x);Field(v.y);Field(v.z); }
+    template<class V> void Vector(V &v,unsigned bytes=4) { Field(v.x,bytes);Field(v.y,bytes);Field(v.z,bytes); }
     void Real(RealValue &v) { Field(v.start);Field(v.end);Field(v.steps);Field(v.since); }
     void Check(bool valid) { if(!valid) ok=false; }
 };
 static void Object(Stream &s,WorldObject &o) {
     for(int i=0;i<26;++i) {
         int v=s.Field(o.v[i],2);
-        if(i==O_SLOT) s.Check(v>=-1 && v<MAX_ACTIVE);
+        if(i==O_SLOT) s.Check(v>=-1 && v<(s.legacy?24:MAX_ACTIVE));
         if(i==O_BODY) s.Check(v>=-1 && v<A32X_MODEL_COUNT);
     }
 }
@@ -62,7 +62,7 @@ static void Pose(Stream &s,Actor &a,int body,int character) {
     unsigned groups=a.model.data?BE16(a.model.data+4):0,saved=s.Word(groups,2);
     s.Check(saved==groups && saved<=MAX_GROUPS);
     if(saved>MAX_GROUPS) return;
-    for(unsigned i=0;i<saved;++i) for(unsigned j=0;j<2;++j) { GroupState &p=j?a.state[i]:a.previous[i];s.Field(p.type);s.Vector(p.delta); }
+    for(unsigned i=0;i<saved;++i) for(unsigned j=0;j<2;++j) { GroupState &p=j?a.state[i]:a.previous[i];unsigned bytes=s.legacy?4:2;s.Field(p.type,bytes);s.Vector(p.delta,bytes); }
 }
 static bool Payload(Stream &s,Game &g) {
     World &w=g.world;int character=s.Field(w.character);s.Check(character==0 || character==1);
@@ -81,7 +81,7 @@ static bool Payload(Stream &s,Game &g) {
     for(auto &v:w.vars) s.Field(v,2);
     for(auto &v:w.cvars) s.Field(v,2);
     bool applying=s.apply;
-    for(int k=0;k<MAX_ACTIVE;++k) {
+    for(int k=0;k<(s.legacy?24:MAX_ACTIVE);++k) {
         ActiveObject temporary{};Actor dummy{};
         ActiveObject &a=s.reading&&!applying?temporary:w.active[k];
         s.apply=true;int id=s.Field(a.id);s.Check(id>=-1 && id<A32X_OBJECT_COUNT);
@@ -93,20 +93,24 @@ static bool Payload(Stream &s,Game &g) {
         } else if(s.reading) { a={};a.id=-1; }
         s.apply=applying;
     }
+    if(s.reading && s.apply && s.legacy) for(int k=24;k<MAX_ACTIVE;++k) { w.active[k]={};w.active[k].id=-1; }
     for(auto &e:w.effects) {
         s.Field(e.since);s.Field(e.duration,2);s.Field(e.floor,2);s.Field(e.room,2);
         int count=s.Field(e.count,1);s.Check(count<=30);s.Field(e.color,1);s.Field(e.mode,1);
         for(auto &v:e.points) { s.Field(v.x,2);s.Field(v.y,2);s.Field(v.z,2); }
     }
+    if(!s.legacy) s.Field(w.dark,1);
+    else if(s.reading && s.apply) w.dark=!w.cvars[12] && ((floor==2 && room==0 && !w.vars[70]) || (floor==2 && room==6 && !w.vars[85]) || (floor==6 && w.player->room<6 && !w.vars[178]));
     return s.ok;
 }
-struct Record { uint32_t generation,length,checksum;bool valid; };
+struct Record { uint32_t generation,length,checksum;bool valid,legacy; };
 static uint32_t RawRead() { unsigned v=0;for(int i=0;i<4;++i) v=(v<<8)|Platform_SaveRead();return v; }
 static void RawWrite(uint32_t v) { for(int i=3;i>=0;--i) Platform_SaveWrite((uint8_t)(v>>(8*i))); }
 static Record Inspect(unsigned bank) {
     Record r{};if(!Platform_SaveBegin(bank)) return r;
     uint32_t magic=RawRead(),format=RawRead();r.generation=RawRead();r.length=RawRead();r.checksum=RawRead();unsigned game=RawRead();
-    if(magic==MAGIC && format==FORMAT && game==A32X_SAVE_FINGERPRINT && r.length && r.length<=LIMIT) {
+    r.legacy=format==LEGACY_FORMAT;
+    if(magic==MAGIC && (format==FORMAT || r.legacy) && game==A32X_SAVE_FINGERPRINT && r.length && r.length<=LIMIT) {
         unsigned sum=2166136261u;for(unsigned i=0;i<r.length;++i) sum=(sum^Platform_SaveRead())*16777619u;r.valid=sum==r.checksum;
     }
     Platform_SaveEnd();return r;
@@ -134,15 +138,16 @@ bool Game_Load(Game &g) {
     Record r=bank?b:a;
     if(!Platform_SaveBegin(bank)) return false;
     Platform_SaveSeek(HEADER);
-    Stream verify(true,false);bool valid=Payload(verify,g)&&verify.count==r.length&&verify.checksum==r.checksum;
+    Stream verify(true,false,r.legacy);bool valid=Payload(verify,g)&&verify.count==r.length&&verify.checksum==r.checksum;
     Platform_SaveEnd();if(!valid) return false;
-    g.world.player=&g.player;Platform_SaveBegin(bank);Platform_SaveSeek(HEADER);Stream read(true,true);valid=Payload(read,g);Platform_SaveEnd();if(!valid) return false;
+    g.world.player=&g.player;Platform_SaveBegin(bank);Platform_SaveSeek(HEADER);Stream read(true,true,r.legacy);valid=Payload(read,g);Platform_SaveEnd();if(!valid) return false;
     Audio_Reset();Audio_UpdateMusic(g.world.music,g.world.next_music,g.tick);
     g.world.player=&g.player;g.world.pad=0;g.world.click=0;g.world.view_changed=false;g.world.fault_code=0;
     g.world.intro=false;g.world.picture_id=-1;g.world.picture_duration=0;
     g.character=g.world.character;g.camera=g.world.camera;g.mode=1;
     if(g.world.prompt>=0) g.PickupEnter();
     g.paused=true;g.menu=3;g.selection=0;g.action_selection=2;g.book_line=0;
+    g.lighting_dark=false;g.renderer.full_restore[0]=g.renderer.full_restore[1]=true;
     g.startup_phase=STARTUP_GAMEPLAY;g.startup_next=255;g.inventory_dirty=true;
     g.held=g.pending_edges=0;g.action_blocked=true;g.ResetCache();g.dirty=true;return true;
 }

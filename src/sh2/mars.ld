@@ -15,6 +15,7 @@ SECTIONS {
         build/src/platform/save_bridge.o(.text .text.* .rodata .rodata.*)
         build/src/engine/startup.o(.rodata .rodata.*)
         build/src/engine/death.o(.rodata .rodata.*)
+        build/src/engine/lighting.o(.rodata .rodata.*)
         build/src/engine/inventory.o(.rodata .rodata.*)
         /* Expanded intro floor/asset lookup tables need no SDRAM copy. */
         build/src/engine/world.o(.rodata .rodata.*)

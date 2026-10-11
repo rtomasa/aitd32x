@@ -33,6 +33,7 @@ def main():
             lib.host_init.argtypes = [C.c_void_p, C.c_uint]
             lib.host_pixels.restype = lib.host_background.restype = C.c_void_p
             lib.host_cache.restype = C.c_uint
+            lib.host_cache_slots.restype = C.c_uint64
 
         def both(name, *values):
             for lib in libs:
@@ -40,9 +41,9 @@ def main():
 
         def cache():
             lib = libs[0]
-            return dict(signature=lib.host_cache(0, 0), slots=lib.host_cache(1, 0),
-                        hashes=[lib.host_cache(4, slot) for slot in range(24)],
-                        owners=[lib.host_cache(5, slot) for slot in range(24)])
+            return dict(signature=lib.host_cache(0, 0), slots=lib.host_cache_slots(0),
+                        hashes=[lib.host_cache(4, slot) for slot in range(50)],
+                        owners=[lib.host_cache(5, slot) for slot in range(50)])
 
         def order_only(before, after):
             slots = before['slots']
@@ -50,7 +51,7 @@ def main():
                     bool(before['signature']) and slots == after['slots'] and
                     all(before['hashes'][slot] == after['hashes'][slot] and
                         before['owners'][slot] == after['owners'][slot]
-                        for slot in range(24) if slots & (1 << slot)))
+                        for slot in range(50) if slots & (1 << slot)))
 
         def compare(label):
             for api, size in [('host_pixels', 320 * 224), ('host_background', 64000)]:
@@ -82,11 +83,7 @@ def main():
             nonlocal bank
             bank = C.create_string_buffer(data)
             both('host_init', bank, len(data))
-            if character:
-                both('host_tick', 32)
-                both('host_tick', 0)
-            both('host_tick', 128)
-            both('host_tick', 0)
+            both('host_startgame', character)
             both('host_place', 1, 1, room, 700, 0, 1700, 512)
             both('host_set_variable', 33, 1)
             for index in range(50):

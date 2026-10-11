@@ -8,8 +8,9 @@ struct Game {
     World world;
     int menu,selection,action_selection,book_line;
     bool action_blocked;
-    uint32_t tick,static_signature,dynamic_slots,static_hash[MAX_ACTIVE];
-    uint32_t static_slots;
+    uint32_t tick,static_signature,static_hash[MAX_ACTIVE];
+    uint64_t dynamic_slots;
+    uint64_t static_slots;
     uint8_t static_rank[MAX_ACTIVE];
     int16_t static_owner[MAX_ACTIVE];
     uint16_t static_quiet_since[MAX_ACTIVE];
@@ -19,12 +20,12 @@ struct Game {
     uint16_t held,pending_edges;
     int mode,camera,character;
     bool paused,help,dirty,resync_clock;
-    bool inventory_dirty;
+    bool inventory_dirty,lighting_dark;
     // Presentation time is in 1/1500 s, independent of the 25 Hz world.
     uint32_t startup_time,startup_since,startup_transition;
     uint16_t startup_palette;
     uint8_t startup_phase,startup_next,startup_fade;
-    bool Dynamic(int slot) const { return (dynamic_slots&(1u<<slot))!=0; }
+    bool Dynamic(int slot) const { return (dynamic_slots&(uint64_t(1)<<slot))!=0; }
     void ResetCache();
     void RebuildStaticOrder(const int *order,int count);
     void Init(bool boot=true);
@@ -35,6 +36,8 @@ struct Game {
     void Update();
     void DrawScene();
     A32X_COLD void DrawMessages();
+    A32X_COLD Rect PrepareLighting(const int *order,int count,Point &center);
+    A32X_COLD void DrawLighting(Rect restored,Rect light,Point center);
     void Draw();
     A32X_COLD void StartupEnter(unsigned phase);
     A32X_COLD void StartupAdvance(unsigned elapsed);
@@ -53,6 +56,10 @@ struct Game {
     A32X_COLD void DeathUpdate(uint16_t edges);
     A32X_COLD void DeathAdvance(unsigned elapsed);
     A32X_COLD void DeathDraw();
+    A32X_COLD void StartEnding(bool complete=false);
+    A32X_COLD void EndingUpdate(uint16_t edges);
+    A32X_COLD void EndingAdvance(unsigned elapsed);
+    A32X_COLD void EndingDraw();
 };
 // Region-independent fixed-tick scheduler. A frame counter is measured by MD.
 struct Clock {

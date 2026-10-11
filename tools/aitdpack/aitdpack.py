@@ -290,7 +290,7 @@ def main():
     title=get('ITD_RESS',13)
     if len(title)!=64770 or title[:2]!=b'VP':raise ValueError('invalid title')
     add('TITLE_PALETTE',1,b''.join(struct.pack('>H',(r>>3)|((g>>3)<<5)|((b>>3)<<10)) for r,g,b in zip(title[2:770:3],title[3:770:3],title[4:770:3])))
-    from startup import lz4_block,compile_startup,build_bank,BANK_PHYSICAL_BASE,BANK_EXTRA_ORIGIN
+    from startup import lz4_block,compile_startup,build_bank,BANK_PHYSICAL_BASE,BANK_EXTRA_ORIGIN,BANK_MODULE_RESERVE
     title_pixels=title[770:]
     assets.append(('TITLE',2,lz4_block(title_pixels),len(title_pixels),2))
     levels=[]
@@ -366,8 +366,14 @@ def main():
     # Appending preserves every existing resource ID and the save fingerprint.
     startup_assets,startup_levels,startup_report=compile_startup(get,defines_data,native_model,native_room,native_camera,offsets,native_panel,rle,native_text)
     assets.extend(startup_assets)
-    gameplay_levels=list(levels)
-    levels.extend([startup_levels.get(floor,(0,0)) for floor in range(2,8)])
+    # Startup/death assets retain their IDs. Complete their cinematic floor
+    # subsets in place and append the rest of the original playable resources.
+    from full_game import compile_floors,compile_ending
+    levels,full_game_report=compile_floors(assets,get,offsets,native_room,native_camera)
+    get('ENDSEQ',0)
+    ending_assets,ending_report=compile_ending(get,len(paks['ENDSEQ']),lz4_block)
+    assets.extend(ending_assets)
+    full_game_report['ending']=ending_report
     startup_report['existing_presentation_compression']=[dict(name=name,packed_bytes=len(data),unpacked_bytes=usize,flags=flags)
         for name,typ,data,usize,flags in assets if name=='TITLE' or name.startswith('UI_') or name.startswith('READ_BACKGROUND_')]
     (args.out/'startup_manifest.json').write_text(json.dumps(startup_report,indent=2)+'\n')
@@ -401,14 +407,19 @@ def main():
     table('book_assets',[f'BOOK_{i+1}' for i in range(book_count)])
     table('life_assets',[f'LIFE_{i}' for i in range(563)]);table('track_assets',[f'TRACK_{i}' for i in range(45)])
     table('player_model_assets',['MODEL_0_12','MODEL_1_12'])
+    table('ending_frame_assets',[f'ENDING_FRAME_{i}' for i in range(len(paks['ENDSEQ']))])
+    header += [f'#define A32X_ENDING_FRAME_COUNT {len(paks["ENDSEQ"])}']
     for label,id in [('walk',254),('idle',4),('run',255),('back',256),('right',257),('left',258)]:table(f'player_{label}_assets',[f'ANIM_0_{id}',f'ANIM_1_{id}'])
     (args.out/'resource_ids.h').write_text('\n'.join(header)+'\n')
     input_hashes={n+'.PAK':hashlib.sha256(p.b).hexdigest() for n,p in paks.items()}
     input_hashes.update({'OBJETS.ITD':hashlib.sha256(objects).hexdigest(),'DEFINES.ITD':hashlib.sha256(defines_data).hexdigest(),'VARS.ITD':hashlib.sha256(variables).hexdigest()})
     (args.out/'manifest.json').write_text(json.dumps(dict(version=2,levels=levels,reference=REFERENCE,bank_sha256=hashlib.sha256(bank).hexdigest(),bank_layout=bank_layout,rooms=sum(x[0] for x in levels),cameras=sum(x[1] for x in levels),player_object=player,assets=manifest,input_sha256=input_hashes),indent=2)+'\n')
     from static_rasters import compile_rasters
-    # Introduction scenery is decoded once and not baked into gameplay caches.
-    raster=compile_rasters(ROOT,args.out,objs,gameplay_levels)
+    # Compile the same prepared-prop optimization throughout the house. Keep
+    # its immutable programs within the direct ROM window alongside the module;
+    # poses beyond this offline budget retain the regular native renderer.
+    raster_budget=BANK_EXTRA_ORIGIN-BANK_MODULE_RESERVE-bank_layout['fixed_bytes']+4
+    raster=compile_rasters(ROOT,args.out,objs,levels,max_bytes=raster_budget)
     name,typ,*_=assets[raster_id];assets[raster_id]=(name,typ,raster,len(raster),0)
     bank,manifest,bank_layout=write_bank()
     metadata=json.loads((args.out/'manifest.json').read_text())
@@ -416,6 +427,8 @@ def main():
     (args.out/'manifest.json').write_text(json.dumps(metadata,indent=2)+'\n')
     startup_report['bank_layout']=bank_layout
     (args.out/'startup_manifest.json').write_text(json.dumps(startup_report,indent=2)+'\n')
+    full_game_report.update(bank_layout=bank_layout,static_raster_budget=raster_budget)
+    (args.out/'full_game_manifest.json').write_text(json.dumps(full_game_report,indent=2)+'\n')
     print(f'{len(assets)} native assets; floors {levels}; {len(bank):,} bank bytes; {bank_layout["fixed_bytes"]:,} fixed + {bank_layout["extra_bytes"]:,} extra; player object {player}')
 
 if __name__=='__main__':

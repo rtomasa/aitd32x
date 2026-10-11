@@ -13,10 +13,6 @@ static Bounds ReadBox(const uint8_t *p) { return {{BS16(p),BS16(p+4),BS16(p+8)},
 static Bounds Offset(Bounds b,Vec3 d) { b.lo={b.lo.x+d.x,b.lo.y+d.y,b.lo.z+d.z};b.hi={b.hi.x+d.x,b.hi.y+d.y,b.hi.z+d.z};return b; }
 static void Clear(void *p,unsigned n) { uint8_t *b=(uint8_t*)p;while(n--) *b++=0; }
 Asset World::RoomAsset(int f,int r) const {
-    // Extra floors belong to presentation only. The original death LIFE sets
-    // DEAD_PERSO before staging its cemetery movie on floor 6; permit that
-    // floor alone while dying without extending normal gameplay progression.
-    if(!intro && f>=2 && !(f==6 && cvars[15])) return {0,0,0,0,0};
     if(f<0 || f>=A32X_FLOOR_COUNT || r<0 || r>=room_counts[f]) return {0,0,0,0,0};
     return Platform_ReadAsset(floor_rooms[f][r]);
 }
@@ -85,7 +81,7 @@ A32X_COLD void World::Init(Actor &protagonist,int selected,int initial_floor,int
     picture_id=-1;picture_duration=0;
     for(auto &e:effects) e.count=0;
     effect_serial=0;
-    inventory_allowed=true;view_changed=true;finished=false;fault_code=fault_life=fault_pc=peak_active=0;
+    inventory_allowed=true;view_changed=true;finished=false;dark=false;fault_code=fault_life=fault_pc=peak_active=0;
     for(int s=0;s<MAX_ACTIVE;++s) { Clear(&active[s],sizeof(active[s]));active[s].id=-1; }
     Asset o=Platform_ReadAsset(AS_OBJECTS),v=Platform_ReadAsset(AS_VARS_INITIAL),c=Platform_ReadAsset(AS_DEFINES_INITIAL);
     if(o.size!=A32X_OBJECT_COUNT*52 || v.size!=A32X_VAR_COUNT*2 || c.size!=90) Platform_Fatal();
@@ -98,7 +94,7 @@ A32X_COLD void World::Init(Actor &protagonist,int selected,int initial_floor,int
     cvars[8]=(int16_t)selected;
     RefreshActors();
 }
-void World::Activate(int id,int s) {
+A32X_COLD void World::Activate(int id,int s) {
     ActiveObject &a=active[s];Clear(&a,sizeof a);a.id=id;a.value=objects[id];objects[id].v[O_SLOT]=(int16_t)s;
     a.value.v[O_FLAGS]&=~32;
     a.dyn_flags=(objects[id].v[O_FLAGS]&32)?1:0;
@@ -115,9 +111,9 @@ void World::Activate(int id,int s) {
     if(anim<0 && !(a.value.v[O_FLAGS]&F_DRAWABLE)) a.value.v[O_FLAGS]&=~F_ANIMATED;
     if(anim>=0 && p.model.data) {
         Actor_SetAnimation(p,animation_assets[character][anim]);Actor_SetFrame(p,Max(0,a.value.v[O_FRAME]));
-        // FITD InitObjet enables an installed animation. The arrival hatch's
-        // original object flags are zero, so its initial opening needs this.
-        if(intro) a.value.v[O_FLAGS]|=F_ANIMATED;
+        // FITD InitObjet enables every installed animation, including the
+        // later-floor monsters and props whose original flags start at zero.
+        a.value.v[O_FLAGS]|=F_ANIMATED;
     }
 }
 void World::Deactivate(int s) {
@@ -159,14 +155,14 @@ void World::RefreshActors() {
     }
     int count=0;for(int s=0;s<MAX_ACTIVE;++s) if(active[s].id>=0) ++count;peak_active=Max(count,peak_active);
 }
-void World::SetBody(int s,int body) {
+A32X_COLD void World::SetBody(int s,int body) {
     ActiveObject &a=active[s];if(body==a.value.v[O_BODY]) return;
     Actor &p=Pose(s);GroupState old[MAX_GROUPS];unsigned ng=p.model.data?BE16(p.model.data+4):0;
     for(unsigned i=0;i<ng;++i) old[i]=p.state[i];
     a.value.v[O_BODY]=(int16_t)body;Actor_SetModel(p,body);
     if(p.model.data) for(unsigned i=0;i<(unsigned)Min(ng,BE16(p.model.data+4));++i) p.state[i]=p.previous[i]=old[i];
 }
-void World::SetBounds(int s,int type) {
+A32X_COLD void World::SetBounds(int s,int type) {
     Actor &p=Pose(s);Actor_Bounds(p,type);
     if(type!=4) return;
     Asset r=RoomAsset(p.floor,p.room);if(!r.data) return;
@@ -200,7 +196,7 @@ void World::MoveMode(int s,int mode,int track) {
 }
 void World::Stage(int s,int f,int r,Vec3 p) {
     ActiveObject &a=active[s];
-    if(a.id==camera_target && !RoomAsset(f,r).data) { finished=true;return; }
+    if(a.id==camera_target && !RoomAsset(f,r).data) { Error(-1,r,921);return; }
     a.value.v[O_FLOOR]=f;a.value.v[O_ROOM]=r;Actor &pose=Pose(s);pose.floor=f;pose.room=r;pose.pos=p;
     if(a.id==camera_target && (floor!=f || room!=r)) { floor=f;room=r;camera=0;view_changed=true; }
 }
@@ -316,7 +312,7 @@ void World::Track(int s) {
             Asset r=RoomAsset(p.floor,p.room);const uint8_t *b=r.data+BE32(r.data+20);
             for(unsigned i=0;i<BE16(r.data+10);++i,b+=16) if(BE16(b+14)==4) { Bounds box=ReadBox(b);goal={(box.lo.x+box.hi.x)/2,(box.lo.y+box.hi.y)/2,(box.lo.z+box.hi.z)/2};if(BS16(b+12)==Pose(target).room) break; }
         }
-        Aim(s,goal,60,256);return;
+        Aim(s,goal,60,256);a.speed=4;return;
     }
     if(mode!=3 || a.value.v[O_TRACK]<0) return;
     int track=a.value.v[O_TRACK];if(track>=A32X_TRACK_COUNT) { Error(-1,track,904);return; }
@@ -347,7 +343,7 @@ void World::Track(int s) {
             if(!denominator) { Error(-1,pc,906);break; }p.pos.y=o.v[O_Y]+(goal.y-o.v[O_Y])*n/denominator;Aim(s,goal,60,256);
         } else { p.pos.y=goal.y;advance=4; }break;
     }
-    case 19: p.alpha=word(1);p.beta=word(2);p.gamma=word(3);advance=4;break;
+    case 19: p.alpha=word(1);p.beta=word(2);p.gamma=word(3);a.direction=0;advance=4;break;
     default: Error(-1,pc,1000+op);break;
     }
     a.value.v[O_TRACK_POS]+=advance;
@@ -389,8 +385,9 @@ void World::Advance(int s) {
         if(p.pos.y< -10 && !supported) { a.vertical={p.pos.y,p.pos.y+2000,40,now};a.falling=1; }
         else a.falling=0;
     }
-    // Original stationary animations still report overlapping actors.
-    if(!d.x && !d.y && !d.z) {
+    // MoveActor already reports the original stationary overlaps. Thrown
+    // objects bypass it, so only that path needs a separate stationary scan.
+    if(a.hit_type==9 && !d.x && !d.y && !d.z) {
         int num=0;for(int t=0;t<MAX_ACTIVE && num<3;++t) if(t!=s && active[t].id>=0 && Pose(t).floor==p.floor && Intersect(Box(s),Box(t,p.room))) { a.col[num++]=t;active[t].col_by=s; }
     }
 }
@@ -516,8 +513,7 @@ void World::Update(uint16_t controller,bool acting) {
             for(unsigned i=0;i<count;++i) {
                 int id=BE16(ids+2*i);if((unsigned)id>=camera_counts[floor]) continue;
                 Asset cam=Platform_ReadAsset(floor_cameras[floor][id]);
-                // Intro-only floors retain original global camera IDs with
-                // absent views in their sparse tables. Never inspect a hole.
+                // Reject missing or malformed views before inspecting them.
                 if(!cam.data || cam.type!=3) continue;
                 if(chosen<0) chosen=id;
                 if(!Camera_Contains(cam,room,x,z)) continue;
@@ -584,6 +580,67 @@ void World::StopThrow(int s,Vec3 position) {
     a.value.v[O_FLAGS]=(a.value.v[O_FLAGS]|F_DRAWABLE|F_BOXIFY)&~F_ANIMATED;
     objects[a.id].v[O_FOUND_FLAGS]=(objects[a.id].v[O_FOUND_FLAGS]|0x4000)&~0x1000;
 }
+// Bounds constraints execute from ROM to retain the fixed SDRAM budget.
+A32X_COLD __attribute__((noinline)) static void ConstrainDrawOrder(const World &world,int *order,int count,
+                                        const int *nearest,const int *farthest,Vec3 camera_position) {
+    if(count<2) return;
+    // The original pair-dependent distance heuristic can form cycles: a third
+    // model can stop insertion sorting from putting two wholly separated
+    // depth ranges in their required order. Retain that stable order as a
+    // preference, then honor unambiguous bounds across the complete list.
+    uint64_t predecessors[MAX_ACTIVE]={};uint64_t remaining=0;bool changed=false;
+    for(int i=0;i<count;++i) remaining|=uint64_t(1)<<order[i];
+    for(int i=0;i<count;++i) for(int j=i+1;j<count;++j) {
+        int a=order[i],b=order[j],first=-1,last=-1;
+        // Equal, zero-thickness depth planes have no required precedence.
+        if(nearest[a]>=farthest[b] && nearest[b]<farthest[a]) { first=a;last=b; }
+        else if(nearest[b]>=farthest[a] && nearest[a]<farthest[b]) { first=b;last=a; }
+        else {
+            Bounds x=world.Box(a,world.room),y=world.Box(b,world.room);
+            auto plane=[](int alo,int ahi,int blo,int bhi,int camera) {
+                if((alo>=bhi && blo<alo && camera<alo) ||
+                   (ahi<=blo && bhi>ahi && camera>ahi)) return 1;
+                if((blo>=ahi && alo<blo && camera<blo) ||
+                   (bhi<=alo && ahi>bhi && camera>bhi)) return -1;
+                return 0;
+            };
+            int precedence=plane(x.lo.y,x.hi.y,y.lo.y,y.hi.y,camera_position.y);
+            if(!precedence) {
+                // A window behind pushed furniture can have an overlapping
+                // camera-depth range while a world-axis plane still separates
+                // their surfaces. A third actor must not defeat that order.
+                int horizontal=plane(x.lo.x,x.hi.x,y.lo.x,y.hi.x,camera_position.x);
+                int longitudinal=plane(x.lo.z,x.hi.z,y.lo.z,y.hi.z,camera_position.z);
+                // Opposite axis preferences belong to diagonally separated
+                // boxes; retain the existing order instead of forcing both.
+                if(!horizontal || !longitudinal || horizontal==longitudinal)
+                    precedence=horizontal?horizontal:longitudinal;
+            }
+            if(precedence) { first=precedence>0?a:b;last=precedence>0?b:a; }
+        }
+        if(first>=0) { predecessors[last]|=uint64_t(1)<<first;changed|=last==a; }
+    }
+    if(!changed) return;
+    for(int i=0;i<count;++i) {
+        int next=i;
+        while(next<count && (predecessors[order[next]]&remaining)) ++next;
+        if(next==count) {
+            // Camera depth intervals are acyclic. A cycle can only involve
+            // world-axis preferences for intersecting intervals; break those
+            // preference deterministically while preserving all depth edges.
+            for(next=i;next<count;++next) {
+                int s=order[next];bool blocked=false;
+                for(int j=i;j<count && !blocked;++j) {
+                    int t=order[j];
+                    blocked=t!=s && nearest[t]>=farthest[s] && nearest[s]<farthest[t];
+                }
+                if(!blocked) break;
+            }
+        }
+        int s=order[next];for(int j=next;j>i;--j) order[j]=order[j-1];order[i]=s;
+        remaining&=~(uint64_t(1)<<s);
+    }
+}
 int World::DrawList(int *order) const {
     Asset cam=Platform_ReadAsset(floor_cameras[floor][camera]),r=RoomAsset(floor,room);const uint8_t *views=cam.data+BE32(cam.data+20);
     int count=0;for(int s=0;s<MAX_ACTIVE;++s) if(active[s].id>=0 && Get(active[s].id,O_BODY)>=0) {
@@ -594,7 +651,7 @@ int World::DrawList(int *order) const {
     Rotation view_rotation=PrepareRotation(BS16(cam.data),BS16(cam.data+2),BS16(cam.data+4));
     int farthest[MAX_ACTIVE],nearest[MAX_ACTIVE];
     for(int i=0;i<count;++i) {
-        int s=order[i];Bounds box=Box(s,room);nearest[s]=32000;farthest[s]=-32000;
+        int s=order[i];Bounds box=Box(s,room);nearest[s]=0x7fffffff;farthest[s]=-0x7fffffff;
         for(int corner=0;corner<8;++corner) {
             Vec3 v={(corner&1?box.hi.x:box.lo.x)-camera_position.x,
                     (corner&2?box.hi.y:box.lo.y)-camera_position.y,
@@ -627,6 +684,7 @@ int World::DrawList(int *order) const {
         return d1<d2;
     };
     for(int i=1;i<count;++i) { int s=order[i],j=i;while(j>0 && closer(order[j-1],s)) { order[j]=order[j-1];--j; }order[j]=s; }
+    ConstrainDrawOrder(*this,order,count,nearest,farthest,camera_position);
     return count;
 }
 A32X_COLD const char *GameText(int id) {

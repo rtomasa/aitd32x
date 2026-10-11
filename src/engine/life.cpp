@@ -107,7 +107,7 @@ void World::RunLife(int life,int caller,bool found,int depth) {
             if(p.model.data) { Vec3 *points=Actor_GameplayScratch();Actor_Vertices(p,points);Vec3 lo={32000,32000,32000},hi={-32000,-32000,-32000};for(unsigned i=0;i<BE16(p.model.data+2);++i) { Vec3 v=points[i];lo={Min(lo.x,v.x),Min(lo.y,v.y),Min(lo.z,v.z)};hi={Max(hi.x,v.x),Max(hi.y,v.y),Max(hi.z,v.z)}; }p.collision_min=lo;p.collision_max=hi; }break;
         }
         case 39:Audio_Sample(r.Eval());break;case 40: { int type=r.Raw()&0x1d1;a.value.v[O_FLAGS]=(a.value.v[O_FLAGS]&~0x1d1)|type;break; }
-        case 41:case 86:if(!intro) cvars[15]=1;finished=true;return;
+        case 41:case 86:finished=true;return;
         case 42:ManualRotate(target,240);break;case 43:r.Raw();break;
         case 44:music=r.Raw();break;case 45:case 56: { int angle=r.Raw(),duration=r.Raw();SetAngle(target,angle,duration,op==56);break; }
         case 46:SetBounds(target,3);break;case 47: { int f=r.Raw(),room=r.Raw(),x=r.Raw(),y=r.Raw(),z=r.Raw();Stage(target,f,room,{x,y,z});break; }
@@ -125,7 +125,13 @@ void World::RunLife(int life,int caller,bool found,int depth) {
         case 60: { int n=r.Raw(),v=r.Eval();if(n<0 || n>=45) { Error(life,start,915);return; }cvars[n]=v;break; }
         case 61:SetBounds(target,1);break;case 62:SetBounds(target,2);break;case 63: { int sound=r.Eval(),next=r.Eval();Audio_Sample(sound,next);break; }
         case 85: { int sound=r.Eval(),next=r.Eval();Audio_Sample(sound,next,-1);break; }
-        case 64:cvars[13]=r.Raw()?0:-1;break;case 65:r.Raw();break;case 66:inventory_allowed=r.Raw()!=0;break;case 67:set(O_TRACK_POS,r.Raw());break;
+        case 64: {
+            // LIGHT changes visibility, not LIGHT_OBJECT (the lamp's object
+            // ID in C_VAR 13). The original ignores darkness after Pregzt dies.
+            int on=r.Raw();if(!cvars[12]) dark=on!=1;
+            break;
+        }
+        case 65:r.Raw();break;case 66:inventory_allowed=r.Raw()!=0;break;case 67:set(O_TRACK_POS,r.Raw());break;
         case 68:a.vertical={p.pos.y,p.pos.y-2000,1,now-1};break;case 69:a.speed=r.Raw();break;
         case 70: { int obj=r.Object(),source=r.Object();Drop(obj,source);break; }
         case 71: { int x1=r.Raw(),x2=r.Raw(),y1=r.Raw(),y2=r.Raw(),z1=r.Raw(),z2=r.Raw();p.collision_min={x1,y1,z1};p.collision_max={x2,y2,z2};break; }
@@ -145,7 +151,7 @@ void World::RunLife(int life,int caller,bool found,int depth) {
         case 80: { int m=r.Raw();if(music==-1) music=m;else next_music=m;break; }case 81: { int next=r.Raw();if(music==-1) music=next;else { next_music=next;music=-2; }break; }
         case 82:if(a.hit_type==8) { a.hit_type=0;a.hit_force=0; }break;
         case 83: { int obj=r.Object();p.alpha=Get(obj,O_ALPHA);p.beta=Get(obj,O_BETA);p.gamma=Get(obj,O_GAMMA);break; }
-        case 84:finished=true;return;default:Error(life,start,3000+op);return;
+        case 84:picture_id=-2;break;default:Error(life,start,3000+op);return;
         }
         (void)found;
     }

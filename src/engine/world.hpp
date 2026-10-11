@@ -11,7 +11,7 @@ enum ObjectWord { O_SLOT,O_BODY,O_FLAGS,O_ZV,O_FOUND_BODY,O_NAME,O_FOUND_FLAGS,O
  O_X,O_Y,O_Z,O_ALPHA,O_BETA,O_GAMMA,O_FLOOR,O_ROOM,O_LIFE_MODE,O_LIFE,O_FLOOR_LIFE,
  O_ANIM,O_FRAME,O_ANIM_TYPE,O_NEXT_ANIM,O_TRACK_MODE,O_TRACK,O_TRACK_POS };
 enum ActorFlag { F_ANIMATED=1,F_DRAWABLE=4,F_BOXIFY=8,F_MOVABLE=16,F_TRIGGER=64,F_FOUNDABLE=128,F_FALLABLE=256 };
-enum { MAX_ACTIVE=24,INVENTORY_CAPACITY=30 };
+enum { MAX_ACTIVE=50,INVENTORY_CAPACITY=30 };
 struct WorldObject { int16_t v[26]; };
 struct RealValue { int start,end,steps;uint32_t since; };
 struct ActiveObject {
@@ -44,7 +44,7 @@ public:
     // Presentation-only arrival cutscene request. Its display clock is owned
     // by the startup UI while the world simulation is paused; never saved.
     int picture_id,picture_duration;
-    bool inventory_allowed,view_changed,finished,intro;
+    bool inventory_allowed,view_changed,finished,intro,dark;
     int fault_life,fault_pc,fault_code,peak_active;
     void Init(Actor &protagonist,int selected,int initial_floor=0,int initial_room=0,int target=1);
     void InitIntro(Actor &protagonist,int selected) { Init(protagonist,selected,7,1,286); }

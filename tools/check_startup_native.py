@@ -58,6 +58,9 @@ class Check:
         self.e.lib.retro_get_memory_size.argtypes = [C.c_uint]
         self.e.lib.retro_get_memory_size.restype = C.c_size_t
         self.e.capture_audio = True
+        self.last_rom_page=(len(self.e.rom)-2)//0x80000
+        manifest=json.loads((ec.ROOT / "assets/manifest.json").read_text())
+        self.retained_mapper=all(a["flags"]&0x8000 or not (a["offset"]+0x20000 < 0x100000 and a["offset"]+0x20000+a["packed_size"] > 0x80000) for a in manifest["assets"])
 
     def state(self):
         words = (C.c_uint16 * 64).from_address(self.memory + self.debug)
@@ -88,15 +91,18 @@ class Check:
             self.advance()
         raise AssertionError(('timeout', self.state(), self.e.comm(), self.read('book_line')))
 
+    def mapper_valid(self):
+        return self.banks[1]==1 or (self.retained_mapper and 8<=self.banks[1]<=self.last_rom_page)
+
     def settled(self):
-        return (self.e.comm()[0] & 0xff00) in (0x0100, 0x1000) and self.banks[1] == 1
+        return (self.e.comm()[0] & 0xff00) in (0x0100, 0x1000) and self.mapper_valid()
 
     def phase(self, phase, seconds=20):
         self.wait(lambda: self.state()['phase'] == phase, seconds)
         self.wait(self.settled, seconds)
         self.advance(self.hz // 3)
         self.wait(self.settled, seconds)
-        assert self.banks[1] == 1, ('mapper not restored', list(self.banks))
+        assert self.mapper_valid(), ('mapper page invalid', list(self.banks))
 
     def press(self, pad):
         self.advance(self.hz // 5)
@@ -272,7 +278,7 @@ def picture_hold(check, decode, number=0):
         check.advance()
     assert captured and abs(video_frames / check.hz - 20 / 60) < .12, ('frog visible duration', video_frames)
     check.wait(check.settled)
-    assert check.banks[1] == 1
+    assert check.mapper_valid()
     return dict(world_ticks=tick, seconds=round(phase_frames / check.hz, 3),
                 video_frames=video_frames, video_seconds=round(video_frames / check.hz, 3),
                 original_video_pixels=True)
@@ -296,7 +302,7 @@ def arrival(check, decode, full=True):
             print(check.region, 'arrival', path, 'tick', s['world_ticks'], flush=True)
             last = path
             if check.settled():
-                assert check.banks[1] == 1
+                assert check.mapper_valid()
         if s['phase'] == 9:
             assert check.scene() == decode('STARTUP_PICTURE'), 'original frog picture differs'
             pictures.append(picture_hold(check, decode, len(pictures)))
@@ -316,14 +322,15 @@ def arrival(check, decode, full=True):
         check.phase(10)
     s = check.state()
     assert (s['mode'], s['floor'], s['room'], s['character']) == (1, 0, 0, s['character']), s
-    assert check.banks[1] == 1
+    assert check.mapper_valid()
     # Native audio remains autonomous while banked images are mapped/decoded.
     nonzero = any(check.e.audio[before:])
     if full:
         assert nonzero, 'arrival audio produced silence'
     check.capture('gameplay')
     return dict(path=paths, pictures=pictures, full_sequence=full, audio_nonzero=nonzero,
-                banked_frame_samples=banked_frames, banked_frames_with_audio=banked_sound_frames, bank_restored=1)
+                banked_frame_samples=banked_frames, banked_frames_with_audio=banked_sound_frames,
+                mapper_valid=True, mapper_retained_safe=check.retained_mapper)
 
 
 def save_reload(check, core, offsets):
@@ -357,7 +364,7 @@ def save_reload(check, core, offsets):
     assert (loaded.state()['floor'], loaded.state()['room']) == (0, 0)
     off = loaded.memory + loaded.game + offsets['world'] + offsets['vars'] + 90 * 2
     assert C.c_int16.from_address(off).value == 17
-    assert loaded.banks[1] == 1
+    assert loaded.mapper_valid()
     loaded.capture('loaded')
     loaded.press(START)
     assert not loaded.state()['paused']

@@ -79,8 +79,8 @@ bool Renderer::SetCamera(unsigned id,unsigned floor,unsigned room_id,bool load_p
     camera=Platform_ReadAsset(floor_cameras[floor][id]);room=Platform_ReadAsset(floor_rooms[floor][room_id]);
     Asset bg=Platform_ReadAsset(floor_backgrounds[floor][id]),pal=Platform_ReadAsset(AS_GAME_PALETTE);
     if(!camera.data || !room.data || pal.size!=512 || bg.unpacked!=sizeof(background) ||
-       (bg.flags!=0 && !(floor>=2 && bg.flags==0x8000))) return false;
-    // Raw banked intro originals remain available during a scoped scene draw;
+       (bg.flags!=0 && bg.flags!=0x8000)) return false;
+    // Raw banked camera originals remain available during a scoped scene draw;
     // the RAM restore image can use the same scenery cache as gameplay.
     if(!Platform_Decode(bg,background,sizeof(background))) return false;
     original_background=bg;
@@ -231,6 +231,14 @@ void Renderer::DrawCoverage(const CachedSpan *spans,unsigned count,Rect clip) {
         if(y>=clip.y1 && y<=clip.y2) BackgroundSpan(y,Max(x,clip.x1),Min(x+spans[i].length-1,clip.x2));
     }
 }
+void Renderer::DrawCachedCoverage(const Actor &actor,const CachedSpan *spans,unsigned count,Rect bounds,Rect clip) {
+    DrawCoverage(spans,count,clip);
+    // A cached actor writes architectural background as well as colored
+    // pixels. Replay both, confined to the area overwritten by earlier actors;
+    // a whole-bounds mask could otherwise erase untouched foreground scenery.
+    bounds={Max(bounds.x1,clip.x1),Max(bounds.y1,clip.y1),Min(bounds.x2,clip.x2),Min(bounds.y2,clip.y2)};
+    if(bounds.x1<=bounds.x2 && bounds.y1<=bounds.y2) Mask(actor,bounds);
+}
 void Renderer::Span(int y,int x1,int x2,uint8_t color) {
     RasterSurface surface={target,0,GAME_HEIGHT,damage[buffer_index]};
     RasterSpan(surface,y,x1,x2,color);damage[buffer_index]=surface.damage;
@@ -302,10 +310,6 @@ void Renderer::PolygonGeneral(Point *p,unsigned n,uint8_t color) {
     RasterSurface surface={target,0,GAME_HEIGHT,damage[buffer_index]};
     RasterPolygonGeneral(surface,p,n,color);damage[buffer_index]=surface.damage;
 }
-static Vec3 ClipNear(Vec3 a,Vec3 b) {
-    int dz=b.z-a.z;
-    return {a.x+RenderDivide((b.x-a.x)*(51-a.z),dz),a.y+RenderDivide((b.y-a.y)*(51-a.z),dz),51};
-}
 void Renderer::SortFaces(const uint8_t *m) {
     const uint8_t *prim=m+BE32Aligned(m+32);unsigned np=BE16Aligned(m+6);
     for(unsigned i=0;i<np;++i) {
@@ -353,7 +357,7 @@ void Renderer::DrawActor(const Actor &a) {
     for(unsigned i=0;i<nv;++i) {
         Vec3 &v=single.vertices[i];v.x+=a.pos.x-translation.x;v.y+=a.pos.y-translation.y;v.z+=a.pos.z-translation.z;
         Rotate(v,rotation);v.z+=focal_depth;
-        if(v.z>=51) single.projected[i]={Clamp(160+RenderDivide(v.x*focal_x,v.z),-4096,4096),Clamp(100+RenderDivide(v.y*focal_y,v.z),-4096,4096)};
+        if(v.z>100) single.projected[i]={Clamp(160+RenderDivide(v.x*focal_x,v.z),-4096,4096),Clamp(100+RenderDivide(v.y*focal_y,v.z),-4096,4096)};
     }
     }
     // Stable far-to-near ordering. No z-buffer consumes SDRAM.
@@ -376,28 +380,16 @@ void Renderer::DrawActor(const Actor &a) {
     for(unsigned f=0;f<np;++f) {
         unsigned index=coverage_mode?face_order[f]:ordering.faces[f].index;
         const uint8_t *p=m+BE32Aligned(prim+index*4);unsigned n=p[1];uint8_t color=p[2];
-        Vec3 clipped[MAX_POLY];unsigned count=0;
         Point screen[MAX_POLY];
-        bool near_clipped=false;
-        for(unsigned i=0;i<n;++i) if(single.vertices[BE16Aligned(p+6+i*2)].z<51) near_clipped=true;
-        if(!near_clipped) {
-            count=n;
-            for(unsigned i=0;i<n;++i) screen[i]=single.projected[BE16Aligned(p+6+i*2)];
-        } else if(p[0]==1) {
-            for(unsigned i=0,j=n-1;i<n;j=i++) {
-                Vec3 u=single.vertices[BE16Aligned(p+6+j*2)],v=single.vertices[BE16Aligned(p+6+i*2)];
-                if((u.z>=51)!=(v.z>=51)) clipped[count++]=ClipNear(u,v);
-                if(v.z>=51) clipped[count++]=v;
-            }
-        } else {
-            for(unsigned i=0;i<n;++i) if(single.vertices[BE16Aligned(p+6+i*2)].z>=51) clipped[count++]=single.vertices[BE16Aligned(p+6+i*2)];
-        }
-        if(!count) continue;
-        for(unsigned i=0;i<count;++i) {
-            if(near_clipped) screen[i]={Clamp(160+RenderDivide(clipped[i].x*focal_x,clipped[i].z),-4096,4096),Clamp(100+RenderDivide(clipped[i].y*focal_y,clipped[i].z),-4096,4096)};
-
-        }
-        int depth=near_clipped?clipped[0].z:single.vertices[BE16Aligned(p+6)].z;
+        // FITD rejects the complete primitive when any vertex reaches Z<=100.
+        // Clipping it into a new face can expose camera-side doors as enormous
+        // panels, including faces that the original fixed camera never drew.
+        bool rejected=false;
+        for(unsigned i=0;i<n;++i) if(single.vertices[BE16Aligned(p+6+i*2)].z<=100) { rejected=true;break; }
+        if(rejected || !n) continue;
+        unsigned count=n;
+        for(unsigned i=0;i<count;++i) screen[i]=single.projected[BE16Aligned(p+6+i*2)];
+        int depth=single.vertices[BE16Aligned(p+6)].z;
         int size=p[0]==3?Max(0,RenderDivide(BE16Aligned(p+4)*focal_x,depth)/2):p[0]==7?Max(0,RenderDivide(20*focal_x,depth)/2):1;
         size=Min(120,size);
         // Models contain both sides of doors and their handles. Cull the
@@ -552,7 +544,8 @@ void Renderer::ContactTiles(const ContactContext &context,RasterSurface &surface
 }
 
 bool Renderer::ResolveOverlap(const Actor *const *actors,unsigned count,Rect area) {
-    unsigned offsets[24],used=0;bool near[24]={};
+    if(count>MAX_ACTIVE) return false;
+    unsigned offsets[MAX_ACTIVE],used=0;bool near[MAX_ACTIVE]={};
     for(unsigned i=0;i<count;++i) { offsets[i]=used;used+=BE16Aligned(actors[i]->model.data+2); }
     // Two maximum-size source models fit; larger groups retain painter order.
     if(used>768) return false;
@@ -564,12 +557,13 @@ bool Renderer::ResolveOverlap(const Actor *const *actors,unsigned count,Rect are
         Vec3 translation={(BS16Aligned(c+6)-BS16Aligned(r.data))*10,(BS16Aligned(r.data+2)-BS16Aligned(c+8))*10,(BS16Aligned(r.data+4)-BS16Aligned(c+10))*10};
         for(unsigned v=0;v<BE16Aligned(a.model.data+2);++v) {
             Vec3 q={vertices[v].x+a.pos.x-translation.x,vertices[v].y+a.pos.y-translation.y,vertices[v].z+a.pos.z-translation.z};
-            Rotate(q,rotation);q.z+=BS16Aligned(c+12);if(q.z<51) near[i]=true;
+            Rotate(q,rotation);q.z+=BS16Aligned(c+12);if(q.z<=100) near[i]=true;
             CompactVertex &out=combined[offsets[i]+v];out.x=Clamp(q.x,-32768,32767);out.y=Clamp(q.y,-32768,32767);out.z=Clamp(q.z,-32768,32767);
-            if(q.z>=51) { out.sx=Clamp(160+RenderDivide(q.x*BS16Aligned(c+14),q.z),-4096,4096);out.sy=Clamp(100+RenderDivide(q.y*BS16Aligned(c+16),q.z),-4096,4096); }
+            if(q.z>100) { out.sx=Clamp(160+RenderDivide(q.x*BS16Aligned(c+14),q.z),-4096,4096);out.sy=Clamp(100+RenderDivide(q.y*BS16Aligned(c+16),q.z),-4096,4096); }
         }
-        // Camera-space X is only needed for near clipping. For ordinary
-        // groups, reuse it for reciprocal depth computed once per vertex.
+        // Ordinary groups reuse camera-space X for reciprocal depth computed
+        // once per vertex. Near-rejected groups use their valid vertices only
+        // in the fallback path and compute those depths there.
         if(!near[i]) for(unsigned v=0;v<BE16Aligned(a.model.data+2);++v) { CompactVertex &q=combined[offsets[i]+v];q.x=(int16_t)RenderDivide(1<<20,q.z); }
     }
     area={Max(0,area.x1),Max(0,area.y1),Min(319,area.x2),Min(199,area.y2)};
@@ -585,7 +579,7 @@ bool Renderer::ResolveOverlap(const Actor *const *actors,unsigned count,Rect are
     }
     DepthPrimitive *commands=(DepthPrimitive *)vertices;
     constexpr unsigned capacity=sizeof(Vec3)*MAX_VERTICES/sizeof(DepthPrimitive);
-    unsigned total=0;uint16_t ends[24];
+    unsigned total=0;uint16_t ends[MAX_ACTIVE];
     for(unsigned i=0;i<count;++i) {
         const uint8_t *m=actors[i]->model.data,*directory=m+BE32Aligned(m+32);
         for(unsigned f=0;f<BE16Aligned(m+6);++f) {
@@ -667,34 +661,24 @@ A32X_COLD void Renderer::ContactFallback(const Actor *const *actors,unsigned cou
             for(unsigned f=0;f<BE16Aligned(m+6);++f) {
                 const uint8_t *p=m+BE32Aligned(directory+4*f);unsigned n=p[1];
                 if(p[0]!=1) {
-                    const CompactVertex &v=combined[offsets[i]+BE16Aligned(p+6)];if(v.z<51) continue;
+                    const CompactVertex &v=combined[offsets[i]+BE16Aligned(p+6)];if(v.z<=100) continue;
                     int size=p[0]==3?RenderDivide(BE16Aligned(p+4)*BS16Aligned(c+14),v.z)/2:p[0]==7?RenderDivide(20*BS16Aligned(c+14),v.z)/2:p[0]==6?1:0;
                     int inv=near[i]?RenderDivide(1<<20,v.z):v.x;
                     if(p[0]==0 && n==2) {
-                        const CompactVertex &b=combined[offsets[i]+BE16Aligned(p+8)];if(b.z<51) continue;
+                        const CompactVertex &b=combined[offsets[i]+BE16Aligned(p+8)];if(b.z<=100) continue;
                         int dx=b.sx-v.sx,dy=b.sy-v.sy,steps=Max(dx<0?-dx:dx,dy<0?-dy:dy),end=near[i]?RenderDivide(1<<20,b.z):b.x;
                         for(int t=0;t<=steps;++t) { Point point={v.sx+(steps?dx*t/steps:0),v.sy+(steps?dy*t/steps:0)};RasterDepthPoint(surface,point,inv+(steps?(end-inv)*t/steps:0),0,tile,depths,p[2],p[3],mask); }
                     } else RasterDepthPoint(surface,{v.sx,v.sy},inv,Clamp(size,0,120),tile,depths,p[2],p[3],mask);
                     continue;
                 }
                 if(n<3) continue;
-                // Near-crossing contacts use the same clipping plane as the
-                // regular renderer. Store reciprocal depth after clipping.
-                Vec3 clipped[MAX_POLY];Point screen[MAX_POLY];int q[MAX_POLY];unsigned size=0;
-                bool clipped_near=false;
-                for(unsigned v=0;v<n;++v) if(combined[offsets[i]+BE16Aligned(p+6+2*v)].z<51) clipped_near=true;
-                if(clipped_near) {
-                    for(unsigned v=0,k=n-1;v<n;k=v++) {
-                        const CompactVertex &a=combined[offsets[i]+BE16Aligned(p+6+2*k)],&b=combined[offsets[i]+BE16Aligned(p+6+2*v)];
-                        Vec3 u={a.x,a.y,a.z},w={b.x,b.y,b.z};
-                        if((u.z>=51)!=(w.z>=51)) clipped[size++]=ClipNear(u,w);
-                        if(w.z>=51) clipped[size++]=w;
-                    }
-                    for(unsigned v=0;v<size;++v) { Vec3 &a=clipped[v];screen[v]={Clamp(160+RenderDivide(a.x*BS16Aligned(c+14),a.z),-4096,4096),Clamp(100+RenderDivide(a.y*BS16Aligned(c+16),a.z),-4096,4096)};q[v]=RenderDivide(1<<20,a.z); }
-                } else {
-                    size=n;
-                    for(unsigned v=0;v<n;++v) { const CompactVertex &a=combined[offsets[i]+BE16Aligned(p+6+2*v)];screen[v]={a.sx,a.sy};q[v]=near[i]?RenderDivide(1<<20,a.z):a.x; }
-                }
+                // The contact path must preserve the same whole-face near
+                // rejection as ordinary and precompiled world rendering.
+                bool rejected=false;
+                for(unsigned v=0;v<n;++v) if(combined[offsets[i]+BE16Aligned(p+6+2*v)].z<=100) { rejected=true;break; }
+                if(rejected) continue;
+                Point screen[MAX_POLY];int q[MAX_POLY];unsigned size=n;
+                for(unsigned v=0;v<n;++v) { const CompactVertex &a=combined[offsets[i]+BE16Aligned(p+6+2*v)];screen[v]={a.sx,a.sy};q[v]=near[i]?RenderDivide(1<<20,a.z):a.x; }
                 int winding=0;
                 for(unsigned v=1;v+1<size && !winding;++v)
                     winding=(screen[v].x-screen[0].x)*(screen[v+1].y-screen[0].y)-(screen[v].y-screen[0].y)*(screen[v+1].x-screen[0].x);

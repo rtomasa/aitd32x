@@ -240,7 +240,7 @@ def live_arrival(check, decode):
             pages.add(mapped);banked_frames+=1
             if any(check.e.audio[audio:]):banked_audio+=1
         if (check.e.comm()[0]&0xff00) in (0x0100,0x1000):
-            assert mapped==1,('mapper completed/idle page',mapped)
+            assert check.mapper_valid(),('mapper completed/idle page',mapped)
         if state['phase']==8 and path[:2]==(3,1) and path[2] in (3,2):
             row=segments.setdefault(path[2],dict(frames=0,completed_draws=0,observed_swaps=0,start_ticks=state['world_ticks']))
             row['frames']+=1;row['completed_draws']+=end['rendered']-start['rendered']
@@ -248,14 +248,14 @@ def live_arrival(check, decode):
     state=check.state()
     assert state['phase']==10 and (state['floor'],state['room'])==(0,0),('live intro incomplete',state,paths)
     assert {p['floor'] for p in paths}>={1,2,3,7} and pictures,paths
-    assert pages=={8,9},('raw intro mapper pages not exercised',pages)
-    assert check.banks[1]==1
+    assert pages and all(8<=page<=check.last_rom_page for page in pages),('raw intro mapper pages not exercised',pages)
+    assert check.mapper_valid()
     for row in segments.values():
         row['seconds']=row['frames']/check.hz
         row['presented_fps']=row['observed_swaps']/row['seconds']
         row['draw_fps']=row['completed_draws']/row['seconds']
     return dict(full_sequence=True,path=paths,pictures=pictures,entrance_live_segments=segments,
-                mapped_pages=sorted(pages),bank_restored=1,script_fault=0,
+                mapped_pages=sorted(pages),mapper_valid=True,mapper_retained_safe=check.retained_mapper,script_fault=0,
                 banked_frame_samples=banked_frames,banked_frames_with_pcm=banked_audio,
                 audio_scope='Nonzero libretro PCM samples; not a measurement of FM music cues')
 
@@ -292,7 +292,7 @@ def gameplay_idle(check):
     assert check.read('notice')==1 and rows['actions']['navigation_draws']>=1
     for name,row in rows.items():
         assert row['completed_draws']==row['observed_swaps']==row['world_ticks']==0,('idle gameplay UI work',name,row)
-    assert not check.read('fault',world=True) and check.banks[1]==1
+    assert not check.read('fault',world=True) and check.mapper_valid()
     return dict(samples=rows,transient_inventory_items=items,no_sram_file=True)
 
 
@@ -323,7 +323,7 @@ def main():
                     emulator_only=True,measure='Frozen native entrance renderer capacity; original world/actor fixtures; separate idle UI samples')
         report['idle']=navigate(check,decode,not args.ui_only)
         if args.live_only:
-            report['measure']='Natural full native arrival, including entrance presentation rate and mapper restoration'
+            report['measure']='Natural full native arrival, including entrance presentation rate and safe mapper state'
             report['live_arrival']=live_arrival(check,decode)
             if args.gameplay_idle:report['gameplay_idle']=gameplay_idle(check)
             assert hashlib.sha256(rom.read_bytes()).hexdigest()==report['rom_sha256'],'ROM changed during validation'
