@@ -1,14 +1,25 @@
-# AITD32X — original startup and arrival sequence
+# AITD32X
 
-Native Sega 32X conversion using the original Alone in the Dark 1 installation supplied by the user. Revision 15 corrects the window-collision script error, matches the CD scripts to their original AdLib music cues, balances music/effects, and restores original note/book/notebook artwork, proportional typography, illustrations and page sounds. Gameplay messages, pickups and menus now share the original proportional font, casing and symbols.
+A native Sega 32X port of **Alone in the Dark 1**, built from the original game's resources. The port is in active development: gameplay currently supports floors 0 and 1; full-house progression is unfinished.
 
-Startup now includes the original animated Infogrames armadillo, title, timed credits, start menu, character portraits and biographies, and the scripted journey through Derceto to the attic. The console menu offers Replay Intro in place of Return to DOS. Both characters retain their original introduction text and arrival animations.
+## Download and play
 
-## Play
+Downloadable ROM builds are distributed through [GitHub Releases](https://github.com/rtomasa/aitd32x/releases). Source archives contain the engine and importer; building requires your own original game installation.
 
-Load `AITD32X.32x` in a 32X-capable emulator with cartridge SRAM saving enabled. The frontend retains saves in its battery/save file (usually `.srm`). Any button skips the logo/title/credits to the start menu. Up/Down selects Begin a New Game, Resume a Saved Game or Replay Intro; A/Start confirms. B loads the latest valid save directly from this menu.
+Load `AITD32X.32x` in a 32X-capable emulator with **SSF2 cartridge mapper support** and cartridge SRAM saving enabled. The current ROM is 5.125 MiB. Native checks use PicoDrive libretro in NTSC and PAL; physical 32X hardware validation is still pending. CD narration is not implemented.
 
-Character selection: Left chooses Emily, Right chooses Edward, C toggles, and A/Start opens the selected biography. B returns to the menu. In the biography, Up/Left and Down/Right change pages; A/Start/C advances and begins the arrival after the last page. B returns to character selection. A/B/C/Start skips the arrival to fresh gameplay. Credits turn pages automatically. The frog close-up pauses the arrival simulation, and completing or skipping the introduction starts a clean game without erasing a save.
+## Features
+
+- Original animated Infogrames logo, title, credits, start menu, character selection, biographies and scripted arrival at Derceto.
+- Both Emily Hartwood and Edward Carnby, with their original introductions.
+- Original three-section inventory with rotating 3D items, quantities, health, actions and scrolling; original Leave/Take pickup screen with a 3D object preview.
+- Original proportional typography, mixed case and symbols throughout menus and gameplay. Information messages appear once, directly over the scene.
+- Original paper, book and notebook artwork, illustrations, document layout and page sounds.
+- Original scripted death cinematic, final picture and return to the title menu.
+- 101 original sound effects through 32X PWM and eight original AdLib music tracks adapted to YM2612/PSG. Instrument timbre differs from the PC version.
+- Persistent saving with one visible slot and two alternating SRAM records for recovery if the newest record is damaged.
+
+## Controls
 
 | Button | Gameplay |
 |---|---|
@@ -19,63 +30,51 @@ Character selection: Left chooses Emily, Right chooses Edward, C toggles, and A/
 | C | Inventory |
 | Start | Pause menu |
 
-In the pause menu, Up/Down selects Resume, Save Game, Load Game or Return to Title; A confirms. Start/B/C resumes. Loading opens this menu with gameplay paused. There is one visible save slot, backed by two alternating records; a damaged newest record falls back to the previous valid save. A new game does not erase the save. Save transfers can take a few seconds; wait for GAME SAVED. A load restores both characters, floor/room/camera, health, inventory, variables, enemies, doors, furniture, RNG and animation state. The music track restarts from its beginning when loading; exact audio playhead/sample voices are not saved. Saves use this port's own format. Revision 14 saves remain compatible; when using a versioned ROM filename, copy its existing .srm battery file to the new ROM's filename.
+**Startup:** A/B/C/Start skips the logo, title or credits. Up/Down selects Begin a New Game, Resume a Saved Game or Replay Intro; A/Start confirms. B loads the latest valid save directly.
 
-Inventory: Up/Down selects an object, A opens its actions, Up/Down selects, A confirms, C/B returns. The Actions entry selects Fight, Search, Close or Push through original scripts. Hold A while facing furniture to search/push; approach with a direction. In Fight, A + Up/Down/Left/Right selects attacks. Pickups show the original rotating 3D object and Leave/Take choices: Left/Right selects, A confirms (Take is selected initially), C/B leaves. Books use Up/Down, Left/Right or B for pages and A/C to close. Original arrows indicate available previous/next pages. Gameplay time freezes in these screens.
+**Character selection:** Left chooses Emily, Right chooses Edward, C toggles, and A/Start opens the biography. B returns to the start menu. In biographies, Up/Left and Down/Right change pages; A/Start/C advances and begins the arrival after the last page. B returns to character selection. A/B/C/Start skips the arrival or death cinematic.
 
-Inventory uses the original three gold sections: five visible items with scrolling arrows, a rotating 3D item with its original quantity, and available actions. Health remains visible. On death, the original scripts play the graveyard cinematic and final picture, then return to the title menu. A/B/C/Start skips the death sequence to that menu; Resume can restore your existing save.
+**Inventory and actions:** Up/Down selects an object, A opens its actions, Up/Down selects an action, and A confirms. C/B returns. The Actions entry selects Fight, Search, Close or Push through the original scripts. Hold A while facing furniture and use a direction to search or push. In Fight, A + Up/Down/Left/Right selects attacks. Furniture closing automatically is original game behaviour.
 
-The game remains a 25 Hz simulation with the approved 60 Hz animation clock. Native video is 320×224 with a 320×200 scene and black borders. FPS measures completed draws and is hidden during startup. A static paused game can show zero FPS.
+**Pickups:** Left/Right selects Leave or Take; A confirms. Take is selected initially. B/C leaves the object.
 
-Information messages appear once, directly over the scene in the original proportional font. Menu input follows controller snapshots independently of the 25 Hz world clock. Static pause menus retain the paused scene. Inventory/pickup panels and labels compose in the existing RAM background; only the item preview and its damage need restoration during animation. Its original 60 Hz rotation clock is independent of the capped 30 FPS presentation rate and the paused gameplay clock. Compressed images share an optimized constant-run decoder throughout the game.
+**Reading:** Up/Down, Left/Right or B changes pages; A/C closes. Original arrows show available previous/next pages.
 
-## Audio
+**Pause menu:** Up/Down selects Resume, Save Game, Load Game or Return to Title; A confirms. Start/B/C resumes. Loading leaves gameplay paused. Inventory, pickups and reading also pause the world.
 
-101 original VOC effects are converted offline to 8 kHz mono IMA ADPCM and mixed through interrupt-driven 32X PWM, with two simultaneous voices. Original LIFE sound commands drive footsteps, actions, combat, creatures and scripted effects; repeating/chained effects and stop commands are connected. Eight original ADLM songs are converted offline using the pinned FITD music driver. Six melodic voices use YM2612 FM; extra melodic voices and approximate percussion use PSG. Low auxiliary PSG notes are moved up by octaves to stay within its pitch range. Instruments, waveforms and percussion are adapted to these chips, so timbre differs from AdLib. World/save files retain the CD edition’s cue numbers. Playback maps them to the corresponding floppy AdLib themes, audited against 101 paired original script cues (tools/audio/music_cues.json). CD cues with no AdLib counterpart stop FM playback; CD-specific PCM musical effects remain on their original sound path. Track selection, queued transitions and three-second fades follow LIFE commands. Equivalent CD cues sharing one AdLib theme preserve its playhead. Stop/track-end explicitly mutes all FM operators, including instruments with a zero release rate. Music FM carriers and PSG are about 6 dB quieter than v14, while PWM effects have 1.5× the previous gain. Music advances on the 68000 at 58.8 driver ticks/s in NTSC and PAL, independent of rendering, with region pitch compensation. Camera images remain raw; audio encoding is decoded continuously by the audio interrupt.
+## Saves
 
-## Reading
+Enable cartridge SRAM in your emulator. The frontend usually stores it in a `.srm` battery file associated with the ROM's filename. When changing ROM filenames, back up your existing battery file and copy it to the new ROM's basename without overwriting another save.
 
-Original ITD_RESS entries 6/7/8 provide paper, book and notebook backgrounds, entry 5 supplies the original proportional font, and entry 9 supplies the five document illustrations. Original mixed case, centered headings, paragraph indentation and explicit page breaks are retained. Layout is compiled offline; reading backgrounds use lossless ROM compression. Pages compose in the existing RAM image on opening or paging and retain their pixels while idle. SAMPLE_PAGE uses original effect 49 on opening, paging and closing. The world pauses while reading; closing restores the scenery cache. No additional gameplay image buffer is needed.
+A new game does not erase your save. Saving can take a few seconds; wait for the saved confirmation. Loading restores world, characters, inventory, scripts and animation state. Music restarts at the beginning of the restored track; the exact audio playhead and active sample voices are not saved. Saves use this port's own format, and existing port battery saves remain compatible.
+
+## Performance
+
+Gameplay simulation runs at 25 Hz, with an independent 60 Hz animation clock. Native video is 320×224 with a 320×200 scene. Rendering uses both SH2 processors, cached scenery, partial background repairs and contact-depth rendering where applicable.
+
+Static presentation screens redraw when their content changes; palette fades do not require full redraws. Inventory and pickup screens cache their panels and labels and update the rotating preview at up to 30 FPS. Menu input follows controller snapshots independently of the world clock. Compressed presentation images share the same optimized decoder across the game.
+
+The FPS counter measures completed draws and is hidden during startup. Zero FPS on an idle, static screen is normal. Room transitions and complex scenes can still take longer to render; emulator results do not establish hardware performance.
 
 ## Build
 
-GNU Make, Python 3, host C/C++, and Marsdev GCC 13.1.0 m68k-elf/sh-elf toolchains are required. Original resources are excluded from the source ZIP.
+GNU Make, Python 3, host C/C++ compilers and Marsdev GCC 13.1.0 `m68k-elf`/`sh-elf` toolchains are required. Configure local dependency paths in `local.mk`, then import your original CD resources and build:
 
 ```sh
-cp local.mk.example local.mk  # On a fresh checkout; configure dependency paths.
-make assets                 # Uses msdos-game/AITD_CD/INDARK by default.
+cp local.mk.example local.mk
+# Edit local.mk to configure your dependency paths.
+make assets GAME_DATA="/path/to/ALONE1/INDARK"
 make -j2
-# Overrides are also supported:
-# make assets GAME_DATA="/path/to/ALONE1/INDARK"
-# make -j2 MARSDEV="/path/to/mars"
 ```
 
-See [development handoff](docs/DEVELOPMENT.md) for the Git baseline, local dependencies, focused checks and next work. Original DOS data, converted assets, builds and saves are ignored by Git.
+The result is `build/AITD32X.32x`. Without `GAME_DATA`, the importer uses `msdos-game/AITD_CD/INDARK`. Original DOS data, converted assets, builds, local dependencies and emulator saves are excluded from Git.
 
-Identical converted payloads share aligned ROM storage, retaining existing asset IDs. Gameplay camera images, existing panels and reading sprites remain raw for fast rendering; the original inventory panels are compressed and composed once per content change. Logo, portrait, paper and picture images use lossless compression. Arrival and death camera images use raw banked pixels so the scenery cache can retain original occlusion masks. Static startup screens redraw when content changes; palette fades update without redrawing. All player-facing text preserves the original casing and font symbols. This 5.125 MiB ROM requires 32X SSF2 mapper support, verified in PicoDrive. SRAM supplies two 64 KiB journal records. Rare initialization/save/UI routines execute from ROM to preserve the 12 KiB master and 4 KiB slave stack reservations. See [architecture](docs/ARCHITECTURE.md) for the current ROM layout and memory limits.
+## Development and validation
 
-## Focused checks
+Read [development instructions](docs/DEVELOPMENT.md) for local setup and focused checks, and [architecture](docs/ARCHITECTURE.md) for processor responsibilities, ROM banking, memory budgets and save transport.
 
-```sh
-make host
-# Startup changes only; use the preserved pre-startup host library for old-save checks:
-python3 tools/check_startup.py
-python3 tools/check_bank_layout.py
-python3 tools/check_gameplay_ui.py --core /path/to/picodrive_libretro.so
-python3 tools/check_pickup.py
-python3 tools/check_menu_messages.py
-python3 tools/check_menu_latency.py /path/to/picodrive_libretro.so
-python3 tools/check_death.py
-python3 tools/check_death_native.py /path/to/picodrive_libretro.so
-python3 tools/check_startup_native.py /path/to/picodrive_libretro.so --mars /path/to/mars
-# Region-sensitive startup/banking changes:
-python3 tools/check_startup_native.py /path/to/picodrive_libretro.so --mars /path/to/mars --region PAL
-```
+Current UI and menu evidence is documented in [menu feedback validation](docs/validation/menu-feedback.md) and [gameplay UI/death validation](docs/validation/gameplay-ui-death.md). [Validation history](docs/VALIDATION.md) records earlier builds; those reports describe their respective revisions, rather than verification of every later checkout. Run only the checks relevant to a change.
 
-The native startup check uses controller input and private in-memory SRAM for save/core-restart/resume. Older gameplay checks assume immediate Start-to-gameplay and need startup navigation or the host fixture `host_startgame(character)` before reuse. `docs/VALIDATION.md` records historical checks, [gameplay UI/death validation](docs/validation/gameplay-ui-death.md) records the preceding feature build, [menu feedback validation](docs/validation/menu-feedback.md) records the latest fixes, and `docs/ARCHITECTURE.md` describes memory/transport. Gameplay supports floors 0 and 1. Additional room/camera resources are imported only for the original arrival and death sequences; full-house progression and physical hardware validation remain unfinished.
+## License
 
-Engine source is GPL; see LICENSE and third_party/NOTICES.md. Original resources retain their original ownership.
-
-## Revision 15 validation
-
-Historical checks and limitations are recorded in docs/validation/v15-validation.md. tools/check_v15.py covers window collision and document paging in that baseline; tools/check_mix.py compares native sound levels to a preserved v14 project. Their startup setup predates the new menus. Original resources are not redistributed in the source archive.
+Engine source is GPL; see [LICENSE](LICENSE) and [third-party notices](third_party/NOTICES.md). Original game resources retain their original ownership.
