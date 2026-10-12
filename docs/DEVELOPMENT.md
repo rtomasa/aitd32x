@@ -37,6 +37,24 @@ The importer vendors its decompressor and music-capture driver; a separate FITD 
 
 ## Relevant verification
 
+For scheduled vertex projection, build `make -j2 host all`, then run
+`tools/check_projection_native.py .local/tools/picodrive_libretro.so --mars .local/toolchain/mars`
+for independent native arithmetic and a VBlank-timed old/new helper comparison.
+The isolated diagnostic links assets read-only and never accesses battery saves.
+`check_sh2_scheduling_native.py` covers ordinary/contact projection and
+`check_gameplay_ui.py --core .local/tools/picodrive_libretro.so --native-only`
+covers rotating previews in both regions. Run `check_bank_layout.py` for the
+very tight static SDRAM limit. See [projection validation](validation/projection.md).
+
+For aligned framebuffer writes or SH2 waits, run the focused decoder and band
+checks (`make build/check_decode build/check_bands`, then both executables),
+`check_bank_layout.py`, `check_sh2_scheduling_native.py` and
+`check_startup_native.py --short-arrival` with the local PicoDrive core.
+Use NTSC/PAL for VDP/command-wait changes. These use private SRAM and exercise
+black pixels, alignment/tails, overlapping LZ4 matches, both framebuffer banks,
+SH2 queue ownership and mapper/audio/save exchanges. See
+[framebuffer and synchronization validation](validation/framebuffer-sync.md).
+
 Do not run the entire historical test collection for every change.
 The following historical host checks cover scripts, documents and saves:
 
@@ -144,6 +162,32 @@ One visible save slot uses two 64 KiB SRAM journals. New format `0x53313601` sto
 The historical v15 ROM was near the 4 MiB direct SH2 ROM window. Startup now uses an extension bank for raw arrival cameras and compressed presentation images, reusing existing framebuffer/background scratch. SH2 RAM remains 256 KiB with 12 KiB master and 4 KiB slave stack reservations. Avoid adding global buffers casually. See docs/ARCHITECTURE.md for current layout details and limits. Physical 32X hardware and CD narration remain unvalidated/unimplemented respectively.
 
 ## Next priorities
+
+Adaptive SH2 ownership and asynchronous background repair are documented in
+[SH2 scheduling validation](validation/sh2-scheduling.md). Relevant checks:
+`make -j2 host build/check_bands all`, `./build/check_bands`,
+`python3 tools/check_bank_layout.py`, and
+`python3 tools/check_sh2_scheduling_native.py .local/tools/picodrive_libretro.so`
+(`--region PAL` selects PAL). The scheduling check changes split limits in
+private emulator SDRAM and compares both displayed banks to serial host pixels;
+it freezes only the private World::Update function. User battery saves are
+untouched. Before changing queue payloads, preserve the preceding ROM/ELF and
+host library under ignored `build/` for native comparisons. Restore must finish
+before drawing/masking, scenery readback, RAM composition or presentation;
+geometry preparation can overlap the outstanding copy. Keep the published
+split immutable until END and leave PWM interrupts available.
+
+For the large-ROM EverDrive Pro header/mapper fix, see
+[SSF mapper validation](validation/ssf-mapper.md). Use `make -j2`,
+`python3 tools/check_bank_layout.py` and
+`python3 tools/check_startup_native.py .local/tools/picodrive_libretro.so --short-arrival`
+(`--region PAL` selects PAL). The focused
+`python3 tools/check_ssf_sram_native.py .local/tools/picodrive_libretro.so`
+executes the compiled extended-SRAM branch with a page-31 bus shim. The shim
+does not model hardware timing, boot autodetection or the cartridge OS's SD
+save export. All SRAM is private memory. The ROM must keep its `.32x`
+extension; hardware should select SSF rather than 10M. Existing release bundles
+remain unchanged; the test bundle lives under ignored `build/hardware-tests/`.
 
 The opening/occlusion/saber fixes and the reproduced key/chest audio fix were
 committed as `a0fd040` and are documented in

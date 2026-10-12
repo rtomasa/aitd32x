@@ -1,6 +1,6 @@
 OUTPUT_ARCH(sh)
 MEMORY {
-    rom (rx) : ORIGIN = 0x02000000, LENGTH = 0x02000000
+    rom (rx) : ORIGIN = 0x02000000, LENGTH = 0x00F00000
     ram (rwx) : ORIGIN = 0x06000000, LENGTH = 0x0003C000
 }
 PROVIDE(__stack = 0x0603F000);
@@ -59,4 +59,4 @@ ASSERT(_sdata < 0x0003C000, "SH-2 startup module exceeds SDRAM")
 ASSERT(SIZEOF(.text) <= 0x00020000, "ROM code overlaps fixed asset origin")
 ASSERT(_stext + _sdata <= 0x00400000, "BIOS module exceeds fixed cartridge window")
 ASSERT((_stext & 3) == 0, "BIOS module source must be longword aligned")
-ASSERT(SIZEOF(.romextra) <= 0x01C00000, "Cartridge exceeds 32 MiB mapper limit")
+ASSERT(SIZEOF(.romextra) <= 0x00B00000, "Cartridge overlaps reserved SSF pages 30/31")

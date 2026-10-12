@@ -18,7 +18,7 @@ ifeq ($(BUILD),PROFILE)
 OPT := -O2 -g -DPROFILE
 endif
 SHFLAGS := -m2 -mb -std=c++17 -ffreestanding -fno-exceptions -fno-rtti -fno-threadsafe-statics -fno-unwind-tables -fno-asynchronous-unwind-tables -fno-builtin -Wall -Wextra $(OPT) -MMD -MP
-CORE := src/render/book.cpp src/render/preview.cpp src/platform/audio.cpp src/engine/save.cpp src/engine/startup.cpp src/engine/death.cpp src/engine/ending.cpp src/engine/lighting.cpp src/engine/inventory.cpp src/platform/save_bridge.cpp src/engine/math.cpp src/engine/trig.cpp src/engine/actor.cpp src/engine/collision.cpp src/engine/game.cpp src/engine/world.cpp src/engine/life.cpp src/platform/storage.cpp src/render/render.cpp src/render/raster.cpp src/render/worker.cpp src/render/font.cpp
+CORE := src/render/project.cpp src/render/book.cpp src/render/preview.cpp src/platform/audio.cpp src/engine/save.cpp src/engine/startup.cpp src/engine/death.cpp src/engine/ending.cpp src/engine/lighting.cpp src/engine/inventory.cpp src/platform/save_bridge.cpp src/engine/math.cpp src/engine/trig.cpp src/engine/actor.cpp src/engine/collision.cpp src/engine/game.cpp src/engine/world.cpp src/engine/life.cpp src/platform/storage.cpp src/render/render.cpp src/render/raster.cpp src/render/worker.cpp src/render/font.cpp
 SHSRC := $(CORE) src/sh2/master.cpp src/sh2/slave.cpp src/sh2/memory.cpp src/sh2/profile.cpp
 SHOBJ := $(patsubst %.cpp,build/%.o,$(SHSRC))
 .PHONY: all assets clean host check FORCE
@@ -56,7 +56,7 @@ build/AITD32X.32x: build/AITD32X.elf tools/finalize_rom.py
 	"$(SHOBCOPY)" -O binary $< build/unpadded.bin
 	python3 tools/finalize_rom.py build/unpadded.bin $@
 host: build/libaitd32x.so
-build/libaitd32x.so: $(CORE) tools/host.cpp assets/resource_ids.h
+build/libaitd32x.so: $(CORE) tools/host.cpp assets/resource_ids.h src/platform/pixel_words.hpp src/render/project.hpp
 	@mkdir -p build
 	c++ -std=c++17 -O2 -fPIC -shared -Wall -Wextra $(CORE) tools/host.cpp -o $@
 check: build/check_clock build/check_render build/check_animation
@@ -73,17 +73,17 @@ build/check_render: tools/check_render.cpp $(CORE) assets/resource_ids.h
 	@mkdir -p build
 	c++ -std=c++17 -O2 -Wall -Wextra $(CORE) $< -o $@
 # Optional differential raster coverage; compare its report with a reference build.
-build/check_raster: tools/check_raster.cpp src/render/render.cpp src/render/raster.cpp src/render/worker.cpp src/render/font.cpp src/engine/math.cpp src/engine/trig.cpp src/render/render_api.hpp
+build/check_raster: src/render/project.cpp tools/check_raster.cpp src/render/render.cpp src/render/raster.cpp src/render/worker.cpp src/render/font.cpp src/engine/math.cpp src/engine/trig.cpp src/render/render_api.hpp
 	@mkdir -p build
-	c++ -std=c++17 -O2 -Wall -Wextra -I. tools/check_raster.cpp src/render/render.cpp src/render/raster.cpp src/render/worker.cpp src/render/font.cpp src/engine/math.cpp src/engine/trig.cpp -o $@
-build/check_bands: tools/check_bands.cpp src/render/raster.cpp src/render/raster.hpp
+	c++ -std=c++17 -O2 -Wall -Wextra -I. tools/check_raster.cpp src/render/project.cpp src/render/render.cpp src/render/raster.cpp src/render/worker.cpp src/render/font.cpp src/engine/math.cpp src/engine/trig.cpp -o $@
+build/check_bands: tools/check_bands.cpp src/render/raster.cpp src/render/raster.hpp src/platform/pixel_words.hpp
 	@mkdir -p build
 	c++ -std=c++17 -O2 -Wall -Wextra -I. tools/check_bands.cpp src/render/raster.cpp -o $@
 clean:
 	rm -rf build
 -include $(SHOBJ:.o=.d)
 # Focused decoder parity and camera-row indexing after transition optimization.
-build/check_decode: tools/check_decode.cpp src/platform/storage.cpp src/platform/platform_api.hpp
+build/check_decode: tools/check_decode.cpp src/platform/storage.cpp src/platform/platform_api.hpp src/platform/pixel_words.hpp
 	@mkdir -p build
 	c++ -std=c++17 -O2 -Wall -Wextra $< src/platform/storage.cpp -o $@
 # Full actor-pool serialization bound, with no test code in the cartridge.

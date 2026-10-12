@@ -8,6 +8,27 @@ static uint16_t pal_audio;static uint8_t frequency_high[6];
 static uint16_t fade_frames,fade_length,fade_gain;static uint8_t levels[32];
 static uint16_t music_high,music_wait,music_phase,music_active,save_active;
 static uint16_t music_bank;
+static uint16_t extended_mapper;
+#define SSF_CTRL (*(volatile uint16_t *)0xA130F0)
+#define SSF_ROM_32X 0xC000 /* protected control write, 32X mode, page 0, ROM read-only */
+#define SSF_LAST_ROM_PAGE 29 /* reserve pages 30/31 for the cartridge OS and SRAM */
+
+RAM_CODE void MapperInit(void) {
+    volatile uint8_t *rv=(volatile uint8_t *)0xA15107;
+    uint8_t previous=*rv;*rv=previous|1;
+    uint16_t slot;
+    for(slot=1;slot<8;++slot) *(volatile uint16_t *)(0xA130F0+slot*2)=slot;
+    // Extended SSF can remap bank 0; standard SSF2 (including PicoDrive)
+    // ignores its protected high byte and only disables conventional SRAM.
+    // Compare immutable ROM bytes with the same physical page in bank 2.
+    SSF_CTRL=0x8002;
+    const volatile uint16_t *first=(const volatile uint16_t *)0x001000;
+    const volatile uint16_t *second=(const volatile uint16_t *)0x101000;
+    extended_mapper=1;
+    for(slot=0;slot<128;++slot) if(first[slot]!=second[slot]) { extended_mapper=0;break; }
+    SSF_CTRL=SSF_ROM_32X;
+    *rv=previous;
+}
 RAM_CODE void FMWrite(uint16_t port,uint16_t reg,uint16_t value) {
     volatile uint8_t *ym=(volatile uint8_t *)0xA04000;
     while(ym[0]&0x80) { }
@@ -97,18 +118,36 @@ RAM_CODE void ServiceMusic(void) {
     else if(op==0x5014) value=music_active;
     comm[1]=value;comm[0]=0x5FFF;
 }
-// SRAM lives in the MD cartridge window; SH2 ROM mappings stay unchanged.
+// The extended SSF SRAM is physical page 31 on Mega EverDrive Pro. Each
+// word access borrows bank 4 only while RV stalls SH2 cartridge reads; fixed
+// world/audio assets and the retained image page are restored before ack.
 static uint32_t save_cursor,save_base;
+RAM_CODE uint16_t SaveWord(uint16_t value,uint16_t write) {
+    volatile uint8_t *rv=(volatile uint8_t *)0xA15107;
+    uint8_t previous=*rv;*rv=previous|1;
+    if(extended_mapper) {
+        SSF_CTRL=write?0xA000:0x8000; // MD access, enable writes only for this word.
+        *(volatile uint16_t *)0xA130F8=31;
+    }
+    volatile uint16_t *word=(volatile uint16_t *)(0x200000+save_cursor);
+    if(write) *word=value;else value=*word;
+    if(extended_mapper) {
+        *(volatile uint16_t *)0xA130F8=4;
+        SSF_CTRL=SSF_ROM_32X;
+    }
+    *rv=previous;
+    save_cursor+=2;return value;
+}
 RAM_CODE void ServiceSave(void) {
     volatile uint16_t *comm=(volatile uint16_t *)MARS_COMM0;
     uint16_t op=comm[0];if(op<0x5001 || op>0x5005) return;
     uint16_t value=comm[1];
     switch(op) {
-    case 0x5001:save_active=1;save_base=(uint32_t)(value&1)*65536;save_cursor=save_base;*(volatile uint8_t *)0xA130F1=1;value=0x5341;break;
+    case 0x5001:save_active=1;save_base=(uint32_t)(value&1)*65536;save_cursor=save_base;if(!extended_mapper) *(volatile uint8_t *)0xA130F1=1;value=0x5341;break;
     case 0x5002:save_cursor=save_base+value;break;
-    case 0x5003:value=*(volatile uint16_t *)(0x200000+save_cursor);save_cursor+=2;break;
-    case 0x5004:*(volatile uint16_t *)(0x200000+save_cursor)=value;save_cursor+=2;break;
-    case 0x5005:*(volatile uint8_t *)0xA130F1=0;music_bank=0xffff;save_active=0;break;
+    case 0x5003:value=SaveWord(0,0);break;
+    case 0x5004:(void)SaveWord(value,1);break;
+    case 0x5005:if(!extended_mapper) *(volatile uint8_t *)0xA130F1=0;music_bank=0xffff;save_active=0;break;
     }
     comm[1]=value;comm[0]=0x5FFF;
 }
@@ -116,7 +155,7 @@ RAM_CODE void ServiceMapper(void) {
     volatile uint16_t *comm=(volatile uint16_t *)MARS_COMM0;
     uint16_t op=comm[0];if(op!=0x5020 && op!=0x5021) return;
     uint16_t bank=op==0x5020?comm[1]:1;
-    if(!save_active && bank<=255) {
+    if(!save_active && bank<=SSF_LAST_ROM_PAGE) {
         // Mapper registers are driven from MD RAM while RV briefly transfers
         // cartridge access to the 68000. SH2 code and audio assets are outside
         // the selected 512 KiB aperture; RV returns before the acknowledgement.

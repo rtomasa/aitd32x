@@ -11,7 +11,7 @@
 		.long	0x000003F0
 	.endr
 
-		.ascii	"SEGA 32X        "
+		.ascii	"SEGA SSF        " /* extended cartridge mapper; retain .32x extension */
 		.ascii	"AITD32X 2026.10 "
 		.ascii	"ALONE IN THE DARK 32X - TECHNICAL BUILD         "
 		.ascii	"ALONE IN THE DARK 32X - TECHNICAL BUILD         "

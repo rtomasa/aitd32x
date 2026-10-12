@@ -8,6 +8,15 @@ Find published ROM builds and their release notes in [GitHub Releases](https://g
 
 Load `AITD32X.32x` in a 32X-capable emulator with **SSF2 cartridge mapper support** and cartridge SRAM saving enabled. The current ROM is **14,155,776 bytes (14.16 MB / 13.5 MiB)**. Native checks use PicoDrive libretro in NTSC and PAL. A physical flash cartridge must support this mapper in 32X mode and have enough ROM storage; compatibility with the previously reported cheap flash cartridge remains unestablished.
 
+The current development build uses the `SEGA SSF` header and extended SSF
+initialization for large cartridge ROMs. Keep the **`.32x` extension**. This
+addresses the reported EverDrive Pro selection of `10M+32x (3)`; the intended
+mapper is **SSF (5)**. The engine enables 32X mapper mode and uses page-31 SRAM
+on extended hardware, with standard SRAM access in PicoDrive. This is a
+hardware test candidate, not confirmed EverDrive compatibility. Startup and
+save/load pass in PicoDrive NTSC/PAL; physical boot and SD save persistence
+still need testing. See [mapper validation](docs/validation/ssf-mapper.md).
+
 ## Features
 
 - Original animated Infogrames logo, title, credits, start menu, character selection, biographies and scripted arrival at Derceto.
@@ -62,6 +71,24 @@ A new game does not erase your save. Saving can take a few seconds; wait for the
 ## Performance
 
 Gameplay simulation runs at 25 Hz, with an independent 60 Hz animation clock. Native video is 320×224 with a 320×200 scene. Rendering uses both SH2 processors, cached scenery, partial background repairs and contact-depth rendering where applicable. Camera images remain raw and use bank switching; fixed engine resources stay outside the mapped aperture, allowing camera pages to remain selected between draws. Prepared prop rendering is available across the house, with a normal rendering fallback.
+
+Ordinary model and contact-depth drawing adapt their SH2 row split from measured
+workload. Larger background repairs use both processors and can overlap vertex
+transformation and face sorting, including inventory and pickup previews.
+Completion fences preserve masks, scenery readback and framebuffer swaps.
+See [SH2 scheduling validation](docs/validation/sh2-scheduling.md) for measured
+benefits and hardware testing limits.
+
+Shared solid spans, background copies, image decoding and panels use aligned
+32-bit writes with safe word tails and partial-pixel handling. Compact SH2 wait
+loops cover rendering, framebuffer swaps and mapper/audio/save handshakes.
+See [framebuffer and synchronization validation](docs/validation/framebuffer-sync.md)
+for pixel checks, measured menu response and pending hardware comparisons.
+
+Paired vertex projection schedules Y-numerator work during X division and
+centers/clamps X during Y division. It preserves exact signed arithmetic and
+the hardware divider's latency across gameplay, contact depth, effects and
+3D previews. See [projection validation](docs/validation/projection.md).
 
 Static presentation screens redraw when their content changes; palette fades do not require full redraws. Inventory and pickup screens cache their panels and labels and update the rotating preview at up to 30 FPS. Menu input follows controller snapshots independently of the world clock. Compressed presentation images share the same optimized decoder across the game.
 

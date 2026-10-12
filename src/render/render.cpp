@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+#include "../platform/pixel_words.hpp"
 #include "render_api.hpp"
 #include "../engine/world.hpp"
 #include "divide.hpp"
+#include "project.hpp"
 #include "raster.hpp"
 #include "worker.hpp"
 #include "../platform/platform_api.hpp"
@@ -54,6 +56,7 @@ bool Renderer::DrawCompiledActor(const Actor &a) {
     if(BE32Aligned(entry)!=camera_id || BE32Aligned(entry+4)!=key) return false;
     const uint8_t *program=asset.data+BE32Aligned(entry+8);
     Rect bounds={BS16Aligned(program),BS16Aligned(program+2),BS16Aligned(program+4),BS16Aligned(program+6)};
+    FinishRestore();
     RasterSurface surface={target,0,GAME_HEIGHT,damage[buffer_index]};
     if(coverage_mode) {
         surface.coverage=CoverageBits();
@@ -73,7 +76,8 @@ bool Renderer::DrawCompiledActor(const Actor &a) {
     return true;
 }
 #endif
-bool Renderer::SetCamera(unsigned id,unsigned floor,unsigned room_id,bool load_palette) {
+A32X_COLD bool Renderer::SetCamera(unsigned id,unsigned floor,unsigned room_id,bool load_palette) {
+    FinishRestore();
     if(floor>=A32X_FLOOR_COUNT || id>=camera_counts[floor] || room_id>=room_counts[floor]) return false;
     coverage_mode=false;
     camera=Platform_ReadAsset(floor_cameras[floor][id]);room=Platform_ReadAsset(floor_rooms[floor][room_id]);
@@ -97,6 +101,7 @@ bool Renderer::SetTitle() {
     return SetImage(AS_TITLE,AS_TITLE_PALETTE);
 }
 A32X_COLD bool Renderer::SetImage(unsigned image,unsigned colors) {
+    FinishRestore();
     coverage_mode=false;
     Asset bg=Platform_ReadAsset(image),pal=Platform_ReadAsset(colors);
     if(!pal.data || pal.size!=512 || pal.flags || bg.type!=2 || bg.unpacked!=sizeof(background) || !Platform_Decode(bg,background,sizeof(background))) return false;
@@ -106,6 +111,7 @@ A32X_COLD bool Renderer::SetImage(unsigned image,unsigned colors) {
     return true;
 }
 A32X_COLD bool Renderer::DrawImage(unsigned image,int x,int y,unsigned width,unsigned height) {
+    FinishRestore();
     Asset a=Platform_ReadAsset(image);
     if(a.type==13) {
         if(!a.data || a.size<4 || a.unpacked<4 || (a.flags!=0 && a.flags!=3 && a.flags!=4)) return false;
@@ -127,21 +133,19 @@ void Renderer::Restore() {
     // Word writes can write palette index zero. Byte writes of zero on the 32X
     // framebuffer are transparent and cannot restore a black background pixel.
     const uint16_t *source=(const uint16_t *)background;
-    if(full_restore[buffer_index]) {
-        for(unsigned i=0;i<sizeof(background)/2;i+=4) {
-            target[i]=source[i];target[i+1]=source[i+1];
-            target[i+2]=source[i+2];target[i+3]=source[i+3];
-        }
-        full_restore[buffer_index]=false;
-    } else {
-        const Rect &d=damage[buffer_index];
-        for(int y=d.y1;y<=d.y2;++y) for(int x=d.x1/2;x<=d.x2/2;++x) {
-            int i=y*160+x;target[i]=source[i];
-        }
+    Rect d=full_restore[buffer_index]?Rect{0,0,319,199}:damage[buffer_index];
+    int split=RendererWorker_Restore(target,source,d);
+    for(int y=d.y1;y<split;++y) {
+        unsigned i=y*160+d.x1/2,last=y*160+d.x2/2;
+        if(d.x1>d.x2) break;
+        PixelCopyWords(target+i,source+i,last-i+1);
     }
+    full_restore[buffer_index]=false;
     damage[buffer_index]={320,200,-1,-1};
 }
+A32X_COLD void Renderer::FinishRestore() { RendererWorker_WaitRestore(); }
 A32X_COLD BackgroundComposition::BackgroundComposition(Renderer &r):renderer(r),output(r.target) {
+    renderer.FinishRestore();
     previous_damage[0]=r.damage[0];previous_damage[1]=r.damage[1];
     renderer.target=(volatile uint16_t *)renderer.background;
     renderer.damage[renderer.buffer_index]={320,200,-1,-1};
@@ -156,6 +160,7 @@ A32X_COLD BackgroundComposition::~BackgroundComposition() {
     }
 }
 void Renderer::BakeBackground() {
+    FinishRestore();
     // FITD's background incrustation: static actors become part of the restore
     // image. Finish the slave queue before reading this framebuffer back.
     uint16_t *destination=(uint16_t *)background;
@@ -164,7 +169,7 @@ void Renderer::BakeBackground() {
     const Rect &d=damage[buffer_index];
     if(d.x1<=d.x2 && d.y1<=d.y2) for(int y=d.y1;y<=d.y2;++y) {
         unsigned first=y*160+d.x1/2,last=y*160+d.x2/2;
-        for(unsigned i=first;i<=last;++i) destination[i]=target[i];
+        PixelCopyWords(destination+first,target+first,last-first+1);
     }
     damage[buffer_index]={320,200,-1,-1};
     full_restore[buffer_index]=false;full_restore[buffer_index^1]=true;
@@ -173,11 +178,12 @@ A32X_COLD void Renderer::RestoreOriginal(Rect area) {
     for(int y=area.y1;y<=area.y2;++y) BackgroundSpan(y,area.x1,area.x2,true);
 }
 A32X_COLD void Renderer::BakeRegion(Rect area) {
+    FinishRestore();
     // The caller expands to whole words and encloses every redrawn prop.
     uint16_t *destination=(uint16_t *)background;
     for(int y=area.y1;y<=area.y2;++y) {
         unsigned first=y*160+area.x1/2,last=y*160+area.x2/2;
-        for(unsigned i=first;i<=last;++i) destination[i]=target[i];
+        PixelCopyWords(destination+first,target+first,last-first+1);
     }
     damage[buffer_index]={320,200,-1,-1};
     // The other physical bank needs this region restored on its next use.
@@ -240,11 +246,13 @@ void Renderer::DrawCachedCoverage(const Actor &actor,const CachedSpan *spans,uns
     if(bounds.x1<=bounds.x2 && bounds.y1<=bounds.y2) Mask(actor,bounds);
 }
 void Renderer::Span(int y,int x1,int x2,uint8_t color) {
+    FinishRestore();
     RasterSurface surface={target,0,GAME_HEIGHT,damage[buffer_index]};
     RasterSpan(surface,y,x1,x2,color);damage[buffer_index]=surface.damage;
 }
 
 void Renderer::BackgroundSpan(int y,int left,int right,bool original) {
+    FinishRestore();
     if(left>right) return;
     if(coverage_mode && original) RasterCoverageSpan(CoverageBits(),y,left,right,true);
     Rect &d=damage[buffer_index];
@@ -267,12 +275,13 @@ void Renderer::BackgroundSpan(int y,int left,int right,bool original) {
         --right;
     }
     const uint16_t *words=(const uint16_t *)source;
-    for(int x=left/2;left<=right && x<=right/2;++x) p[x]=words[x];
+    if(left<=right) PixelCopyWords(p+left/2,words+left/2,(right-left+1)/2);
 }
 void Renderer::Box(int x,int y,int w,int h,uint8_t color) {
     for(int j=Max(0,y);j<Min(GAME_HEIGHT,y+h);++j) Span(j,x,x+w-1,color);
 }
 void Renderer::Panel(int x,int y,unsigned asset) {
+    FinishRestore();
     Asset panel=Platform_ReadAsset(asset);
     if(panel.flags==3 || panel.flags==4) {
         if(!DrawImage(asset,x,y)) Platform_Fatal();
@@ -284,7 +293,7 @@ void Renderer::Panel(int x,int y,unsigned asset) {
     // Word copies also clear black pixels on the 32X framebuffer.
     for(int row=0;row<h;++row) {
         volatile uint16_t *out=target+(y+row)*160+x/2;
-        for(int col=0;col<w/2;++col) out[col]=*source++;
+        PixelCopyWords(out,source,w/2);source+=w/2;
     }
     Rect &d=damage[buffer_index];
     d={Min(d.x1,x),Min(d.y1,y),Max(d.x2,x+w-1),Max(d.y2,y+h-1)};
@@ -298,15 +307,18 @@ void Renderer::DrawText(int x,int y,const char *s,uint8_t color) {
     }
 }
 void Renderer::Polygon(Point *p,unsigned n,uint8_t color) {
+    FinishRestore();
     ProfileScope timing(PROFILE_FILL);
     RasterSurface surface={target,0,GAME_HEIGHT,damage[buffer_index]};
     RasterPolygon(surface,p,n,color);damage[buffer_index]=surface.damage;
 }
 void Renderer::Triangle(Point *p,uint8_t color) {
+    FinishRestore();
     RasterSurface surface={target,0,GAME_HEIGHT,damage[buffer_index]};
     RasterTriangle(surface,p,color);damage[buffer_index]=surface.damage;
 }
 void Renderer::PolygonGeneral(Point *p,unsigned n,uint8_t color) {
+    FinishRestore();
     RasterSurface surface={target,0,GAME_HEIGHT,damage[buffer_index]};
     RasterPolygonGeneral(surface,p,n,color);damage[buffer_index]=surface.damage;
 }
@@ -357,7 +369,7 @@ void Renderer::DrawActor(const Actor &a) {
     for(unsigned i=0;i<nv;++i) {
         Vec3 &v=single.vertices[i];v.x+=a.pos.x-translation.x;v.y+=a.pos.y-translation.y;v.z+=a.pos.z-translation.z;
         Rotate(v,rotation);v.z+=focal_depth;
-        if(v.z>100) single.projected[i]={Clamp(160+RenderDivide(v.x*focal_x,v.z),-4096,4096),Clamp(100+RenderDivide(v.y*focal_y,v.z),-4096,4096)};
+        if(v.z>100) single.projected[i]=RenderProject(v,focal_x,focal_y,{160,100});
     }
     }
     // Stable far-to-near ordering. No z-buffer consumes SDRAM.
@@ -487,7 +499,8 @@ void Renderer::DrawEffects(const World &world) {
             Vec3 v={q.x-translation.x,q.y-translation.y-(int)age*(e.mode==1?2:6),q.z-translation.z};
             v.x+=((int)(i%5)-2)*(int)age;v.z+=((int)(i%7)-3)*(int)age;
             Rotate(v,rotation);v.z+=BS16Aligned(c+12);if(v.z<51) continue;
-            int x=160+RenderDivide(v.x*BS16Aligned(c+14),v.z),y=100+RenderDivide(v.y*BS16Aligned(c+16),v.z);
+            Point screen=RenderProject(v,BS16Aligned(c+14),BS16Aligned(c+16),{160,100},false);
+            int x=screen.x,y=screen.y;
             int radius=Clamp(RenderDivide((e.mode==0?50:20)*BS16Aligned(c+14),v.z)/2,0,3);
             // Triple the projected diameter, including one-pixel distant points.
             if(e.mode==0) radius=3*radius+1;
@@ -559,7 +572,7 @@ bool Renderer::ResolveOverlap(const Actor *const *actors,unsigned count,Rect are
             Vec3 q={vertices[v].x+a.pos.x-translation.x,vertices[v].y+a.pos.y-translation.y,vertices[v].z+a.pos.z-translation.z};
             Rotate(q,rotation);q.z+=BS16Aligned(c+12);if(q.z<=100) near[i]=true;
             CompactVertex &out=combined[offsets[i]+v];out.x=Clamp(q.x,-32768,32767);out.y=Clamp(q.y,-32768,32767);out.z=Clamp(q.z,-32768,32767);
-            if(q.z>100) { out.sx=Clamp(160+RenderDivide(q.x*BS16Aligned(c+14),q.z),-4096,4096);out.sy=Clamp(100+RenderDivide(q.y*BS16Aligned(c+16),q.z),-4096,4096); }
+            if(q.z>100) { Point p=RenderProject(q,BS16Aligned(c+14),BS16Aligned(c+16),{160,100});out.sx=p.x;out.sy=p.y; }
         }
         // Ordinary groups reuse camera-space X for reciprocal depth computed
         // once per vertex. Near-rejected groups use their valid vertices only
@@ -575,7 +588,7 @@ bool Renderer::ResolveOverlap(const Actor *const *actors,unsigned count,Rect are
 #if !defined(__sh__)
         ++contact_stats[1];
 #endif
-        ContactFallback(actors,count,area,offsets,near);return true;
+        FinishRestore();ContactFallback(actors,count,area,offsets,near);return true;
     }
     DepthPrimitive *commands=(DepthPrimitive *)vertices;
     constexpr unsigned capacity=sizeof(Vec3)*MAX_VERTICES/sizeof(DepthPrimitive);
@@ -626,13 +639,15 @@ bool Renderer::ResolveOverlap(const Actor *const *actors,unsigned count,Rect are
         RasterSurface surface={target,0,GAME_HEIGHT,damage[buffer_index]};
         ContactContext context={this,actors,commands,ends,count,area,false};
         bool parallel=area.y2-area.y1>=15 && total>=12;
-        if(parallel) RendererWorker_Contact(surface,ContactWorker,&context,area.y1+(area.y2-area.y1+2)/2);
+        FinishRestore();
+        if(parallel) RendererWorker_Contact(surface,ContactWorker,&context,RendererWorker_ContactSplit(area.y1,area.y2+1));
         ContactTiles(context,surface,contact_depth);
         if(parallel) RendererWorker_Finish(surface);
         damage[buffer_index]=surface.damage;
     }
     return true;
 fallback:
+    FinishRestore();
 #if !defined(__sh__)
     ++contact_stats[2];
 #endif

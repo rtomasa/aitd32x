@@ -33,6 +33,7 @@ A32X_COLD void Game::EndingAdvance(unsigned elapsed) {
         return;
     }
     while(startup_time-startup_since>=FRAME_TIME) {
+        renderer.FinishRestore();
         startup_since+=FRAME_TIME;
         if(++book_line>=A32X_ENDING_FRAME_COUNT) { ResumeEscape(*this);return; }
         Rect changed={320,200,-1,-1};

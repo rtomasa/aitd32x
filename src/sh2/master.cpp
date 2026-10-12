@@ -5,6 +5,9 @@
 #include "../platform/32x/hardware.hpp"
 #include "../platform/32x/frame_stats.hpp"
 #include "../platform/profile.hpp"
+#include "../render/worker.hpp"
+#include "../platform/pixel_words.hpp"
+#include "../platform/32x/wait.hpp"
 extern "C" const uint8_t asset_bank[],asset_bank_end[];
 static Game game;
 static Clock clock_state;
@@ -21,23 +24,23 @@ static InputSnapshot ReadInput() {
 static void Flip() {
     unsigned next=displayed^1;
     VDP_FB=(uint16_t)next;
-    while((VDP_FB&1)!=next) { }
+    SH2WaitMask16(&VDP_FB,1,next);
     displayed=next;
 }
-static void InitVideo() {
-    while(!(REG16(0x20004000)&0x8000)) { }
+static A32X_COLD void InitVideo() {
+    SH2WaitMask16(&REG16(0x20004000),0x8000,0x8000);
     // Packed-pixel, 224 lines on PAL and NTSC. No shift, scaling or line reuse.
     VDP_MODE=1;
     displayed=VDP_FB&1;
     for(int bank=0;bank<2;++bank) {
         for(unsigned i=0;i<256;++i) FRAMEBUFFER[i]=(uint16_t)(0x100+i*160);
-        for(unsigned i=256;i<256+SCREEN_WIDTH*SCREEN_HEIGHT/2;++i) FRAMEBUFFER[i]=0;
+        PixelFillWords(FRAMEBUFFER+256,SCREEN_WIDTH*SCREEN_HEIGHT/2,0);
         Flip();
     }
     game.renderer.target=FRAMEBUFFER+256+GAME_Y_OFFSET*160;
 }
 static void LoadPalette() {
-    while(!(VDP_FB&0x2000)) { } // CRAM writable during blanking.
+    SH2WaitMask16(&VDP_FB,0x2000,0x2000); // CRAM writable during blanking.
     for(unsigned i=0;i<256;++i) PALETTE[i]=game.renderer.palette[i];
     game.renderer.palette_changed=false;
 }
@@ -45,13 +48,14 @@ extern "C" int m_main(void) {
     Platform_SetAssetBank(asset_bank,(uint32_t)(asset_bank_end-asset_bank));
     InitVideo();game.Init();LoadPalette();
     // Slave publishes this after its C entry point, through uncached COMM.
-    while(COMM(2)!=0x534C) { }
+    SH2WaitMask16(&COMM(2),0xffff,0x534c);
     unsigned refresh=COMM(7)==50?50:60;
     InputSnapshot initial=ReadInput();
     uint16_t last_toggles=initial.pad>>8;
     clock_state.Init(initial.sequence);
     frame_stats.Init(initial.sequence);
     Profile_Init();
+    RendererWorker_Init();
     for(;;) {
         InputSnapshot input=ReadInput();
         int previous_mode=game.mode;
@@ -78,12 +82,13 @@ extern "C" int m_main(void) {
             ProfileScope timing(PROFILE_FRAME);
             game.renderer.buffer_index=displayed^1;
             game.Draw();
+            game.renderer.FinishRestore();
             if(game.renderer.palette_changed) {
                 ProfileScope palette(PROFILE_PALETTE);LoadPalette();
             }
             { ProfileScope ui(PROFILE_UI);
               if(game.mode) Renderer_DrawFPS(FRAMEBUFFER+256,frame_stats.fps_tenths,frame_stats.ready);
-              else for(unsigned p=0;p<GAME_Y_OFFSET*160;++p) FRAMEBUFFER[256+p]=0;
+              else PixelFillWords(FRAMEBUFFER+256,GAME_Y_OFFSET*160,0);
             }
             { ProfileScope flip(PROFILE_FLIP);Flip(); }
             if(game_frame) frame_stats.Rendered();

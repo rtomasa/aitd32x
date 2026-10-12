@@ -6,6 +6,7 @@
 #include "../platform/audio.hpp"
 extern "C" int s_main(void) {
     Profile_Init();
+    RendererWorker_Init();
     COMM(2)=0x534C;
     uint16_t last=COMM(6),count=0;
     for(;;) {

@@ -7,6 +7,7 @@
 #include AITD_RESOURCE_IDS
 #if defined(__sh__)
 #include "32x/hardware.hpp"
+#include "32x/wait.hpp"
 static int played_music=-99;static uint32_t music_probe;
 extern "C" const uint8_t asset_bank[];
 namespace {
@@ -45,7 +46,7 @@ static int Sample(Voice &v) {
     ++v.pos;return v.predictor;
 }
 static uint16_t Command(uint16_t op,uint16_t value=0) {
-    COMM(1)=value;COMM(0)=op;while(COMM(0)!=0x5FFF) { asm volatile("nop; nop; nop; nop"); }return COMM(1);
+    COMM(1)=value;COMM(0)=op;SH2WaitMask16(&COMM(0),0xffff,0x5fff);return COMM(1);
 }
 }
 void Audio_Sample(int id,int next,int repeat) {

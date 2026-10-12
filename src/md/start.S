@@ -159,6 +159,7 @@ _start:
 		move.l	#0xC0400000,(a1)		/* write CRAM address 64 */
 		move.l	#0x0000000A,(a2)		/* entry 32 (black) BGR and 33 (red) */
 
+		jsr		MapperInit			/* RAM code, before releasing either SH2 */
 		move.b	#0,(0xA15107)			/* clear RV - allow SH2 to access ROM */
 		move.w	#0,(JoypadState)		/* controller 1 */
 		move.l	#0,(VBlankCounter)		/* clear the vblank count */

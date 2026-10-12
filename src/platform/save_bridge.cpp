@@ -2,9 +2,10 @@
 #include "platform_api.hpp"
 #if defined(__sh__)
 #include "32x/hardware.hpp"
+#include "32x/wait.hpp"
 static uint16_t Command(uint16_t op,uint16_t arg=0) {
     COMM(1)=arg;COMM(0)=op;
-    while(COMM(0)!=0x5FFF) { __asm__ volatile("nop; nop; nop; nop"); }
+    SH2WaitMask16(&COMM(0),0xffff,0x5fff);
     return COMM(1);
 }
 static unsigned read_word,write_word;static bool read_pending,write_pending;

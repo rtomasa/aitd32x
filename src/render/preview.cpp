@@ -2,6 +2,7 @@
 #include "render_api.hpp"
 #include "raster.hpp"
 #include "divide.hpp"
+#include "project.hpp"
 #include "../../assets/resource_ids.h"
 
 namespace {
@@ -40,10 +41,11 @@ A32X_COLD void Renderer::DrawPreview(int character,int body,int beta,Rect viewpo
     for(unsigned i=0;i<nv;++i) {
         Vec3 &v=single.vertices[i];v.x+=center.x;v.y+=center.y;v.z+=center.z;
         Rotate(v,rotation);v.z+=128;
-        single.projected[i]=v.z>=51?Point{cx+RenderDivide(v.x*projection_x,v.z),cy+RenderDivide(v.y*projection_y,v.z)}:Point{0,0};
+        single.projected[i]=v.z>=51?RenderProject(v,projection_x,projection_y,{cx,cy},false):Point{0,0};
     }
     // Share gameplay's stable merge sort and its existing scratch workspace.
     SortFaces(m);
+    FinishRestore();
     RasterSurface surface={target,viewport.y1,viewport.y2+1,damage[buffer_index]};
     for(unsigned f=0;f<np;++f) {
         const uint8_t *p=m+BE32Aligned(primitives+ordering.faces[f].index*4);

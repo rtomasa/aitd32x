@@ -16,7 +16,7 @@ ASSET_PHYSICAL = 0x20000
 EXTRA_PHYSICAL = 0x400000
 PAGE_BYTES = 0x80000
 APERTURE = (0x80000, 0x100000)
-ROM_LIMIT = 0x2000000
+ROM_LIMIT = 0xf00000
 
 
 def require(condition, message):
@@ -91,7 +91,14 @@ class Elf:
 
 def check(rom, elf_data, bank, main, extra, manifest):
     require(len(rom) <= ROM_LIMIT and len(rom) % 65536 == 0, 'invalid cartridge size/padding')
-    require(rom[0x100:0x110] == b'SEGA 32X        ', 'missing 32X header')
+    require(rom[0x100:0x110] == b'SEGA SSF        ', 'missing extended SSF header')
+    require(rom[0x3C0:0x3D0] == b'AITD32X         ', 'missing 32X module header')
+    require(rom[0x1000:0x1100] != rom[0x101000:0x101100],
+            'extended mapper probe has indistinguishable ROM samples')
+    require(rom[0x190:0x1A0] == b'J6              ', 'unexpected CD device flag')
+    require(rom[0x1B0:0x1B4] == b'RA\xf8\x20' and
+            struct.unpack_from('>2I', rom, 0x1B4) == (0x200000, 0x21FFFF),
+            'incorrect 128 KiB word-wide SRAM header')
     require(struct.unpack_from('>I', rom, 0x1A4)[0] == len(rom) - 1, 'incorrect ROM end header')
     checksum = sum(value for (value,) in struct.iter_unpack('>H', rom[512:])) & 65535
     require(struct.unpack_from('>H', rom, 0x18E)[0] == checksum, 'incorrect Mega Drive checksum')

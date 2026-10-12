@@ -14,6 +14,7 @@ struct Primitive {
     std::array<Point,4> points;
     uint8_t color;
     int size;
+    uint8_t material=0;
 };
 using Case=std::vector<Primitive>;
 static constexpr unsigned words=GAME_WIDTH*GAME_HEIGHT/2,guard=16;
@@ -43,7 +44,7 @@ static void CheckGuards(const Buffer &buffer,unsigned index,int split) {
             Fail(index,split,"framebuffer guard changed");
 }
 static void Draw(RasterSurface &surface,const Primitive &p) {
-    RasterPrimitive(surface,p.type,p.points.data(),p.count,p.color,p.size);
+    RasterPrimitive(surface,p.type,p.points.data(),p.count,p.color,p.size,p.material);
 }
 static Primitive Make(unsigned type,std::initializer_list<Point> points,uint8_t color,int size=0) {
     Primitive p={type,unsigned(points.size()),{},color,size};
@@ -110,7 +111,10 @@ int main() {
         });
     }
     if(cases.size()!=200) { std::fprintf(stderr,"unexpected case count %zu\n",cases.size());return 1; }
-    constexpr int splits[]={0,1,66,100,199,200};
+    // Adaptive ownership moves in four-row steps, including within glass and
+    // zero-color spans. All these boundaries must reproduce unsplit drawing.
+    for(unsigned i=0;i<cases.size();++i) for(auto &p:cases[i]) p.material=(i&1)?2:0;
+    constexpr int splits[]={0,1,20,40,64,66,100,136,160,180,199,200};
     Buffer full,banded,initial;
     unsigned comparisons=0,primitive_calls=0;
     for(unsigned index=0;index<cases.size();++index) {
@@ -147,6 +151,6 @@ int main() {
             ++comparisons;
         }
     }
-    std::printf("cases=%zu splits=6 comparisons=%u primitive_calls=%u pixels/damage/ownership/guards=ok\n",
+    std::printf("cases=%zu splits=12 comparisons=%u primitive_calls=%u pixels/damage/ownership/guards=ok\n",
                 cases.size(),comparisons,primitive_calls);
 }

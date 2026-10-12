@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+#include "../platform/pixel_words.hpp"
 #include "raster.hpp"
 #include "divide.hpp"
 #include "../engine/actor.hpp"
@@ -26,9 +27,7 @@ static inline void StoreSpan(volatile uint16_t *p,int x1,int x2,uint8_t color) {
     if(x1<=x2) {
         p+=x1/2;
         int count=(x2-x1+1)/2;
-        // Two word stores share one loop branch while retaining zero-color writes.
-        for(;count>=2;count-=2) { *p++=two;*p++=two; }
-        if(count) *p=two;
+        PixelFillWords(p,count,two);
     }
 }
 void RasterCoverageSpan(volatile uint8_t *bits,int y,int left,int right,bool clear,uint8_t material) {

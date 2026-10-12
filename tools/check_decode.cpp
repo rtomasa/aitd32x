@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Decoder byte parity, guard boundaries and random-access camera row indexing.
 #include "../src/platform/platform_api.hpp"
+#include "../src/platform/pixel_words.hpp"
 #include <array>
 #include <cstdio>
 #include <cstdlib>
@@ -8,7 +9,7 @@
 #include <vector>
 static void Check(bool ok) { if(!ok) { std::fputs("decoder/row index mismatch\n",stderr);std::exit(1); } }
 static void Compare(const std::vector<uint8_t> &packed,const std::vector<uint8_t> &plain,unsigned flags,bool rows=false) {
-    for(unsigned input_offset:{0u,1u}) for(unsigned output_offset:{4u,5u}) {
+    for(unsigned input_offset:{0u,1u,2u,3u}) for(unsigned output_offset:{4u,5u,6u,7u}) {
         std::vector<uint8_t> source(packed.size()+input_offset+4),dest(plain.size()+16,0xed);
         std::memcpy(source.data()+input_offset,packed.data(),packed.size());
         Asset a={source.data()+input_offset,(uint32_t)packed.size(),(uint32_t)plain.size(),(uint16_t)(flags>=3?13:0),(uint16_t)flags};
@@ -41,6 +42,28 @@ static void Framebuffer(const std::vector<uint8_t> &packed,const std::vector<uin
     Check(dest[0]==0xeded && dest[1]==0xeded && dest[dest.size()-2]==0xeded && dest.back()==0xeded);
 }
 int main() {
+    // Independent word reference checks every short alignment/tail case,
+    // including black, mismatched source alignment and forward overlap.
+    alignas(4) uint16_t source[264],actual[264],expected[264];
+    for(unsigned i=0;i<264;++i) source[i]=i%3?uint16_t(i*913):0;
+    for(unsigned count=0;count<=257;++count) for(unsigned to:{2u,3u}) for(unsigned from:{0u,1u}) {
+        std::fill(actual,actual+264,0xeded);std::fill(expected,expected+264,0xeded);
+        for(unsigned i=0;i<count;++i) expected[to+i]=source[from+i];
+        PixelCopyWords(actual+to,source+from,count);
+        Check(!std::memcmp(actual,expected,sizeof(actual)));
+        for(uint16_t color:{uint16_t(0),uint16_t(0x7193)}) {
+            std::fill(actual,actual+264,0xeded);std::fill(expected,expected+264,0xeded);
+            for(unsigned i=0;i<count;++i) expected[to+i]=color;
+            PixelFillWords(actual+to,count,color);
+            Check(!std::memcmp(actual,expected,sizeof(actual)));
+        }
+        for(unsigned offset:{2u,3u}) {
+            std::memcpy(actual,source,sizeof(actual));std::memcpy(expected,source,sizeof(expected));
+            for(unsigned i=0;i<count;++i) expected[to+offset+i]=expected[to+i];
+            PixelCopyWords(actual+to+offset,actual+to,count);
+            Check(!std::memcmp(actual,expected,sizeof(actual)));
+        }
+    }
     std::vector<uint8_t> raw(103);for(unsigned i=0;i<raw.size();++i) raw[i]=(uint8_t)(i*47);Compare(raw,raw,0);
     std::vector<uint8_t> packed,plain;
     for(unsigned n=1;n<=255;++n) { packed.push_back(n);packed.push_back((uint8_t)(n*37));plain.insert(plain.end(),n,(uint8_t)(n*37)); }
@@ -65,8 +88,8 @@ int main() {
     }
     // Paired copies: odd starting/output lengths, short overlap, and the
     // large offset used by portrait frames, with independent row padding.
-    for(unsigned offset:{2u,3200u}) {
-        unsigned literals=offset+1,total=offset==2?48:9600,match=total-literals-2;
+    for(unsigned offset:{2u,4u,6u,3200u}) {
+        unsigned literals=offset+1,total=offset<3200?48:9600,match=total-literals-2;
         packed.clear();plain.clear();
         packed.push_back((Min(literals,15)<<4)|Min(match-4,15));
         auto extension=[&](unsigned length) {
@@ -80,7 +103,7 @@ int main() {
         for(unsigned i=0;i<match;++i) plain.push_back(plain[plain.size()-offset]);
         packed.insert(packed.end(),{0x20,0,9});plain.insert(plain.end(),{0,9});
         Compare(packed,plain,2);
-        if(offset==2) Framebuffer(packed,plain,2,16,3,20);
+        if(offset<3200) Framebuffer(packed,plain,2,16,3,20);
         else Framebuffer(packed,plain,2,160,60,320);
     }
     uint8_t lz_bad[]={0x10,7,0,0,0x00};

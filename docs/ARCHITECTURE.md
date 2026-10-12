@@ -15,20 +15,43 @@ The 68000 boots the cartridge, detects PAL/NTSC and publishes coherent controlle
 snapshots each VBlank. It also services cartridge mapping, SRAM and YM2612/PSG
 music from its own RAM. The master SH2 executes the 25 Hz simulation, LIFE/track,
 active objects, animation, collision, inventory and camera selection; it
-transforms/sorts geometry and presents completed frames. Both SH2s rasterize:
-the master owns logical rows 0–99 and the slave owns rows 100–199 through a
-cache-through eight-entry command ring. The slave also owns autonomous PWM
+transforms/sorts geometry and presents completed frames. Both SH2s rasterize
+disjoint whole-row bands through a cache-through eight-entry command ring.
+Ordinary jobs start with a split at row 100, adapting within rows 20–180;
+contact jobs separately adapt the master's share from 10% to 90% of their
+repair rectangle. The slave also owns autonomous PWM
 sample mixing; audio interrupts remain available during rendering.
 
 The runtime is freestanding C++17 with no heap, OS, filesystem, SDL, STL, RTTI
-or exceptions. Shared-RAM polling reads are spaced by 24 NOPs to avoid a
-terminal-read polling-detector sleep in PicoDrive. A VBlank phase accumulator
+or exceptions. Shared-RAM completion/queue waits and COMM/VDP waits use compact
+SH2 loops with an address-register write in the branch delay slot. This keeps
+PicoDrive's polling detector from incorrectly sleeping on a completed exchange
+without padded NOP loops. Payload fences and uncached aliases are retained.
+A VBlank phase accumulator
 catches up simulation independently of completed draws. The approved animation
 clock remains 60 Hz with fractional phase units of 1/1500 second: each logic
 update consumes 60 units and each original key lasts `duration * 25` units.
 Walk/run displacement and interpolation carry their remainder across keys.
 Pause, inventory, pickups, books and cinematic picture/movie holds stop the
 world clock. Presentation input consumes controller edges without advancing it.
+
+Both SH2s initialize their CPU-local free-running timer at phi/128 in RELEASE
+as well as PROFILE. Ordinary jobs measure master submission/drawing time minus
+queue stalls and slave rasterization time; contact jobs measure both tile
+passes. A 25% imbalance and three agreeing samples move the split by four rows
+(four units out of 200 for contacts). Tiny jobs retain the split.
+Each BEGIN/CONTACT payload freezes ownership until END; masks and shared scratch
+reuse still follow that fence. Timer reads retry across high-byte rollover.
+The timer is polled and enables no timer interrupts; PWM stays interruptible.
+
+Background repairs of at least eight rows and 512 words dispatch the bottom
+half of the damaged rectangle to the slave while the master copies the top.
+The master can then transform/sort the next model or item preview while the
+copy remains pending. The slave reads the existing RAM image through its
+uncached alias; no second image or copy buffer is allocated. A separate restore
+token fences framebuffer writes/readback, RAM composition and presentation.
+Small repairs and RAM targets retain synchronous copying. These paths are
+shared by gameplay, startup/death/ending and inventory/pickup screens.
 
 ## Complete world and script state
 
@@ -135,8 +158,9 @@ to the title. Ending state is presentation-only and is cleared on load.
 ## Cartridge banking
 
 The SH2 direct cartridge window is 32 Mbit / 4 MiB. Larger ROMs require a
-compatible cartridge mapper; this build uses SSF2 512 KiB pages and bounds
-physical ROM to 32 MiB. The asset directory starts at physical `0x20000`.
+compatible cartridge mapper; this build uses extended SSF 512 KiB pages and
+bounds physical ROM to 15 MiB (pages 0–29). Pages 30/31 are reserved for the
+cartridge OS and SRAM. The asset directory starts at physical `0x20000`.
 Fixed data and the BIOS-loaded SH2 module remain below 4 MiB; executable ROM
 code stays below the asset origin. Banked images/movie deltas begin at
 physical `0x400000`. Directory offsets remain relative to the asset origin.
@@ -164,6 +188,29 @@ directory and restore identity page 1 before world reads. Scoped mappings
 restore asset pointers in either case. Mapping policy is shared by gameplay
 cameras, UI images, startup/death images and ending deltas.
 
+The system header is `SEGA SSF`, selecting extended mapping instead of the
+linear 10M mode reported on Mega EverDrive Pro. The `.32x` extension and MARS
+bootstrap/module remain intact. Before releasing the SH2s, the RAM-resident
+68000 initializer resets banks 1–7, probes extended bank-0 remapping by
+comparing 256 ROM bytes against bank 2, restores bank 0, and writes `0xC000`
+to `A130F0` (protected control update, 32X mode, ROM writes disabled). Standard
+SSF2 emulation ignores bank-0 remapping and retains conventional SRAM access.
+
+On extended hardware, each SRAM word temporarily selects page 31 in bank 4.
+The supervisor sets RV, uses `0x8000` for reads or `0xA000` for writes, accesses
+the word at `0x200000 + journal offset`, restores bank 4/page 4 and `0xC000`,
+then restores RV before acknowledging. This targets Mega EverDrive Pro's
+word-wide SRAM at the start of page 31; older EverDrive layouts are not
+validated. The retained image bank is untouched, and music pumping remains
+suspended during save transactions. The header declares 128 KiB SRAM. No
+serialization migration is introduced or required for this mapper change.
+
+The [Krikzz extended SSF specification](https://krikzz.com/pub/support/mega-everdrive/x3x5x7/dev/extended_ssf-v2.txt)
+documents the header/control protocol; the
+[Pro FPGA source](https://github.com/krikzz/mega-ed-pub/blob/master/fpga/mapper/map_ssf/map_ssf.sv)
+routes page 31 to SRAM. [Mapper validation](validation/ssf-mapper.md) separates
+stock PicoDrive coverage, the extended-SRAM bus model and pending hardware tests.
+
 The [Sega hardware manual](https://consolemods.org/wiki/images/e/e9/32X_Hardware_Manual_1994_Sega_text.pdf)
 describes the direct window and arbitration. PicoDrive implements
 [32X SSF2 reads](https://github.com/notaz/picodrive/blob/master/pico/32x/memory.c),
@@ -176,7 +223,11 @@ must provide compatible 32X mapper support and sufficient ROM storage.
 
 Packed-pixel video is 320×224 in both regions, with a 320×200 logical scene at
 (0,12). Each framebuffer has a native line table and independent damage bounds.
-Word writes restore palette index zero correctly. FPS counts completed draws
+Aligned longword copies/fills share four-store unrolled loops across solid
+spans, background repairs/readback, panels and image decoding. Word leads/tails,
+unaligned copy fallback and partial-pixel handling preserve exact boundaries.
+Normal word/longword writes restore palette index zero correctly; transparent
+and depth-tested pixels retain selective stores. FPS counts completed draws
 against VBlank and requests a repaint only when its displayed value changes;
 idle static presentation screens retain their pixels.
 
@@ -187,6 +238,16 @@ FITD's visibility rule. Ordinary drawing, prepared props and contact depth use
 the same policy; crossing faces are not turned into new clipped polygons.
 Type-2 eye points occupy one pixel; small type-3 spheres can also shrink to one
 pixel. Back faces are culled. Material 2 uses fixed 50% screen-door transparency.
+
+Gameplay, contact geometry, effects and 3D previews share paired signed
+projection in `project.cpp`. During X division the CPU loads/multiplies Y;
+during Y division it centers/clamps X. Conservative instruction counting plus
+36/34 padding NOPs guarantees at least 39 cycles before either quotient read.
+No other DIVU access can intervene; PWM interrupts preserve MACL and do not
+use DIVU. World coordinates retain +/-4096 clamping, while effects/previews
+retain unclamped coordinates and their existing near-plane checks. Isolated
+edge, radius, reciprocal-depth and wide-gradient divisions retain their waits.
+
 Translation/mask tests use each actor's floor and room. A stable world painter
 sort orders models before their primitive sort. The original pair-dependent
 distance heuristic supplies a preference; a stable bounded graph pass enforces
@@ -293,11 +354,13 @@ separate from the engine license and are excluded from source archives/Git.
 ## Memory and diagnostics
 
 The complete-game RELEASE ROM is 14,155,776 bytes (13.5 MiB). Fixed bank data
-uses 3,964,720 bytes and the extension 9,932,868 bytes. The 84,420-byte BIOS
-module ends at physical byte 4,180,212, leaving 14,092 bytes below the 4 MiB
-direct-window limit. BSS uses 160,640 bytes; module/BSS/linker overhead total
-245,064 bytes, ending at `0x0603BD48`. The static margin below the reserved
-stacks is 696 bytes. `build/bank-layout.json` is the authoritative
+uses 3,964,720 bytes and the extension 9,932,868 bytes. The 85,076-byte BIOS
+module ends at physical byte 4,180,868, leaving 13,436 bytes below the 4 MiB
+direct-window limit. BSS uses 160,672 bytes; module/BSS/linker overhead total
+245,752 bytes, ending at `0x0603BFF8`. The static margin below the reserved
+stacks is 8 bytes. Camera setup, video initialization, scenery readback and
+worker control/copy helpers execute from
+protected ROM; hot raster loops remain in SDRAM. `build/bank-layout.json` is the authoritative
 generated layout report for this build; later changes require fresh figures.
 
 SH2 SDRAM remains 256 KiB. The master reserves 12 KiB and the slave 4 KiB at
@@ -316,7 +379,8 @@ remain outside the cartridge where applicable.
 
 The RA header advertises 128 KiB SRAM at `0x200000–0x21FFFF`. SH2 transports
 sequential bytes through blocking COMM commands serviced by the 68000, batching
-two bytes per exchange. SRAM is enabled only during a transaction. Six u32
+two bytes per exchange. Conventional SRAM is enabled during a transaction;
+extended SSF maps it only for each protected word access. Six u32
 header words store magic AITD, schema, generation, length, FNV-1a checksum and
 the original imported-game fingerprint. Two 64 KiB journal records alternate;
 magic clears first and commits last, followed by readback. A damaged newest

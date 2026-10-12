@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+#include "../platform/pixel_words.hpp"
 #include "game.hpp"
 #include "startup.hpp"
 #include "save.hpp"
@@ -30,10 +31,12 @@ static A32X_COLD void Palette(Game &g,unsigned level,bool white=false) {
     }
 }
 static A32X_COLD void Portrait(Game &g) {
+    g.renderer.FinishRestore();
     int x=g.character?0:160,left=x+10,right=x+148,top=10,bottom=189;
     const uint16_t *source=(const uint16_t *)g.renderer.background;
     for(int y=top;y<=bottom;++y) {
-        for(int p=left/2;p<(right+1)/2;++p) g.renderer.target[y*160+p]=source[y*160+p];
+        unsigned first=y*160+left/2;
+        PixelCopyWords(g.renderer.target+first,source+first,(right+1)/2-left/2);
         if(!(right&1)) g.renderer.Span(y,right,right,g.renderer.background[y*320+right]);
     }
 }
@@ -45,6 +48,7 @@ A32X_COLD void Game::StartGameplay() {
     pending_edges=0;startup_phase=STARTUP_GAMEPLAY;startup_next=NONE;dirty=true;resync_clock=true;
 }
 A32X_COLD void Game::StartupEnter(unsigned phase) {
+    renderer.FinishRestore();
     startup_phase=(uint8_t)phase;startup_next=NONE;startup_since=startup_time;startup_fade=0;dirty=true;
     switch(phase) {
     case STARTUP_LOGO:

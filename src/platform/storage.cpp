@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "platform_api.hpp"
+#include "pixel_words.hpp"
 #if defined(__sh__)
 #include "32x/hardware.hpp"
+#include "32x/wait.hpp"
 #endif
 static const uint8_t *bank;
 static uint32_t bank_size,bank_count;
@@ -39,7 +41,7 @@ constexpr unsigned BANKED=0x8000;
 #if defined(__sh__)
 static A32X_COLD uint16_t MapperCommand(unsigned command,unsigned value=0) {
     COMM(1)=(uint16_t)value;COMM(0)=(uint16_t)command;
-    while(COMM(0)!=0x5fff) { asm volatile(".rept 24\n\tnop\n\t.endr" ::: "memory"); }
+    SH2WaitMask16(&COMM(0),0xffff,0x5fff);
     return COMM(1);
 }
 #endif
@@ -49,7 +51,7 @@ static A32X_COLD Asset MapImage(const Asset &a) {
     // Only immutable images/deltas use the extension. Complete-game banks
     // retain their page; older banks restore slot 1 before world updates.
     unsigned physical=(uintptr_t)a.data-0x02000000u,offset=physical&0x7ffffu;
-    if((a.type!=2 && a.type!=19) || physical<0x400000u || a.size>0x80000u-offset || physical>>19>63) return {};
+    if((a.type!=2 && a.type!=19) || physical<0x400000u || a.size>0x80000u-offset || physical>>19>29) return {};
     unsigned page=physical>>19;
     if(mapper_page!=page) {
         if(MapperCommand(0x5020,page)!=0x424b) return {};
@@ -111,9 +113,8 @@ struct FramePixels {
             count-=n;
             if(position&1) { Write(i++,value);++position;--n; }
             volatile uint16_t *words=data+position/2;uint16_t pair=(uint16_t)(value*257u);
-            for(;n>=8;n-=8,i+=8) { *words++=pair;*words++=pair;*words++=pair;*words++=pair; }
-            for(;n>=2;n-=2,i+=2) *words++=pair;
-            if(n) Write(i++,value);
+            PixelFillWords(words,n/2,pair);i+=(n/2)*2;
+            if(n&1) Write(i++,value);
         }
     }
     A32X_COLD void Copy(unsigned i,unsigned offset,unsigned count) {
@@ -129,7 +130,8 @@ struct FramePixels {
             unsigned pairs=n/2;
             // Even offsets are at least two pixels, so each paired source
             // has already been written when a short match overlaps itself.
-            for(unsigned word=0;word<pairs;++word) to[word]=from[word];
+            if(offset>=4) PixelCopyWords(to,from,pairs);
+            else for(unsigned word=0;word<pairs;++word) to[word]=from[word];
             i+=pairs*2;count-=pairs*2;
             if(n&1) { uint8_t value=Read(i-offset);Write(i++,value);--count; }
         }
@@ -214,11 +216,7 @@ bool Platform_Decode(const Asset &a,uint8_t *dest,uint32_t capacity,uint16_t *ro
         if(!(((uintptr_t)a.data|(uintptr_t)dest)&1)) {
             const uint16_t *source=(const uint16_t *)a.data;
             uint16_t *target=(uint16_t *)dest;
-            for(;i+8<=a.size;i+=8) {
-                *target++=*source++;*target++=*source++;
-                *target++=*source++;*target++=*source++;
-            }
-            for(;i+2<=a.size;i+=2) *target++=*source++;
+            PixelCopyWords(target,source,a.size/2);i=a.size&~1u;
         }
         for(;i<a.size;++i) dest[i]=a.data[i];
         return true;
@@ -238,9 +236,8 @@ bool Platform_Decode(const Asset &a,uint8_t *dest,uint32_t capacity,uint16_t *ro
         uint8_t color=a.data[i+1],*p=dest+out;out+=n;
         if((uintptr_t)p&1) { *p++=color;--n; }
         uint16_t pair=(uint16_t)(color*257u),*words=(uint16_t *)p;
-        for(;n>=8;n-=8) { *words++=pair;*words++=pair;*words++=pair;*words++=pair; }
-        for(;n>=2;n-=2) *words++=pair;
-        if(n) *(uint8_t *)words=color;
+        PixelFillWords(words,n/2,pair);
+        if(n&1) ((uint8_t *)words)[n&~1u]=color;
     }
     return out==a.unpacked;
 }
@@ -254,9 +251,8 @@ A32X_COLD bool Platform_Blit(const Asset &a,volatile uint16_t *dest,unsigned wid
         if(!(width&1) && !((uintptr_t)a.data&1)) {
             const uint16_t *source=(const uint16_t *)a.data;
             for(unsigned row=0;row<height;++row) {
-                volatile uint16_t *out=dest+row*(stride/2);unsigned col=0;
-                for(;col+4<=width/2;col+=4) { *out++=*source++;*out++=*source++;*out++=*source++;*out++=*source++; }
-                for(;col<width/2;++col) *out++=*source++;
+                volatile uint16_t *out=dest+row*(stride/2);
+                PixelCopyWords(out,source,width/2);source+=width/2;
             }
         } else for(unsigned i=0;i<a.size;++i) pixels.Write(i,a.data[i]);
         return true;
