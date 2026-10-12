@@ -90,6 +90,16 @@ centers/clamps X during Y division. It preserves exact signed arithmetic and
 the hardware divider's latency across gameplay, contact depth, effects and
 3D previews. See [projection validation](docs/validation/projection.md).
 
+Contact correction reuses a live ordinary model projection and prepares tile
+bounds once, building architectural masks only for intersecting primitives.
+Scenery caches derive prepared-prop coverage directly from stored color spans.
+In the measured PicoDrive fixtures, hallway rendering improves from 11.0 to
+11.8 FPS and the room-entry hitch falls from 233 to 200 ms; chest pushing gains
+only 0.2 FPS. These shared paths preserve rendering and use no additional RAM.
+See [action performance measurements](docs/validation/action-performance.md)
+for comparisons and remaining bottlenecks. MiSTer and physical 32X comparisons
+remain pending.
+
 Static presentation screens redraw when their content changes; palette fades do not require full redraws. Inventory and pickup screens cache their panels and labels and update the rotating preview at up to 30 FPS. Menu input follows controller snapshots independently of the world clock. Compressed presentation images share the same optimized decoder across the game.
 
 The ending animation applies precompiled changed spans to the retained image. Dark rooms use a bounded lamp mask, restoring each framebuffer's previous illuminated footprint. Compact original bone channels let the 50-actor pool fit in the existing RAM budget.

@@ -235,17 +235,21 @@ void Game::DrawScene() {
     static_slots=next_static_slots;
     for(int i=0;i<count;++i) if(!Dynamic(order[i])) static_rank[order[i]]=(uint8_t)i;
     Rect dynamic_bounds={320,200,-1,-1};
+    const Actor *projected=nullptr;
     for(int i=0;i<count;++i) {
         int slot=order[i];bool full_draw=false;
         if(Dynamic(slot)) {
-            renderer.DrawActor(world.Pose(slot));Rect b=renderer.last_bounds;static_bounds[slot]=b;
+            const Actor &actor=world.Pose(slot);
+            projected=renderer.DrawActor(actor)?&actor:nullptr;Rect b=renderer.last_bounds;static_bounds[slot]=b;
             full_draw=true;
         } else {
             // A cached prop in front of an animated actor must keep the
             // original painter ordering. Redraw only overlapping props.
             Rect b=static_bounds[slot];
             if(b.x1<=dynamic_bounds.x2 && b.x2>=dynamic_bounds.x1 && b.y1<=dynamic_bounds.y2 && b.y2>=dynamic_bounds.y1) {
-                if(static_span_count[slot]==65535) { renderer.DrawActor(world.Pose(slot));full_draw=true; }
+                if(static_span_count[slot]==65535) {
+                    const Actor &actor=world.Pose(slot);projected=renderer.DrawActor(actor)?&actor:nullptr;full_draw=true;
+                }
                 else renderer.DrawCachedCoverage(world.Pose(slot),static_spans+static_span_start[slot],static_span_count[slot],b,dynamic_bounds);
             }
         }
@@ -286,7 +290,8 @@ void Game::DrawScene() {
         }
         const Actor *group[MAX_ACTIVE];unsigned members=0;
         for(int j=0;j<count;++j) if(group_mask&(uint64_t(1)<<order[j])) group[members++]=&world.Pose(order[j]);
-        if(!renderer.ResolveOverlap(group,members,area)) continue;
+        bool resolved=renderer.ResolveOverlap(group,members,area,projected);projected=nullptr;
+        if(!resolved) continue;
         // Disjoint foreground models keep their ordinary painter position;
         // they need no depth pass alongside this intersecting group.
         Rect repaired=area;
@@ -294,7 +299,7 @@ void Game::DrawScene() {
             int t=order[j];if(group_mask&(uint64_t(1)<<t)) continue;Rect b=static_bounds[t];
             if(b.x1>repaired.x2 || b.x2<repaired.x1 || b.y1>repaired.y2 || b.y2<repaired.y1) continue;
             if(Dynamic(t) || static_span_count[t]==65535) {
-                renderer.DrawActor(world.Pose(t));b=renderer.last_bounds;
+                const Actor &actor=world.Pose(t);projected=renderer.DrawActor(actor)?&actor:nullptr;b=renderer.last_bounds;
                 repaired={Min(repaired.x1,b.x1),Min(repaired.y1,b.y1),Max(repaired.x2,b.x2),Max(repaired.y2,b.y2)};
             } else renderer.DrawCachedCoverage(world.Pose(t),static_spans+static_span_start[t],static_span_count[t],b,repaired);
         }

@@ -51,9 +51,15 @@ A32X_COLD void Renderer::DrawPreview(int character,int body,int beta,Rect viewpo
         const uint8_t *p=m+BE32Aligned(primitives+ordering.faces[f].index*4);
         surface.material=p[3];
         unsigned n=p[1];Point screen[MAX_POLY];bool near=false;
+        Rect bounds={4096,4096,-4096,-4096};
         for(unsigned j=0;j<n;++j) {
-            unsigned index=BE16Aligned(p+6+j*2);if(single.vertices[index].z<51) near=true;
+            unsigned index=BE16Aligned(p+6+j*2);
+            if(single.vertices[index].z<51) { near=true;break; }
             screen[j]=single.projected[index];
+            if(p[0]==1) {
+                bounds.x1=Min(bounds.x1,screen[j].x);bounds.x2=Max(bounds.x2,screen[j].x);
+                bounds.y1=Min(bounds.y1,screen[j].y);bounds.y2=Max(bounds.y2,screen[j].y);
+            }
         }
         // No original found-body reaches the near plane at the original
         // inventory or pickup orbit. Reject malformed presentation safely.
@@ -62,11 +68,6 @@ A32X_COLD void Renderer::DrawPreview(int character,int body,int beta,Rect viewpo
             int winding=0;for(unsigned j=1;j+1<n && !winding;++j)
                 winding=(screen[j].x-screen[0].x)*(screen[j+1].y-screen[0].y)-(screen[j].y-screen[0].y)*(screen[j+1].x-screen[0].x);
             if(winding<=0) continue;
-            Rect bounds={4096,4096,-4096,-4096};
-            for(unsigned j=0;j<n;++j) {
-                bounds.x1=Min(bounds.x1,screen[j].x);bounds.x2=Max(bounds.x2,screen[j].x);
-                bounds.y1=Min(bounds.y1,screen[j].y);bounds.y2=Max(bounds.y2,screen[j].y);
-            }
             if(bounds.x2<viewport.x1 || bounds.x1>viewport.x2 || bounds.y2<viewport.y1 || bounds.y1>viewport.y2) continue;
             if(bounds.x1<viewport.x1 || bounds.x2>viewport.x2 || bounds.y1<viewport.y1 || bounds.y2>viewport.y2)
                 n=Clip(screen,n,viewport);

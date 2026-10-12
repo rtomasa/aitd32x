@@ -23,8 +23,11 @@ struct __attribute__((may_alias)) DepthPrimitive {
     uint8_t kind,color,material,pad;
 };
 bool RasterPrepareDepthTriangle(DepthPrimitive &,const Point *,const int *,uint8_t,uint8_t);
-void RasterDepthPrimitive(RasterSurface &,const DepthPrimitive &,Rect,uint16_t *,const uint8_t *mask=nullptr);
+A32X_COLD void RasterDepthPrimitive(RasterSurface &,const DepthPrimitive &,Rect,uint16_t *,const uint8_t *mask=nullptr);
+// Caller has intersected the primitive's prepared bounds with this tile.
+void RasterDepthVisible(RasterSurface &,const DepthPrimitive &,Rect,uint16_t *,const uint8_t *mask=nullptr);
+A32X_COLD Rect RasterDepthBounds(const DepthPrimitive &);
 
-void RasterDepthTriangle(RasterSurface &,const Point *,const int *,Rect,uint16_t *,uint8_t,uint8_t,const uint8_t *mask=nullptr);
+A32X_COLD void RasterDepthTriangle(RasterSurface &,const Point *,const int *,Rect,uint16_t *,uint8_t,uint8_t,const uint8_t *mask=nullptr);
 
 void RasterDepthPoint(RasterSurface &,Point,int,int,Rect,uint16_t *,uint8_t,uint8_t,const uint8_t *mask=nullptr);

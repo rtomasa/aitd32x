@@ -37,6 +37,18 @@ The importer vendors its decompressor and music-capture driver; a separate FITD 
 
 ## Relevant verification
 
+For contact/scenery optimizations, see the before/after fixtures in
+[action performance measurements](validation/action-performance.md).
+`check_raster_parity.py --ordinary` checks every prepared prop's pixels and
+coverage; `check_draw_order_cache.py --sweep`, `check_contact_order.py` and
+`check_partial_cache.py` cover composition and repair. The native
+`check_sh2_scheduling_native.py` verifies scratch ownership/fences in both
+framebuffer banks; use NTSC/PAL for shared-worker changes. Preserve the
+last-projection hint's lifetime and overwrite compact vertices with bounds
+only after all contact fallback decisions have passed. Run
+`check_bank_layout.py` after code-placement changes: the current RELEASE
+static stack margin is only 328 bytes.
+
 For scheduled vertex projection, build `make -j2 host all`, then run
 `tools/check_projection_native.py .local/tools/picodrive_libretro.so --mars .local/toolchain/mars`
 for independent native arithmetic and a VBlank-timed old/new helper comparison.

@@ -279,6 +279,12 @@ reuses contact/face-sort scratch after face indices move to a local array.
 Bitmap runs form a bounded 3072-span cache without a second draw or framebuffer
 scan. Each cached span is `(u16 pixel start, u16 length)`; exhausted pools fall
 back to regular model drawing. Baking copies only changed static rectangles.
+Prepared props instead merge adjacent stored color spans into coverage runs;
+black pixels and glass holes remain represented by those spans. An allowed-bit
+rectangle in existing scratch records architectural erasures, which are
+subtracted only when a mask actually intersects the bounds. No asset format or
+additional bitmap is needed. Ordinary moved/rotating props retain the bitmap
+capture fallback.
 Foreground replay copies cached colored spans and reapplies the actor's original
 architectural masks, including background erasures absent from its silhouette.
 Both operations are clipped to the overwritten region. A regular full-draw
@@ -300,6 +306,20 @@ disjoint SH2 bands and two 64×32 halves of the depth workspace, with explicit
 CONTACT/END fences. Oversized groups or models with near-rejected vertices use
 the fallback, which retains valid primitives. Original camera masks and unrelated foreground ordering survive
 contact repair. Audio interrupts remain available.
+
+`DrawActor` reports whether its camera-space vertices/projection remain live.
+The scene retains only the last such ordinary draw and invalidates that hint
+after every contact call. If the hinted actor joins the next group, its compact
+vertices are copied first at offset zero; compact writes trail the source
+vertices and cannot reach the projected-point tail. Other group members then
+transform into the remaining union. This avoids duplicate model/camera
+transformation and projection without caching poses across frames.
+After commands are complete and all fallback decisions have passed, their
+screen bounds replace the now-dead compact vertices. Both SH2s cull tiles
+against those immutable bounds before constructing an actor's mask; the slave
+reads bounds through its uncached alias. Depth arithmetic and coverage rules
+remain unchanged. Ordinary models and 3D previews also combine primitive
+vertex collection with screen-bound calculation.
 
 Dark rooms apply a bounded lamp mask after normal scene drawing. LIFE selects
 its source; the renderer projects that source's current collision center
@@ -354,11 +374,12 @@ separate from the engine license and are excluded from source archives/Git.
 ## Memory and diagnostics
 
 The complete-game RELEASE ROM is 14,155,776 bytes (13.5 MiB). Fixed bank data
-uses 3,964,720 bytes and the extension 9,932,868 bytes. The 85,076-byte BIOS
-module ends at physical byte 4,180,868, leaving 13,436 bytes below the 4 MiB
+uses 3,964,720 bytes and the extension 9,932,868 bytes. The 84,756-byte BIOS
+module ends at physical byte 4,180,548, leaving 13,756 bytes below the 4 MiB
 direct-window limit. BSS uses 160,672 bytes; module/BSS/linker overhead total
-245,752 bytes, ending at `0x0603BFF8`. The static margin below the reserved
-stacks is 8 bytes. Camera setup, video initialization, scenery readback and
+245,432 bytes, ending at `0x0603BEB8`. The static margin below the reserved
+stacks is 328 bytes. Camera setup, video initialization, scenery readback,
+prepared-prop lookup/coverage construction, fallback depth wrappers and
 worker control/copy helpers execute from
 protected ROM; hot raster loops remain in SDRAM. `build/bank-layout.json` is the authoritative
 generated layout report for this build; later changes require fresh figures.

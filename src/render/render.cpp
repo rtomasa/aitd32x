@@ -38,11 +38,11 @@ uint32_t Renderer_RasterKey(const Actor &a) {
     return key;
 }
 #ifndef AITD_RASTER_BUILD
-bool Renderer::DrawCompiledActor(const Actor &a) {
+A32X_COLD const uint8_t *Renderer::CompiledProgram(const Actor &a) const {
     // Skeletons and arbitrary moved poses always use the regular renderer.
-    if(BE16Aligned(a.model.data+4)) return false;
+    if(!camera.data || !a.model.data || BE16Aligned(a.model.data+4)) return nullptr;
     Asset asset=Platform_ReadAsset(AS_STATIC_RASTERS);
-    if(!asset.data || asset.size<4 || !BE32Aligned(asset.data)) return false;
+    if(!asset.data || asset.size<4 || !BE32Aligned(asset.data)) return nullptr;
     uint32_t key=Renderer_RasterKey(a);
     unsigned left=0,right=BE32Aligned(asset.data);
     while(left<right) {
@@ -51,29 +51,33 @@ bool Renderer::DrawCompiledActor(const Actor &a) {
         if(view<camera_id || (view==camera_id && pose<key)) left=mid+1;
         else right=mid;
     }
-    if(left==BE32Aligned(asset.data)) return false;
+    if(left==BE32Aligned(asset.data)) return nullptr;
     const uint8_t *entry=asset.data+4+left*12;
-    if(BE32Aligned(entry)!=camera_id || BE32Aligned(entry+4)!=key) return false;
-    const uint8_t *program=asset.data+BE32Aligned(entry+8);
+    if(BE32Aligned(entry)!=camera_id || BE32Aligned(entry+4)!=key) return nullptr;
+    return asset.data+BE32Aligned(entry+8);
+}
+void Renderer::DrawCompiledActor(const Actor &a,const uint8_t *program,bool *masked) {
     Rect bounds={BS16Aligned(program),BS16Aligned(program+2),BS16Aligned(program+4),BS16Aligned(program+6)};
     FinishRestore();
     RasterSurface surface={target,0,GAME_HEIGHT,damage[buffer_index]};
-    if(coverage_mode) {
-        surface.coverage=CoverageBits();
-        volatile uint16_t *words=(volatile uint16_t *)surface.coverage;
-        // Coverage is scanned only inside this program's known silhouette.
-        // Clearing its bounding words avoids an 8 KiB clear for every prop.
+    if(masked) {
+        // The stored color spans already describe the exact silhouette,
+        // including black and glass holes. Only architectural erasures need
+        // bitmap recording; start with all pixels allowed inside the bounds.
+        volatile uint16_t *words=(volatile uint16_t *)CoverageBits();
         for(int y=Max(0,bounds.y1);y<=Min(199,bounds.y2);++y)
-            for(int x=Max(0,bounds.x1)/16;x<=Min(319,bounds.x2)/16;++x)
-                words[y*20+x]=0;
+            if(bounds.x1<=bounds.x2) {
+                unsigned first=Max(0,bounds.x1)/16,last=Min(319,bounds.x2)/16;
+                PixelFillWords(words+y*20+first,last-first+1,0xffff);
+            }
     }
     unsigned count=BE32Aligned(program+8);program+=12;
     for(unsigned i=0;i<count;++i,program+=6) {
         unsigned start=BE16Aligned(program);int y=start/320,x=start-y*320;
         RasterSpan(surface,y,x,x+BE16Aligned(program+2)-1,program[4]);
     }
-    damage[buffer_index]=surface.damage;last_bounds=bounds;Mask(a,bounds);
-    return true;
+    damage[buffer_index]=surface.damage;last_bounds=bounds;
+    bool erased=Mask(a,bounds);if(masked) *masked=erased;
 }
 #endif
 A32X_COLD bool Renderer::SetCamera(unsigned id,unsigned floor,unsigned room_id,bool load_palette) {
@@ -197,7 +201,55 @@ volatile uint8_t *Renderer::CoverageBits() {
 #endif
     return (volatile uint8_t *)address;
 }
-unsigned Renderer::DrawCachedActor(const Actor &actor,CachedSpan *spans,unsigned capacity) {
+static A32X_COLD bool CacheSpan(CachedSpan *spans,unsigned capacity,unsigned &count,int y,int first,int end) {
+    if(first>=end) return true;
+    unsigned start=y*320+first;
+    if(count && spans[count-1].start+spans[count-1].length==start && spans[count-1].start/320==(unsigned)y) {
+        spans[count-1].length+=(uint16_t)(end-first);return true;
+    }
+    if(count==capacity) return false;
+    spans[count++]={(uint16_t)start,(uint16_t)(end-first)};return true;
+}
+static A32X_COLD bool CacheRun(volatile const uint8_t *bits,int y,int left,int limit,CachedSpan *spans,unsigned capacity,unsigned &count) {
+    if(!bits) return CacheSpan(spans,capacity,count,y,left,limit);
+    int start=-1;
+    auto finish=[&](int end) {
+        bool fits=start<0 || CacheSpan(spans,capacity,count,y,start,end);
+        start=-1;return fits;
+    };
+    for(int x=left;x<limit;) {
+        int end=Min(limit,(x|7)+1);
+        unsigned mask=(1u<<(end-x))-1,value=(bits[y*40+x/8]>>(x&7))&mask;
+        if(!value) { if(!finish(x)) return false; }
+        else if(value==mask) { if(start<0) start=x; }
+        else for(int i=x;i<end;++i,value>>=1) {
+            if(value&1) { if(start<0) start=i; }
+            else if(!finish(i)) return false;
+        }
+        x=end;
+    }
+    return finish(limit);
+}
+A32X_COLD unsigned Renderer::DrawCachedActor(const Actor &actor,CachedSpan *spans,unsigned capacity) {
+#ifndef AITD_RASTER_BUILD
+    if(const uint8_t *program=CompiledProgram(actor)) {
+        bool masked;
+        coverage_mode=true;DrawCompiledActor(actor,program,&masked);coverage_mode=false;
+        volatile const uint8_t *bits=masked?CoverageBits():nullptr;
+        unsigned count=0,total=BE32Aligned(program+8);program+=12;
+        for(unsigned i=0;i<total;) {
+            unsigned start=BE16Aligned(program),end=start+BE16Aligned(program+2),y=start/320;
+            program+=6;++i;
+            // Color changes do not split coverage. Merge adjacent spans on
+            // this row before subtracting any current architectural masks.
+            while(i<total && BE16Aligned(program)==end && end/320==y) {
+                end+=BE16Aligned(program+2);program+=6;++i;
+            }
+            if(!CacheRun(bits,y,start-y*320,end-y*320,spans,capacity,count)) return 65535;
+        }
+        return count;
+    }
+#endif
     // The normal colored draw records its silhouette in sort scratch after
     // face indices have moved to the stack. No second monochrome draw/readback.
     coverage_mode=true;DrawActor(actor);coverage_mode=false;
@@ -205,30 +257,8 @@ unsigned Renderer::DrawCachedActor(const Actor &actor,CachedSpan *spans,unsigned
     bounds={Max(0,bounds.x1),Max(0,bounds.y1),Min(319,bounds.x2),Min(199,bounds.y2)};
     if(bounds.x1>bounds.x2 || bounds.y1>bounds.y2) return 0;
     volatile const uint8_t *bits=CoverageBits();unsigned count=0;
-    for(int y=bounds.y1;y<=bounds.y2;++y) {
-        int start=-1,limit=bounds.x2+1;
-        auto finish=[&](int end) {
-            if(start<0) return true;
-            if(count==capacity) return false;
-            spans[count++]={(uint16_t)(y*320+start),(uint16_t)(end-start)};
-            start=-1;return true;
-        };
-        for(int x=bounds.x1;x<limit;) {
-            int end=Min(limit,(x|7)+1);
-            unsigned mask=(1u<<(end-x))-1;
-            unsigned value=(bits[y*40+x/8]>>(x&7))&mask;
-            // Shared bitmap reads cost bus cycles. Read each byte once;
-            // empty/solid runs skip all eight individual pixel probes.
-            if(!value) { if(!finish(x)) return 65535; }
-            else if(value==mask) { if(start<0) start=x; }
-            else for(int i=x;i<end;++i,value>>=1) {
-                if(value&1) { if(start<0) start=i; }
-                else if(!finish(i)) return 65535;
-            }
-            x=end;
-        }
-        if(!finish(limit)) return 65535; // Safe normal-draw fallback.
-    }
+    for(int y=bounds.y1;y<=bounds.y2;++y)
+        if(!CacheRun(bits,y,bounds.x1,bounds.x2+1,spans,capacity,count)) return 65535;
     return count;
 }
 void Renderer::DrawCoverage(const CachedSpan *spans,unsigned count,Rect clip) {
@@ -347,11 +377,11 @@ void Renderer::SortFaces(const uint8_t *m) {
     }
     if(source!=ordering.faces) for(unsigned i=0;i<np;++i) ordering.faces[i]=source[i];
 }
-void Renderer::DrawActor(const Actor &a) {
+bool Renderer::DrawActor(const Actor &a) {
     last_bounds={320,200,-1,-1};
-    if(!camera.data || !a.model.data) return;
+    if(!camera.data || !a.model.data) return false;
 #ifndef AITD_RASTER_BUILD
-    if(DrawCompiledActor(a)) return;
+    if(const uint8_t *program=CompiledProgram(a)) { DrawCompiledActor(a,program);return false; }
 #endif
     {
     ProfileScope timing(PROFILE_TRANSFORM);
@@ -397,10 +427,16 @@ void Renderer::DrawActor(const Actor &a) {
         // Clipping it into a new face can expose camera-side doors as enormous
         // panels, including faces that the original fixed camera never drew.
         bool rejected=false;
-        for(unsigned i=0;i<n;++i) if(single.vertices[BE16Aligned(p+6+i*2)].z<=100) { rejected=true;break; }
+        Rect visible={4096,4096,-4096,-4096};
+        for(unsigned i=0;i<n;++i) {
+            unsigned vertex=BE16Aligned(p+6+i*2);
+            if(single.vertices[vertex].z<=100) { rejected=true;break; }
+            screen[i]=single.projected[vertex];
+            visible.x1=Min(visible.x1,screen[i].x);visible.x2=Max(visible.x2,screen[i].x);
+            visible.y1=Min(visible.y1,screen[i].y);visible.y2=Max(visible.y2,screen[i].y);
+        }
         if(rejected || !n) continue;
         unsigned count=n;
-        for(unsigned i=0;i<count;++i) screen[i]=single.projected[BE16Aligned(p+6+i*2)];
         int depth=single.vertices[BE16Aligned(p+6)].z;
         int size=p[0]==3?Max(0,RenderDivide(BE16Aligned(p+4)*focal_x,depth)/2):p[0]==7?Max(0,RenderDivide(20*focal_x,depth)/2):1;
         size=Min(120,size);
@@ -411,8 +447,6 @@ void Renderer::DrawActor(const Actor &a) {
             for(unsigned i=1;i+1<count && !winding;++i) winding=(screen[i].x-screen[0].x)*(screen[i+1].y-screen[0].y)-(screen[i].y-screen[0].y)*(screen[i+1].x-screen[0].x);
             if(winding<=0) continue;
         }
-        Rect visible={4096,4096,-4096,-4096};
-        for(unsigned i=0;i<count;++i) { visible.x1=Min(visible.x1,screen[i].x);visible.x2=Max(visible.x2,screen[i].x);visible.y1=Min(visible.y1,screen[i].y);visible.y2=Max(visible.y2,screen[i].y); }
         if(p[0]==3 || p[0]==7 || p[0]==6) { visible.x1-=size;visible.x2+=size;visible.y1-=size;visible.y2+=size; }
         if(visible.x2<0 || visible.y2<0 || visible.x1>=320 || visible.y1>=200) continue;
         bounds={Min(bounds.x1,Max(0,visible.x1)),Min(bounds.y1,Max(0,visible.y1)),Max(bounds.x2,Min(319,visible.x2)),Max(bounds.y2,Min(199,visible.y2))};
@@ -430,10 +464,11 @@ void Renderer::DrawActor(const Actor &a) {
 #ifndef AITD_RASTER_BUILD
     Mask(a,bounds);
 #endif
+    return true;
 }
-void Renderer::Mask(const Actor &a,Rect bounds) {
+bool Renderer::Mask(const Actor &a,Rect bounds) {
     ProfileScope timing(PROFILE_MASK);
-    const uint8_t *c=camera.data,*views=c+BE32Aligned(c+20);
+    const uint8_t *c=camera.data,*views=c+BE32Aligned(c+20);bool erased=false;
     bounds.x1=Clamp(bounds.x1,0,319);bounds.x2=Clamp(bounds.x2,0,319);
     bounds.y1=Clamp(bounds.y1,0,199);bounds.y2=Clamp(bounds.y2,0,199);
     // AITD1 masks are conditional on the entire actor ZV lying in a test rectangle.
@@ -446,11 +481,13 @@ void Renderer::Mask(const Actor &a,Rect bounds) {
             const uint8_t *sp=c+BE32Aligned(mask+8);
             for(unsigned k=0;k<BE16Aligned(mask+2);++k,sp+=6) {
                 int y=BE16Aligned(sp),left=Max(bounds.x1,BE16Aligned(sp+2)),right=Min(bounds.x2,BE16Aligned(sp+4));
-                if(y<bounds.y1 || y>bounds.y2) continue;
+                if(y<bounds.y1 || y>bounds.y2 || left>right) continue;
+                erased=true;
                 BackgroundSpan(y,left,right,true);
             }
         }
     }
+    return erased;
 }
 
 bool Renderer::DepthMask(const Actor &a,Rect tile,uint8_t *bits) {
@@ -516,6 +553,7 @@ struct Renderer::ContactContext {
     Renderer *renderer;
     const Actor *const *actors;
     const DepthPrimitive *commands;
+    const Rect *bounds;
     const uint16_t *ends;
     unsigned count;
     Rect area;
@@ -535,6 +573,7 @@ template<class T> static T *ContactRead(T *p) {
 void Renderer::ContactWorker(void *data,RasterSurface &surface) {
     ContactContext context=*ContactRead((ContactContext *)data);
     context.actors=ContactRead(context.actors);context.commands=ContactRead(context.commands);
+    context.bounds=ContactRead(context.bounds);
     context.ends=ContactRead(context.ends);context.uncached=true;
     uint16_t *depths=context.renderer->contact_depth+64*32;
     ContactRead(context.renderer)->ContactTiles(context,surface,depths);
@@ -549,30 +588,51 @@ void Renderer::ContactTiles(const ContactContext &context,RasterSurface &surface
             unsigned end=context.ends[i];if(begin==end) continue;
             const Actor *actor=context.actors[i];if(context.uncached) actor=ContactRead(actor);
             uint32_t blocked[128];
-            const uint8_t *mask=DepthMask(*actor,tile,(uint8_t *)blocked)?(uint8_t *)blocked:nullptr;
-            for(unsigned f=begin;f<end;++f) RasterDepthPrimitive(surface,context.commands[f],tile,depths,mask);
+            const uint8_t *mask=nullptr;bool mask_ready=false;
+            for(unsigned f=begin;f<end;++f) {
+                const Rect &bounds=context.bounds[f];
+                if(bounds.x1>tile.x2 || bounds.x2<tile.x1 || bounds.y1>tile.y2 || bounds.y2<tile.y1) continue;
+                // Architectural masks are needed only if this actor actually
+                // contributes a primitive to the tile. Read them once then.
+                if(!mask_ready) { mask=DepthMask(*actor,tile,(uint8_t *)blocked)?(uint8_t *)blocked:nullptr;mask_ready=true; }
+                RasterDepthVisible(surface,context.commands[f],tile,depths,mask);
+            }
             begin=end;
         }
     }
 }
 
-bool Renderer::ResolveOverlap(const Actor *const *actors,unsigned count,Rect area) {
+bool Renderer::ResolveOverlap(const Actor *const *actors,unsigned count,Rect area,const Actor *projected) {
     if(count>MAX_ACTIVE) return false;
-    unsigned offsets[MAX_ACTIVE],used=0;bool near[MAX_ACTIVE]={};
-    for(unsigned i=0;i<count;++i) { offsets[i]=used;used+=BE16Aligned(actors[i]->model.data+2); }
+    unsigned offsets[MAX_ACTIVE],used=0,reused=count;bool near[MAX_ACTIVE]={};
+    for(unsigned i=0;i<count;++i) if(actors[i]==projected) { reused=i;break; }
+    // Convert the live ordinary projection first, at offset zero. Compact
+    // writes trail source vertices and cannot reach the projected-point tail.
+    // Other actors then occupy the rest of the union without clobbering it.
+    if(reused<count) { offsets[reused]=0;used=BE16Aligned(projected->model.data+2); }
+    for(unsigned i=0;i<count;++i) if(i!=reused) { offsets[i]=used;used+=BE16Aligned(actors[i]->model.data+2); }
     // Two maximum-size source models fit; larger groups retain painter order.
     if(used>768) return false;
     const uint8_t *c=camera.data;Rotation rotation=PrepareRotation(BS16Aligned(c),BS16Aligned(c+2),BS16Aligned(c+4));
     Vec3 *vertices=Actor_GameplayScratch();
-    for(unsigned i=0;i<count;++i) {
-        const Actor &a=*actors[i];Actor_Vertices(a,vertices);
-        Asset r=Platform_ReadAsset(floor_rooms[a.floor][a.room]);
-        Vec3 translation={(BS16Aligned(c+6)-BS16Aligned(r.data))*10,(BS16Aligned(r.data+2)-BS16Aligned(c+8))*10,(BS16Aligned(r.data+4)-BS16Aligned(c+10))*10};
+    for(unsigned pass=0;pass<count;++pass) {
+        unsigned i=reused<count?(pass==0?reused:pass<=reused?pass-1:pass):pass;
+        const Actor &a=*actors[i];Vec3 translation={};
+        if(i!=reused) {
+            Actor_Vertices(a,vertices);
+            Asset r=Platform_ReadAsset(floor_rooms[a.floor][a.room]);
+            translation={(BS16Aligned(c+6)-BS16Aligned(r.data))*10,(BS16Aligned(r.data+2)-BS16Aligned(c+8))*10,(BS16Aligned(r.data+4)-BS16Aligned(c+10))*10};
+        }
         for(unsigned v=0;v<BE16Aligned(a.model.data+2);++v) {
-            Vec3 q={vertices[v].x+a.pos.x-translation.x,vertices[v].y+a.pos.y-translation.y,vertices[v].z+a.pos.z-translation.z};
-            Rotate(q,rotation);q.z+=BS16Aligned(c+12);if(q.z<=100) near[i]=true;
+            Vec3 q;
+            if(i==reused) q=single.vertices[v];
+            else {
+                q={vertices[v].x+a.pos.x-translation.x,vertices[v].y+a.pos.y-translation.y,vertices[v].z+a.pos.z-translation.z};
+                Rotate(q,rotation);q.z+=BS16Aligned(c+12);
+            }
+            if(q.z<=100) near[i]=true;
             CompactVertex &out=combined[offsets[i]+v];out.x=Clamp(q.x,-32768,32767);out.y=Clamp(q.y,-32768,32767);out.z=Clamp(q.z,-32768,32767);
-            if(q.z>100) { Point p=RenderProject(q,BS16Aligned(c+14),BS16Aligned(c+16),{160,100});out.sx=p.x;out.sy=p.y; }
+            if(q.z>100) { Point p=i==reused?single.projected[v]:RenderProject(q,BS16Aligned(c+14),BS16Aligned(c+16),{160,100});out.sx=p.x;out.sy=p.y; }
         }
         // Ordinary groups reuse camera-space X for reciprocal depth computed
         // once per vertex. Near-rejected groups use their valid vertices only
@@ -592,6 +652,7 @@ bool Renderer::ResolveOverlap(const Actor *const *actors,unsigned count,Rect are
     }
     DepthPrimitive *commands=(DepthPrimitive *)vertices;
     constexpr unsigned capacity=sizeof(Vec3)*MAX_VERTICES/sizeof(DepthPrimitive);
+    static_assert(capacity<=MAX_VERTICES,"Contact bounds must cover every prepared command");
     unsigned total=0;uint16_t ends[MAX_ACTIVE];
     for(unsigned i=0;i<count;++i) {
         const uint8_t *m=actors[i]->model.data,*directory=m+BE32Aligned(m+32);
@@ -637,7 +698,10 @@ bool Renderer::ResolveOverlap(const Actor *const *actors,unsigned count,Rect are
         ++contact_stats[0];contact_stats[3]=Max(contact_stats[3],total);
 #endif
         RasterSurface surface={target,0,GAME_HEIGHT,damage[buffer_index]};
-        ContactContext context={this,actors,commands,ends,count,area,false};
+        // All commands now own their projection/depth data. Preserve combined
+        // vertices for every fallback above, then reuse them for tile culling.
+        for(unsigned f=0;f<total;++f) contact_bounds[f]=RasterDepthBounds(commands[f]);
+        ContactContext context={this,actors,commands,contact_bounds,ends,count,area,false};
         bool parallel=area.y2-area.y1>=15 && total>=12;
         FinishRestore();
         if(parallel) RendererWorker_Contact(surface,ContactWorker,&context,RendererWorker_ContactSplit(area.y1,area.y2+1));

@@ -234,12 +234,19 @@ void RasterDepthTriangle(RasterSurface &surface,const Point *p,const int *q,Rect
         DepthTriangle(surface,p,prepared.q,prepared.dx,prepared.dy,tile,depth,color,material,mask);
 }
 
-void RasterDepthPrimitive(RasterSurface &surface,const DepthPrimitive &p,Rect tile,uint16_t *depth,const uint8_t *mask) {
+A32X_COLD Rect RasterDepthBounds(const DepthPrimitive &p) {
     int left=p.x[0],right=left,top=p.y[0],bottom=top;
     unsigned count=p.kind==1?3:p.kind==0?2:1;
     for(unsigned i=1;i<count;++i) { left=Min(left,p.x[i]);right=Max(right,p.x[i]);top=Min(top,p.y[i]);bottom=Max(bottom,p.y[i]); }
     if(p.kind==2) { left-=p.dx;right+=p.dx;top-=p.dx;bottom+=p.dx; }
-    if(left>tile.x2 || right<tile.x1 || top>tile.y2 || bottom<tile.y1) return;
+    return {left,top,right,bottom};
+}
+void RasterDepthPrimitive(RasterSurface &surface,const DepthPrimitive &p,Rect tile,uint16_t *depth,const uint8_t *mask) {
+    Rect bounds=RasterDepthBounds(p);
+    if(bounds.x1>tile.x2 || bounds.x2<tile.x1 || bounds.y1>tile.y2 || bounds.y2<tile.y1) return;
+    RasterDepthVisible(surface,p,tile,depth,mask);
+}
+void RasterDepthVisible(RasterSurface &surface,const DepthPrimitive &p,Rect tile,uint16_t *depth,const uint8_t *mask) {
     if(p.kind==1) {
         Point points[]={{p.x[0],p.y[0]},{p.x[1],p.y[1]},{p.x[2],p.y[2]}};
         DepthTriangle(surface,points,p.q,p.dx,p.dy,tile,depth,p.color,p.material,mask);
