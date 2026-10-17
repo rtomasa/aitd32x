@@ -214,6 +214,17 @@ extern "C" int host_resolve_pair(int first,int second) {
     const Actor *group[]={&game.world.Pose(a),&game.world.Pose(b)};
     return game.renderer.ResolveOverlap(group,2,{0,0,319,199});
 }
+// Bounded private scratch for cache-capacity/invalidation diagnostics. Native
+// gameplay instead borrows unused bytes from its existing scenery span pool.
+extern "C" int host_resolve_cached_pair(int first,int second,unsigned bytes,unsigned key,int reset) {
+    alignas(4) static uint8_t scratch[8192];
+    if(bytes>sizeof(scratch)) return 0;
+    if(reset) for(auto &value:scratch) value=0;
+    int a=game.world.Slot(first),b=game.world.Slot(second);if(a<0 || b<0) return 0;
+    const Actor *group[]={&game.world.Pose(a),&game.world.Pose(b)};
+    ContactCache cache={scratch,bytes,key,2};
+    return game.renderer.ResolveOverlap(group,2,{0,0,319,199},nullptr,&cache);
+}
 extern "C" int host_resolve_group3(int first,int second,int third,int x1,int y1,int x2,int y2) {
     int ids[]={first,second,third};const Actor *group[3];
     for(int i=0;i<3;++i) { int s=game.world.Slot(ids[i]);if(s<0) return 0;group[i]=&game.world.Pose(s); }

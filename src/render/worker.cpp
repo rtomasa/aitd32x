@@ -128,6 +128,8 @@ A32X_COLD void RendererWorker_Begin(RasterSurface &surface) {
     volatile Command &c=Acquire();c.header=uint32_t(BEGIN)<<30;c.argument=(uintptr_t)surface.target;
     c.points[0].x=(uintptr_t)surface.coverage;
     c.points[0].y=job_split;c.points[1].x=surface.last;c.points[1].y=surface.first;
+    c.points[2].x=surface.deferred.x1;c.points[2].y=surface.deferred.y1;
+    c.points[3].x=surface.deferred.x2;c.points[3].y=surface.deferred.y2;
     Publish();surface.last=Min(surface.last,job_split);
 }
 bool RendererWorker_Submit(unsigned type,const Point *points,unsigned count,uint8_t color,int size,uint8_t material) {
@@ -177,6 +179,8 @@ void RendererWorker_Poll() {
     uintptr_t coverage=kind==BEGIN?(uintptr_t)c.points[0].x:0;
     int split=kind==BEGIN?c.points[0].y:0;
     int end=kind==BEGIN?c.points[1].x:0,start=kind==BEGIN?c.points[1].y:0;
+    Rect deferred={320,200,-1,-1};
+    if(kind==BEGIN) deferred={c.points[2].x,c.points[2].y,c.points[3].x,c.points[3].y};
     uintptr_t context=0,target=0;int first=0,last=0;
     if(kind==CONTACT) {
         context=(uintptr_t)c.points[0].x;target=(uintptr_t)c.points[0].y;
@@ -201,6 +205,7 @@ void RendererWorker_Poll() {
     else if(kind==BEGIN) {
         slave_ticks=0;
         slave_surface={(volatile uint16_t *)argument,Max(start,split),end,{320,200,-1,-1},0,(volatile uint8_t *)coverage};
+        slave_surface.deferred=deferred;
     }
     else if(kind==PRIMITIVE) {
         uint16_t timed=Timer();

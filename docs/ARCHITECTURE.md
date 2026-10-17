@@ -321,6 +321,33 @@ reads bounds through its uncached alias. Depth arithmetic and coverage rules
 remain unchanged. Ordinary models and 3D previews also combine primitive
 vertex collection with screen-bound calculation.
 
+Gameplay polygon visibility is checked before sorting, preserving stable order
+among surviving faces. When exactly one settled prop is a possible contact and
+the complete painter interval fits the 768-vertex limit, ordinary triangles
+omit pixels inside that prop's bounds. Their original bounds remain available
+for contact selection; the depth pass supplies those pixels. Other primitive
+types and ambiguous or moving contacts keep the complete ordinary draw. BEGIN
+copies the exclusion rectangle into existing command fields before releasing
+the queue entry; it adds no queue storage.
+
+Architectural mask rows are sorted by Y by the importer. Ordinary and depth
+paths seek the first relevant row and stop after the last. Contact preparation
+evaluates mask activation once per actor, using a temporary 400-byte master
+stack array read by the slave through its uncached alias. Duplicate room
+records or more than 32 masks retain generic selection.
+
+With one potential contact source, settled members' depth commands may occupy
+the unused tail of the existing 3,072-entry scenery-span pool. The entire color
+span capacity remains available. Scene/cache epoch, camera, painter membership
+and static geometry hashes identify programs; insufficient storage retains
+normal preparation and remembers a failed build until invalidation. Cached
+commands retain actor/primitive order and copy only intersecting commands into
+normal contact scratch. Warm hits skip static transforms and depth-gradient
+preparation; near-plane or capacity fallback first rebuilds those vertices.
+Multiple sources use normal preparation. No persistent depth buffer or heap is
+added, and cache contents are excluded from saves. See
+[render preparation validation](validation/render-preparation.md).
+
 Dark rooms apply a bounded lamp mask after normal scene drawing. LIFE selects
 its source; the renderer projects that source's current collision center
 through the active camera, and requires it in the current draw list. A prepared
@@ -374,13 +401,13 @@ separate from the engine license and are excluded from source archives/Git.
 ## Memory and diagnostics
 
 The complete-game RELEASE ROM is 14,155,776 bytes (13.5 MiB). Fixed bank data
-uses 3,964,720 bytes and the extension 9,932,868 bytes. The 84,756-byte BIOS
-module ends at physical byte 4,180,548, leaving 13,756 bytes below the 4 MiB
-direct-window limit. BSS uses 160,672 bytes; module/BSS/linker overhead total
-245,432 bytes, ending at `0x0603BEB8`. The static margin below the reserved
-stacks is 328 bytes. Camera setup, video initialization, scenery readback,
+uses 3,964,720 bytes and the extension 9,932,868 bytes. The 84,612-byte BIOS
+module ends at physical byte 4,180,404, leaving 13,900 bytes below the 4 MiB
+direct-window limit. BSS uses 160,696 bytes; module/BSS/linker overhead total
+245,312 bytes, ending at `0x0603BE40`. The static margin below the reserved
+stacks is 448 bytes. Camera setup, video initialization, scenery readback,
 prepared-prop lookup/coverage construction, fallback depth wrappers and
-worker control/copy helpers execute from
+worker control/copy helpers, face sorting, panels and effects dispatch execute from
 protected ROM; hot raster loops remain in SDRAM. `build/bank-layout.json` is the authoritative
 generated layout report for this build; later changes require fresh figures.
 

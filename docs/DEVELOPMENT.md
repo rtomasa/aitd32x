@@ -47,7 +47,16 @@ framebuffer banks; use NTSC/PAL for shared-worker changes. Preserve the
 last-projection hint's lifetime and overwrite compact vertices with bounds
 only after all contact fallback decisions have passed. Run
 `check_bank_layout.py` after code-placement changes: the current RELEASE
-static stack margin is only 328 bytes.
+static stack margin is only 448 bytes.
+
+The shared [render preparation paths](validation/render-preparation.md) also
+borrow unused scenery-span storage for stationary contact programs. Preserve
+the complete span capacity, invalidate programs on storage/scene/pose changes,
+and rebuild skipped vertices before any depth fallback. With a preserved host
+library, `tools/check_prepared_contact_cache.py --reference /path/to/libaitd32x.so`
+checks warm hits, invalidation, near-plane fallback and insufficient storage.
+`check_draw_order_cache.py --sweep --reference-library /path/to/libaitd32x.so`
+compares complete composition against that earlier renderer.
 
 For scheduled vertex projection, build `make -j2 host all`, then run
 `tools/check_projection_native.py .local/tools/picodrive_libretro.so --mars .local/toolchain/mars`
@@ -174,6 +183,14 @@ One visible save slot uses two 64 KiB SRAM journals. New format `0x53313601` sto
 The historical v15 ROM was near the 4 MiB direct SH2 ROM window. Startup now uses an extension bank for raw arrival cameras and compressed presentation images, reusing existing framebuffer/background scratch. SH2 RAM remains 256 KiB with 12 KiB master and 4 KiB slave stack reservations. Avoid adding global buffers casually. See docs/ARCHITECTURE.md for current layout details and limits. Physical 32X hardware and CD narration remain unvalidated/unimplemented respectively.
 
 ## Next priorities
+
+The [renderer architecture investigation](validation/render-architecture-prototypes.md)
+records three rejected compositor prototypes and isolated comparisons on the
+user's Pi 5. That investigation restored the production renderer byte for byte;
+the subsequent accepted [preparation optimization](validation/render-preparation.md)
+reduces duplicate work within its existing composition rules. Review that
+evidence before repeating color-tile, block-bound or surface-run experiments;
+none establishes a path to stable 20 FPS or a smaller cartridge yet.
 
 Adaptive SH2 ownership and asynchronous background repair are documented in
 [SH2 scheduling validation](validation/sh2-scheduling.md). Relevant checks:

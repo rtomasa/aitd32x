@@ -1,0 +1,330 @@
+{
+  "date": "2026-10-17",
+  "scope": "Rejected renderer experiments; production renderer restored. NTSC emulator results, not physical 32X validation.",
+  "baseline_rom_sha256": "691dfce0283d2b9e48a2e20fb533b3b5650f1f96dccd5f5e3aa26f89197854d1",
+  "candidate_rom_sha256": "14614b1ab7c7bed61b24e9207e98d4cea9a2b348b7dabb71aeadccd691cea117",
+  "local_core_sha256": "bffc428d4090480f7e12807124c670734181fda8de34d1ee4f6f6628f5e584f3",
+  "local_results": {
+    "baseline-final": {
+      "push": {
+        "rom_sha256": "691dfce0283d2b9e48a2e20fb533b3b5650f1f96dccd5f5e3aa26f89197854d1",
+        "windows": [
+          {
+            "phase": "idle",
+            "seconds": 3,
+            "fps": 20.0,
+            "world_ticks": 75
+          },
+          {
+            "phase": "action",
+            "seconds": 5,
+            "fps": 15.0,
+            "world_ticks": 125
+          },
+          {
+            "phase": "settle",
+            "seconds": 3,
+            "fps": 18.0,
+            "world_ticks": 75
+          }
+        ]
+      },
+      "stairs-door": {
+        "rom_sha256": "691dfce0283d2b9e48a2e20fb533b3b5650f1f96dccd5f5e3aa26f89197854d1",
+        "windows": [
+          {
+            "phase": "idle",
+            "seconds": 3,
+            "fps": 23.0,
+            "world_ticks": 74
+          },
+          {
+            "phase": "action",
+            "seconds": 5,
+            "fps": 19.8,
+            "world_ticks": 126
+          },
+          {
+            "phase": "settle",
+            "seconds": 3,
+            "fps": 25.0,
+            "world_ticks": 75
+          }
+        ]
+      },
+      "transition": {
+        "rom_sha256": "691dfce0283d2b9e48a2e20fb533b3b5650f1f96dccd5f5e3aa26f89197854d1",
+        "windows": [
+          {
+            "phase": "idle",
+            "seconds": 3,
+            "fps": 25.0,
+            "world_ticks": 75
+          },
+          {
+            "phase": "settle",
+            "seconds": 5,
+            "fps": 11.8,
+            "world_ticks": 126
+          }
+        ],
+        "first_hallway_frame_intervals_ms": [
+          200.0,
+          100.0,
+          83.33333333333333
+        ]
+      }
+    },
+    "color-final": {
+      "push": {
+        "rom_sha256": "14614b1ab7c7bed61b24e9207e98d4cea9a2b348b7dabb71aeadccd691cea117",
+        "windows": [
+          {
+            "phase": "idle",
+            "seconds": 3,
+            "fps": 20.0,
+            "world_ticks": 75
+          },
+          {
+            "phase": "action",
+            "seconds": 5,
+            "fps": 15.0,
+            "world_ticks": 125
+          },
+          {
+            "phase": "settle",
+            "seconds": 3,
+            "fps": 18.333333333333332,
+            "world_ticks": 75
+          }
+        ]
+      },
+      "stairs-door": {
+        "rom_sha256": "14614b1ab7c7bed61b24e9207e98d4cea9a2b348b7dabb71aeadccd691cea117",
+        "windows": [
+          {
+            "phase": "idle",
+            "seconds": 3,
+            "fps": 23.0,
+            "world_ticks": 74
+          },
+          {
+            "phase": "action",
+            "seconds": 5,
+            "fps": 19.8,
+            "world_ticks": 126
+          },
+          {
+            "phase": "settle",
+            "seconds": 3,
+            "fps": 25.0,
+            "world_ticks": 75
+          }
+        ]
+      },
+      "transition": {
+        "rom_sha256": "14614b1ab7c7bed61b24e9207e98d4cea9a2b348b7dabb71aeadccd691cea117",
+        "windows": [
+          {
+            "phase": "idle",
+            "seconds": 3,
+            "fps": 25.0,
+            "world_ticks": 75
+          },
+          {
+            "phase": "settle",
+            "seconds": 5,
+            "fps": 12.0,
+            "world_ticks": 127
+          }
+        ],
+        "first_hallway_frame_intervals_ms": [
+          183.33333333333334,
+          83.33333333333333,
+          83.33333333333333
+        ]
+      }
+    }
+  },
+  "pi_results": {
+    "platform": "Linux-6.18.39+rpt-rpi-v8-aarch64-with-glibc2.41",
+    "core_sha256": "b8e8720cbd304955766aa096f562c2a0b56c74ba4badb98cb83100dda68ebe3f",
+    "emulator_only": true,
+    "private_sram_only": true,
+    "results": [
+      {
+        "label": "baseline",
+        "scene": "push",
+        "host_seconds": 2.38,
+        "windows": [
+          {
+            "phase": "idle",
+            "seconds": 3,
+            "fps": 20.0,
+            "world_ticks": 75
+          },
+          {
+            "phase": "action",
+            "seconds": 5,
+            "fps": 15.0,
+            "world_ticks": 125
+          },
+          {
+            "phase": "settle",
+            "seconds": 3,
+            "fps": 18.333333333333332,
+            "world_ticks": 75
+          }
+        ]
+      },
+      {
+        "label": "baseline",
+        "scene": "stairs-door",
+        "host_seconds": 1.75,
+        "windows": [
+          {
+            "phase": "idle",
+            "seconds": 3,
+            "fps": 23.0,
+            "world_ticks": 74
+          },
+          {
+            "phase": "action",
+            "seconds": 5,
+            "fps": 19.8,
+            "world_ticks": 126
+          },
+          {
+            "phase": "settle",
+            "seconds": 3,
+            "fps": 25.0,
+            "world_ticks": 75
+          }
+        ]
+      },
+      {
+        "label": "baseline",
+        "scene": "transition",
+        "host_seconds": 1.62,
+        "windows": [
+          {
+            "phase": "idle",
+            "seconds": 3,
+            "fps": 25.0,
+            "world_ticks": 75
+          },
+          {
+            "phase": "settle",
+            "seconds": 5,
+            "fps": 11.8,
+            "world_ticks": 126
+          }
+        ]
+      },
+      {
+        "label": "candidate",
+        "scene": "push",
+        "host_seconds": 2.31,
+        "windows": [
+          {
+            "phase": "idle",
+            "seconds": 3,
+            "fps": 20.0,
+            "world_ticks": 75
+          },
+          {
+            "phase": "action",
+            "seconds": 5,
+            "fps": 15.0,
+            "world_ticks": 124
+          },
+          {
+            "phase": "settle",
+            "seconds": 3,
+            "fps": 18.0,
+            "world_ticks": 76
+          }
+        ]
+      },
+      {
+        "label": "candidate",
+        "scene": "stairs-door",
+        "host_seconds": 1.75,
+        "windows": [
+          {
+            "phase": "idle",
+            "seconds": 3,
+            "fps": 23.0,
+            "world_ticks": 74
+          },
+          {
+            "phase": "action",
+            "seconds": 5,
+            "fps": 19.8,
+            "world_ticks": 126
+          },
+          {
+            "phase": "settle",
+            "seconds": 3,
+            "fps": 25.0,
+            "world_ticks": 75
+          }
+        ]
+      },
+      {
+        "label": "candidate",
+        "scene": "transition",
+        "host_seconds": 1.62,
+        "windows": [
+          {
+            "phase": "idle",
+            "seconds": 3,
+            "fps": 25.0,
+            "world_ticks": 75
+          },
+          {
+            "phase": "settle",
+            "seconds": 5,
+            "fps": 12.0,
+            "world_ticks": 127
+          }
+        ]
+      }
+    ]
+  },
+  "other_hallway_experiments": [
+    {
+      "method": "16-pixel conservative depth bounds with color tiles",
+      "fps": 11.2
+    },
+    {
+      "method": "Visible surface run compositor with exact crossing fallback",
+      "fps": 6.8
+    }
+  ],
+  "candidate_layout": {
+    "rom_bytes": 14155776,
+    "module_bytes": 85076,
+    "static_sdram_end": 100909048,
+    "stack_margin": 8
+  },
+  "validation": {
+    "color_reference_sweep_comparisons": 2660,
+    "camera_views": 144,
+    "characters": 2,
+    "color_reference_pixel_differences": 0,
+    "contact_order_comparisons": 64,
+    "run_synthetic_tiles": 1200,
+    "color_native": "NTSC row ownership extremes, six character/scene combinations, both framebuffer banks",
+    "color_synthetic_tiles": 1200
+  },
+  "preserved_artifacts": "build/scene-compositor/",
+  "pi_test_directory": "/opt/aitd32x/scene-compositor-20261017",
+  "restored_baseline_layout": {
+    "rom_bytes": 14155776,
+    "module_bytes": 84756,
+    "static_sdram_end": 100908728,
+    "stack_margin": 328,
+    "rom_sha256": "691dfce0283d2b9e48a2e20fb533b3b5650f1f96dccd5f5e3aa26f89197854d1"
+  }
+}

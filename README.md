@@ -90,15 +90,16 @@ centers/clamps X during Y division. It preserves exact signed arithmetic and
 the hardware divider's latency across gameplay, contact depth, effects and
 3D previews. See [projection validation](docs/validation/projection.md).
 
-Contact correction reuses a live ordinary model projection and prepares tile
-bounds once, building architectural masks only for intersecting primitives.
-Scenery caches derive prepared-prop coverage directly from stored color spans.
-In the measured PicoDrive fixtures, hallway rendering improves from 11.0 to
-11.8 FPS and the room-entry hitch falls from 233 to 200 ms; chest pushing gains
-only 0.2 FPS. These shared paths preserve rendering and use no additional RAM.
-See [action performance measurements](docs/validation/action-performance.md)
-for comparisons and remaining bottlenecks. MiSTer and physical 32X comparisons
-remain pending.
+Contact correction reuses ordinary projections, skips triangle pixels that it
+will redraw, and caches settled-prop depth commands in unused scenery-span
+storage. Face rejection precedes sorting; architectural masks seek relevant
+rows and prepare activation once per actor. In paired PicoDrive runs on a Pi 5,
+the hallway improves from 11.8 to 14.8 FPS and standing near the chest from
+20 to 23 FPS. Active pushing improves only from 15 to 15.4 FPS. See
+[render preparation measurements](docs/validation/render-preparation.md) for
+the memory budget, validation and remaining slow scenes, and
+[earlier action measurements](docs/validation/action-performance.md) for the
+preceding changes. MiSTer and physical 32X comparisons remain pending.
 
 Static presentation screens redraw when their content changes; palette fades do not require full redraws. Inventory and pickup screens cache their panels and labels and update the rotating preview at up to 30 FPS. Menu input follows controller snapshots independently of the world clock. Compressed presentation images share the same optimized decoder across the game.
 

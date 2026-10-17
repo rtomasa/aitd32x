@@ -1,0 +1,635 @@
+{
+  "date": "2026-10-17",
+  "scope": "Focused render preparation optimization; emulator evidence, no whole-game FPS floor",
+  "emulator_only": true,
+  "private_sram_only": true,
+  "assets_and_save_format_unchanged": true,
+  "baseline_rom_sha256": "691dfce0283d2b9e48a2e20fb533b3b5650f1f96dccd5f5e3aa26f89197854d1",
+  "candidate_rom_sha256": "f8f060ff4adb9411c28752acc0c46f811ba2ddbf0a4ab8c6a9fcc8c2f31cca8c",
+  "host_sha256": "ee479034c310a3e4c59f2f6d1d564b991bf3f1a7838f9701c62ceaaa6578cabf",
+  "bank_sha256": "94c7dc55da69f2445bbafd7e1f6531cb67f2e0c878328305a30ad4645a7dfe6e",
+  "memory": {
+    "baseline": {
+      "rom_bytes": 14155776,
+      "module_bytes": 84756,
+      "bss_bytes": 160672,
+      "static_sdram_end": "0x0603BEB8",
+      "stack_margin": 328
+    },
+    "candidate": {
+      "rom_bytes": 14155776,
+      "module_bytes": 84612,
+      "bss_bytes": 160696,
+      "static_sdram_end": "0x0603BE40",
+      "stack_margin": 448,
+      "module_physical_end": 4180404
+    },
+    "temporary_mask_plan_bytes": 400,
+    "master_stack_reserved": 12288,
+    "slave_stack_reserved": 4096,
+    "span_capacity": 3072,
+    "cache_uses_unused_span_tail": true
+  },
+  "pi": {
+    "platform": "Linux-6.18.39+rpt-rpi-v8-aarch64-with-glibc2.41",
+    "core_sha256": "b8e8720cbd304955766aa096f562c2a0b56c74ba4badb98cb83100dda68ebe3f",
+    "region": "NTSC",
+    "character": "Edward",
+    "results": [
+      {
+        "label": "baseline",
+        "scene": "push",
+        "rom_sha256": "691dfce0283d2b9e48a2e20fb533b3b5650f1f96dccd5f5e3aa26f89197854d1",
+        "host_seconds": 2.34,
+        "windows": [
+          {
+            "phase": "idle",
+            "seconds": 3,
+            "fps": 20.0,
+            "world_ticks": 75
+          },
+          {
+            "phase": "action",
+            "seconds": 5,
+            "fps": 15.0,
+            "world_ticks": 125
+          },
+          {
+            "phase": "settle",
+            "seconds": 3,
+            "fps": 18.333333333333332,
+            "world_ticks": 75
+          }
+        ]
+      },
+      {
+        "label": "baseline",
+        "scene": "stairs-door",
+        "rom_sha256": "691dfce0283d2b9e48a2e20fb533b3b5650f1f96dccd5f5e3aa26f89197854d1",
+        "host_seconds": 1.75,
+        "windows": [
+          {
+            "phase": "idle",
+            "seconds": 3,
+            "fps": 23.0,
+            "world_ticks": 74
+          },
+          {
+            "phase": "action",
+            "seconds": 5,
+            "fps": 19.8,
+            "world_ticks": 126
+          },
+          {
+            "phase": "settle",
+            "seconds": 3,
+            "fps": 25.0,
+            "world_ticks": 75
+          }
+        ]
+      },
+      {
+        "label": "baseline",
+        "scene": "transition",
+        "rom_sha256": "691dfce0283d2b9e48a2e20fb533b3b5650f1f96dccd5f5e3aa26f89197854d1",
+        "host_seconds": 1.62,
+        "windows": [
+          {
+            "phase": "idle",
+            "seconds": 3,
+            "fps": 25.0,
+            "world_ticks": 75
+          },
+          {
+            "phase": "settle",
+            "seconds": 5,
+            "fps": 11.8,
+            "world_ticks": 126
+          }
+        ],
+        "entry_intervals_ms": [
+          200.0,
+          100.0,
+          83.33333333333333
+        ]
+      },
+      {
+        "label": "candidate",
+        "scene": "push",
+        "rom_sha256": "f8f060ff4adb9411c28752acc0c46f811ba2ddbf0a4ab8c6a9fcc8c2f31cca8c",
+        "host_seconds": 2.33,
+        "windows": [
+          {
+            "phase": "idle",
+            "seconds": 3,
+            "fps": 23.0,
+            "world_ticks": 75
+          },
+          {
+            "phase": "action",
+            "seconds": 5,
+            "fps": 15.4,
+            "world_ticks": 125
+          },
+          {
+            "phase": "settle",
+            "seconds": 3,
+            "fps": 22.0,
+            "world_ticks": 76
+          }
+        ]
+      },
+      {
+        "label": "candidate",
+        "scene": "stairs-door",
+        "rom_sha256": "f8f060ff4adb9411c28752acc0c46f811ba2ddbf0a4ab8c6a9fcc8c2f31cca8c",
+        "host_seconds": 1.76,
+        "windows": [
+          {
+            "phase": "idle",
+            "seconds": 3,
+            "fps": 23.0,
+            "world_ticks": 74
+          },
+          {
+            "phase": "action",
+            "seconds": 5,
+            "fps": 20.0,
+            "world_ticks": 126
+          },
+          {
+            "phase": "settle",
+            "seconds": 3,
+            "fps": 25.0,
+            "world_ticks": 75
+          }
+        ]
+      },
+      {
+        "label": "candidate",
+        "scene": "transition",
+        "rom_sha256": "f8f060ff4adb9411c28752acc0c46f811ba2ddbf0a4ab8c6a9fcc8c2f31cca8c",
+        "host_seconds": 1.63,
+        "windows": [
+          {
+            "phase": "idle",
+            "seconds": 3,
+            "fps": 25.0,
+            "world_ticks": 75
+          },
+          {
+            "phase": "settle",
+            "seconds": 5,
+            "fps": 14.8,
+            "world_ticks": 126
+          }
+        ],
+        "entry_intervals_ms": [
+          183.33333333333334,
+          83.33333333333333,
+          66.66666666666667
+        ]
+      }
+    ]
+  },
+  "validation": {
+    "preserved_renderer": {
+      "passed": true,
+      "comparisons": 2660,
+      "camera_views": 144,
+      "reference_sha256": "d6e2f3a603d44447e19d02aa346f54edd3268ea776f0939bf2cd6251042122f0",
+      "contact_cache": {
+        "hits": 59,
+        "builds": 309,
+        "capacity_failures": 0,
+        "negative_hits": 0
+      }
+    },
+    "uncached_renderer": {
+      "passed": true,
+      "comparisons": 2660,
+      "camera_views": 144
+    },
+    "prepared_cache_capacity_and_fallback": {
+      "passed": true,
+      "private_memory_only": true,
+      "comparisons": 30,
+      "cases": [
+        {
+          "character": 0,
+          "capacity": 8192,
+          "comparisons": 5,
+          "hits": 3,
+          "builds": 2,
+          "capacity_failures": 0,
+          "negative_hits": 0
+        },
+        {
+          "character": 0,
+          "capacity": 148,
+          "comparisons": 5,
+          "hits": 0,
+          "builds": 0,
+          "capacity_failures": 2,
+          "negative_hits": 3
+        },
+        {
+          "character": 0,
+          "capacity": 0,
+          "comparisons": 5,
+          "hits": 0,
+          "builds": 0,
+          "capacity_failures": 0,
+          "negative_hits": 0
+        },
+        {
+          "character": 1,
+          "capacity": 8192,
+          "comparisons": 5,
+          "hits": 3,
+          "builds": 2,
+          "capacity_failures": 0,
+          "negative_hits": 0
+        },
+        {
+          "character": 1,
+          "capacity": 148,
+          "comparisons": 5,
+          "hits": 0,
+          "builds": 0,
+          "capacity_failures": 2,
+          "negative_hits": 3
+        },
+        {
+          "character": 1,
+          "capacity": 0,
+          "comparisons": 5,
+          "hits": 0,
+          "builds": 0,
+          "capacity_failures": 0,
+          "negative_hits": 0
+        }
+      ]
+    },
+    "contact_order": {
+      "passed": true,
+      "comparisons": 64
+    },
+    "partial_scenery_repair": {
+      "passed": true,
+      "scenes": 8
+    },
+    "ordinary_prepared_props": {
+      "exact": true,
+      "programs": 1106,
+      "pixel_and_coverage_comparisons": 2212,
+      "moved_rotating_fallback_comparisons": 3
+    },
+    "split_primitives": {
+      "comparisons": 2400,
+      "deferred_triangle_comparisons": 192
+    },
+    "sorted_masks": {
+      "masks": 632,
+      "spans": 78304
+    },
+    "native_worker": [
+      {
+        "region": "NTSC",
+        "passed": true,
+        "rom_sha256": "f8f060ff4adb9411c28752acc0c46f811ba2ddbf0a4ab8c6a9fcc8c2f31cca8c"
+      },
+      {
+        "region": "PAL",
+        "passed": true,
+        "rom_sha256": "f8f060ff4adb9411c28752acc0c46f811ba2ddbf0a4ab8c6a9fcc8c2f31cca8c"
+      }
+    ],
+    "native_ui": {
+      "rom_sha256": "f8f060ff4adb9411c28752acc0c46f811ba2ddbf0a4ab8c6a9fcc8c2f31cca8c",
+      "regions": [
+        "NTSC",
+        "PAL"
+      ]
+    },
+    "eight_floor_native_smoke": {
+      "rom_sha256": "f8f060ff4adb9411c28752acc0c46f811ba2ddbf0a4ab8c6a9fcc8c2f31cca8c",
+      "scenes": 8,
+      "live_fps": [
+        {
+          "floor": 0,
+          "fps": 17
+        },
+        {
+          "floor": 1,
+          "fps": 24
+        },
+        {
+          "floor": 2,
+          "fps": 18
+        },
+        {
+          "floor": 3,
+          "fps": 10
+        },
+        {
+          "floor": 4,
+          "fps": 19
+        },
+        {
+          "floor": 5,
+          "fps": 17
+        },
+        {
+          "floor": 6,
+          "fps": 24
+        },
+        {
+          "floor": 7,
+          "fps": 19
+        }
+      ]
+    },
+    "early_game_trace": {
+      "after": {
+        "seconds": 10,
+        "completed_draws": 243,
+        "draw_fps": 24.3,
+        "world_ticks": 252,
+        "start_pose": [
+          3231,
+          0,
+          -1548,
+          0
+        ],
+        "final_pose": [
+          3243,
+          0,
+          -3147,
+          247
+        ],
+        "fps_tenths": 250,
+        "segments": [
+          {
+            "seconds": 3,
+            "pad": 0,
+            "pose": [
+              3231,
+              0,
+              -1548,
+              0
+            ],
+            "animation": [
+              328,
+              3,
+              1040
+            ],
+            "world_ticks": 77
+          },
+          {
+            "seconds": 2,
+            "pad": 1,
+            "pose": [
+              3231,
+              0,
+              -3036,
+              0
+            ],
+            "animation": [
+              578,
+              0,
+              130
+            ],
+            "world_ticks": 127
+          },
+          {
+            "seconds": 1,
+            "pad": 4,
+            "pose": [
+              3231,
+              0,
+              -3147,
+              234
+            ],
+            "animation": [
+              582,
+              1,
+              320
+            ],
+            "world_ticks": 152
+          },
+          {
+            "seconds": 1,
+            "pad": 64,
+            "pose": [
+              3231,
+              0,
+              -3147,
+              247
+            ],
+            "animation": [
+              588,
+              2,
+              440
+            ],
+            "world_ticks": 177
+          },
+          {
+            "seconds": 3,
+            "pad": 0,
+            "pose": [
+              3243,
+              0,
+              -3147,
+              247
+            ],
+            "animation": [
+              328,
+              2,
+              880
+            ],
+            "world_ticks": 252
+          }
+        ]
+      },
+      "before": {
+        "seconds": 10,
+        "completed_draws": 243,
+        "draw_fps": 24.3,
+        "world_ticks": 252,
+        "start_pose": [
+          3231,
+          0,
+          -1548,
+          0
+        ],
+        "final_pose": [
+          3243,
+          0,
+          -3147,
+          247
+        ],
+        "fps_tenths": 250,
+        "segments": [
+          {
+            "seconds": 3,
+            "pad": 0,
+            "pose": [
+              3231,
+              0,
+              -1548,
+              0
+            ],
+            "animation": [
+              328,
+              3,
+              1040
+            ],
+            "world_ticks": 77
+          },
+          {
+            "seconds": 2,
+            "pad": 1,
+            "pose": [
+              3231,
+              0,
+              -3036,
+              0
+            ],
+            "animation": [
+              578,
+              0,
+              130
+            ],
+            "world_ticks": 127
+          },
+          {
+            "seconds": 1,
+            "pad": 4,
+            "pose": [
+              3231,
+              0,
+              -3147,
+              234
+            ],
+            "animation": [
+              582,
+              1,
+              320
+            ],
+            "world_ticks": 152
+          },
+          {
+            "seconds": 1,
+            "pad": 64,
+            "pose": [
+              3231,
+              0,
+              -3147,
+              247
+            ],
+            "animation": [
+              588,
+              2,
+              440
+            ],
+            "world_ticks": 177
+          },
+          {
+            "seconds": 3,
+            "pad": 0,
+            "pose": [
+              3243,
+              0,
+              -3147,
+              247
+            ],
+            "animation": [
+              328,
+              2,
+              880
+            ],
+            "world_ticks": 252
+          }
+        ]
+      }
+    },
+    "menu_latency": {
+      "after": {
+        "start_menu_down": {
+          "frames": 3,
+          "milliseconds": 50.0
+        },
+        "start_menu_up": {
+          "frames": 2,
+          "milliseconds": 33.3
+        },
+        "character_left": {
+          "frames": 3,
+          "milliseconds": 50.0
+        },
+        "character_right": {
+          "frames": 3,
+          "milliseconds": 50.0
+        },
+        "inventory_down": {
+          "frames": 5,
+          "milliseconds": 83.3
+        },
+        "inventory_up": {
+          "frames": 5,
+          "milliseconds": 83.3
+        },
+        "actions_down": {
+          "frames": 5,
+          "milliseconds": 83.3
+        },
+        "actions_up": {
+          "frames": 6,
+          "milliseconds": 100.0
+        }
+      },
+      "before": {
+        "start_menu_down": {
+          "frames": 3,
+          "milliseconds": 50.0
+        },
+        "start_menu_up": {
+          "frames": 2,
+          "milliseconds": 33.3
+        },
+        "character_left": {
+          "frames": 3,
+          "milliseconds": 50.0
+        },
+        "character_right": {
+          "frames": 3,
+          "milliseconds": 50.0
+        },
+        "inventory_down": {
+          "frames": 6,
+          "milliseconds": 100.0
+        },
+        "inventory_up": {
+          "frames": 5,
+          "milliseconds": 83.3
+        },
+        "actions_down": {
+          "frames": 7,
+          "milliseconds": 116.7
+        },
+        "actions_up": {
+          "frames": 6,
+          "milliseconds": 100.0
+        }
+      }
+    }
+  },
+  "limitations": [
+    "Actual 32X and MiSTer not validated",
+    "Pi frontend display/audio scheduling not tested",
+    "Short interactive samples differ slightly in input-release position",
+    "Active pushing remains around 15 FPS; eight-floor live smoke still includes 10 FPS",
+    "ROM remains 14,155,776 bytes with existing banked extension"
+  ]
+}

@@ -134,7 +134,11 @@ void RasterTriangle(RasterSurface &surface,const Point *p,uint8_t color) {
                     bounds.x1=Min(bounds.x1,left);bounds.x2=Max(bounds.x2,right);
                     if(bounds.y1==GAME_HEIGHT) bounds.y1=y;
                     bounds.y2=y;
-                    MaterialSpan(row,y,left,right,color,surface.material,surface.coverage);
+                    const Rect &omit=surface.deferred;
+                    if(y>=omit.y1 && y<=omit.y2 && left<=omit.x2 && right>=omit.x1) {
+                        if(left<omit.x1) MaterialSpan(row,y,left,omit.x1-1,color,surface.material,surface.coverage);
+                        if(right>omit.x2) MaterialSpan(row,y,omit.x2+1,right,color,surface.material,surface.coverage);
+                    } else MaterialSpan(row,y,left,right,color,surface.material,surface.coverage);
                 }
                 StepEdge(a);StepEdge(b);
             }

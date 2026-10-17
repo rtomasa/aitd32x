@@ -2,6 +2,10 @@
 #pragma once
 #include "../engine/actor.hpp"
 struct CachedSpan { uint16_t start,length; };
+// Optional caller-owned, four-byte-aligned workspace. actors selects stationary
+// group indices; key must cover their geometry, order, camera and storage reuse.
+struct ContactCache { uint8_t *data;unsigned size;uint32_t key;uint64_t actors; };
+struct DepthPrimitive;
 class World;
 struct RasterSurface;
 class Renderer {
@@ -28,19 +32,20 @@ public:
     void DrawCoverage(const CachedSpan *spans,unsigned count,Rect clip={0,0,319,199});
     void DrawCachedCoverage(const Actor &actor,const CachedSpan *spans,unsigned count,Rect bounds,Rect clip);
     // True leaves this actor's camera-space vertices/projection in scratch.
-    bool DrawActor(const Actor &a);
+    bool DrawActor(const Actor &a,const Rect *deferred=nullptr);
     // Original item presentation; shares geometry scratch without a world actor.
     A32X_COLD void DrawPreview(int character,int body,int beta,Rect viewport={8,108,151,191},
                                int distance=24000,int projection_x=400,int projection_y=390,
                                Point projection_center={-1,-1});
-    void DrawEffects(const World &world);
-    bool ResolveOverlap(const Actor *const *actors,unsigned count,Rect area,const Actor *projected=nullptr);
+    A32X_COLD void DrawEffects(const World &world);
+    bool ResolveOverlap(const Actor *const *actors,unsigned count,Rect area,const Actor *projected=nullptr,const ContactCache *cache=nullptr);
     void DrawText(int x,int y,const char *s,uint8_t color=1);
     void Span(int y,int x1,int x2,uint8_t color);
     void Box(int x,int y,int w,int h,uint8_t color);
-    void Panel(int x,int y,unsigned asset);
+    A32X_COLD void Panel(int x,int y,unsigned asset);
 private:
     struct ContactContext;
+    struct ContactMask { const uint8_t *records;uint32_t active; };
     struct CompactVertex { int16_t x,y,z,sx,sy; };
     static_assert(sizeof(CompactVertex)<=sizeof(Vec3),"Contact conversion must trail ordinary vertices");
     union {
@@ -56,13 +61,16 @@ private:
         uint16_t contact_depth[64*64];
     };
     void Polygon(Point *pts,unsigned count,uint8_t color);
-    void SortFaces(const uint8_t *model);
+    A32X_COLD unsigned SortFaces(const uint8_t *model,Rect *bounds=nullptr,const Rect *deferred=nullptr);
     void Triangle(Point *pts,uint8_t color);
     void PolygonGeneral(Point *pts,unsigned count,uint8_t color);
     bool Mask(const Actor &a,Rect bounds);
-    bool DepthMask(const Actor &a,Rect tile,uint8_t *bits);
+    A32X_COLD void PrepareContactMask(const Actor &,ContactMask &);
+    bool DepthMask(const Actor &a,Rect tile,uint8_t *bits,const ContactMask *prepared=nullptr);
     static void ContactWorker(void *,struct RasterSurface &);
     void ContactTiles(const ContactContext &,struct RasterSurface &,uint16_t *depths);
+    void ContactVertices(const Actor &,unsigned,bool,bool &);
+    bool ContactModel(const Actor &,unsigned,Rect,DepthPrimitive *,unsigned &,unsigned);
     A32X_COLD void ContactFallback(const Actor *const *,unsigned,Rect,const unsigned *,const bool *);
     A32X_COLD const uint8_t *CompiledProgram(const Actor &a) const;
     void DrawCompiledActor(const Actor &a,const uint8_t *program,bool *masked=nullptr);

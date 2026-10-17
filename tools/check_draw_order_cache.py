@@ -4,7 +4,8 @@
 The oracle uses ordinary world order, architectural masks, contact depth,
 effects and lighting, but never bakes actors. Fixtures live in private host
 memory and do not open battery saves. This detects cache/order regressions;
-it is not an oracle for the original game's chosen painter order.
+it is not an oracle for the original game's chosen painter order. An optional
+preserved library instead checks exact pixels across renderer implementations.
 """
 import argparse
 import ctypes as C
@@ -27,6 +28,8 @@ def main():
                         help='Record mismatches without requiring zero differences')
     parser.add_argument('--library', type=Path, default=ROOT / 'build/libaitd32x.so',
                         help='Host library to compare with its uncached oracle')
+    parser.add_argument('--reference-library', type=Path,
+                        help='Compare cached pixels with a preserved renderer instead of the uncached oracle')
     parser.add_argument('--output', type=Path, default=ROOT / 'build/draw-order-cache.json')
     args = parser.parse_args()
     library = args.library.resolve()
@@ -38,7 +41,7 @@ def main():
 
     with tempfile.TemporaryDirectory(prefix='draw-order-cache-', dir=ROOT / 'build') as temporary:
         duplicate = Path(temporary) / library.name
-        shutil.copyfile(library, duplicate)
+        shutil.copyfile(args.reference_library.resolve() if args.reference_library else library, duplicate)
         cached, oracle = [C.CDLL(str(path)) for path in (library, duplicate)]
         libraries = (cached, oracle)
         for lib in libraries:
@@ -64,7 +67,10 @@ def main():
             before = [[cached.host_object(identifier, field) for field in range(26)]
                       for identifier in range(292)]
             cached.host_draw_cached()
-            oracle.host_draw_uncached_scene()
+            if args.reference_library:
+                oracle.host_draw_cached()
+            else:
+                oracle.host_draw_uncached_scene()
             images = [C.string_at(lib.host_pixels(), 320 * 224)[SCENE] for lib in libraries]
             different = [index for index, (a, b) in enumerate(zip(*images)) if a != b]
             after = [[cached.host_object(identifier, field) for field in range(26)]
@@ -75,7 +81,9 @@ def main():
                        camera=camera, pose=list(pose), bank=physical_bank,
                        different_pixels=len(different),
                        static_slots=f'{cached.host_cache_slots(0):013x}')
-            if label == 'contact foreground footprint' and pose[0] == -1200:
+            # The painter spot-check uses the uncached oracle's framebuffer
+            # lifecycle; a preserved cached renderer owns a persistent bake.
+            if not args.reference_library and label == 'contact foreground footprint' and pose[0] == -1200:
                 # This foreground replay extends outside the repaired contact
                 # area. The untouched door pixels must retain painter output,
                 # rather than merely agreeing with an overdrawn oracle.
@@ -137,11 +145,19 @@ def main():
 
     report = dict(passed=not failures, comparisons=len(checks),
                   camera_views=len(views), full_house_sweep=args.sweep,
-                  oracle='Same engine scene pipeline with all actors dynamic; no scenery bake',
+                  oracle=('Preserved renderer with scenery cache' if args.reference_library else
+                          'Same engine scene pipeline with all actors dynamic; no scenery bake'),
                   scope='Cache composition and framebuffer histories, not DOS visual or hardware validation',
                   host_sha256=hashlib.sha256(library.read_bytes()).hexdigest(),
                   bank_sha256=hashlib.sha256(bank).hexdigest(), failures=failures,
                   checks=checks)
+    if args.reference_library:
+        report['reference_sha256'] = hashlib.sha256(args.reference_library.read_bytes()).hexdigest()
+    if hasattr(cached, 'renderer_contact_stats'):
+        report['contact_cache'] = dict(hits=cached.renderer_contact_stats(4),
+                                       builds=cached.renderer_contact_stats(5),
+                                       capacity_failures=cached.renderer_contact_stats(6),
+                                       negative_hits=cached.renderer_contact_stats(7))
     path = args.output
     path.write_text(json.dumps(report, indent=2) + '\n')
     summary = {key: value for key, value in report.items() if key not in ('checks', 'failures')}

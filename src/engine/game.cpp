@@ -29,6 +29,7 @@ static A32X_COLD void Number(char *s,unsigned n) {
     s[count]=0;
 }
 void Game::ResetCache() {
+    ++contact_epoch;
     static_signature=dynamic_slots=static_slots=0;for(auto &hash:static_hash) hash=0;
     for(int s=0;s<MAX_ACTIVE;++s) { static_owner[s]=-1;static_quiet_since[s]=0; }
 }
@@ -138,6 +139,33 @@ void Game::Update() {
     }
     dirty=true;
 }
+A32X_COLD Rect Game::DeferredContact(const int *order,int count,int rank) {
+    Rect empty={320,200,-1,-1};
+    int s=order[rank],flags=world.active[s].value.v[O_FLAGS];
+    if(world.intro || startup_phase>=STARTUP_DEATH || !(flags&F_ANIMATED) ||
+       (flags&F_MOVABLE) || !(flags&F_TRIGGER)) return empty;
+    Bounds a=world.Box(s,world.room);int candidate=-1;
+    for(int j=0;j<count;++j) {
+        int t=order[j],f=world.active[t].value.v[O_FLAGS];
+        if(t==s || (f&F_FOUNDABLE) || ((f&F_ANIMATED) && (f&F_TRIGGER) && !(f&F_MOVABLE))) continue;
+        Bounds b=world.Box(t,world.room);
+        if(b.hi.y-b.lo.y<=20 || a.lo.x>b.hi.x+300 || a.hi.x<b.lo.x-300 ||
+           a.lo.y>b.hi.y+100 || a.hi.y<b.lo.y-100 || a.lo.z>b.hi.z+300 || a.hi.z<b.lo.z-300) continue;
+        const Rect &r=static_bounds[t];
+        if(!Dynamic(t) && (r.x1>r.x2 || r.y1>r.y2)) continue;
+        // A settled prop has current bounds from its bake. Multiple potential
+        // contacts or moving props keep the existing complete painter pass.
+        if(Dynamic(t) || candidate>=0) return empty;
+        candidate=j;
+    }
+    if(candidate<0) return empty;
+    unsigned vertices=0;
+    for(int j=Min(rank,candidate);j<=Max(rank,candidate);++j)
+        vertices+=BE16Aligned(world.Pose(order[j]).model.data+2);
+    // Even including every intervening object, depth correction must fit.
+    if(vertices>768) return empty;
+    return static_bounds[order[candidate]];
+}
 void Game::DrawScene() {
     if(world.dark!=lighting_dark) { renderer.full_restore[0]=renderer.full_restore[1]=true;lighting_dark=world.dark; }
     if(renderer.camera_id!=((unsigned)world.floor<<8 | (unsigned)camera)) ResetCache();
@@ -233,14 +261,23 @@ void Game::DrawScene() {
         renderer.BakeBackground();static_signature=signature;
     } else renderer.Restore();
     static_slots=next_static_slots;
-    for(int i=0;i<count;++i) if(!Dynamic(order[i])) static_rank[order[i]]=(uint8_t)i;
+    unsigned span_used=0,contact_sources=0;
+    for(int i=0;i<count;++i) {
+        int s=order[i],flags=world.active[s].value.v[O_FLAGS];
+        if((flags&F_ANIMATED) && (flags&F_TRIGGER) && !(flags&F_MOVABLE)) ++contact_sources;
+        if(!Dynamic(s)) {
+            static_rank[s]=(uint8_t)i;
+            if(static_span_count[s]!=65535) span_used=Max(span_used,static_span_start[s]+static_span_count[s]);
+        }
+    }
     Rect dynamic_bounds={320,200,-1,-1};
     const Actor *projected=nullptr;
     for(int i=0;i<count;++i) {
         int slot=order[i];bool full_draw=false;
         if(Dynamic(slot)) {
             const Actor &actor=world.Pose(slot);
-            projected=renderer.DrawActor(actor)?&actor:nullptr;Rect b=renderer.last_bounds;static_bounds[slot]=b;
+            Rect deferred=DeferredContact(order,count,i);
+            projected=renderer.DrawActor(actor,&deferred)?&actor:nullptr;Rect b=renderer.last_bounds;static_bounds[slot]=b;
             full_draw=true;
         } else {
             // A cached prop in front of an animated actor must keep the
@@ -289,8 +326,24 @@ void Game::DrawScene() {
             if(b.x1<=area.x2 && b.x2>=area.x1 && b.y1<=area.y2 && b.y2>=area.y1) group_mask|=uint64_t(1)<<t;
         }
         const Actor *group[MAX_ACTIVE];unsigned members=0;
-        for(int j=0;j<count;++j) if(group_mask&(uint64_t(1)<<order[j])) group[members++]=&world.Pose(order[j]);
-        bool resolved=renderer.ResolveOverlap(group,members,area,projected);projected=nullptr;
+        ContactCache cache={nullptr,0,(static_signature^contact_epoch)*16777619u,0};
+        cache.key=(cache.key^renderer.camera_id)*16777619u;
+        for(int j=0;j<count;++j) if(group_mask&(uint64_t(1)<<order[j])) {
+            int slot=order[j];group[members]=&world.Pose(slot);
+            cache.key=(cache.key^(uint32_t)world.active[slot].id)*16777619u;
+            bool stationary=!Dynamic(slot);
+            cache.key=(cache.key^(stationary?static_hash[slot]:0))*16777619u;
+            // A single source owns this opportunistic cache. Multiple groups
+            // keep regular preparation rather than evicting each other.
+            if(stationary && contact_sources==1) cache.actors|=uint64_t(1)<<members;
+            ++members;
+        }
+        // Only unused color-span storage is borrowed. Scenery coverage keeps
+        // its complete existing capacity and can reclaim these bytes on bake.
+        uintptr_t begin=((uintptr_t)(static_spans+span_used)+3)&~uintptr_t(3);
+        uintptr_t end=(uintptr_t)(static_spans+3072);
+        if(begin<end) { cache.data=(uint8_t *)begin;cache.size=(unsigned)(end-begin); }
+        bool resolved=renderer.ResolveOverlap(group,members,area,projected,&cache);projected=nullptr;
         if(!resolved) continue;
         // Disjoint foreground models keep their ordinary painter position;
         // they need no depth pass alongside this intersecting group.

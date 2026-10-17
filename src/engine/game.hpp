@@ -25,6 +25,7 @@ struct Game {
     uint32_t startup_time,startup_since,startup_transition;
     uint16_t startup_palette;
     uint8_t startup_phase,startup_next,startup_fade;
+    uint32_t contact_epoch;
     bool Dynamic(int slot) const { return (dynamic_slots&(uint64_t(1)<<slot))!=0; }
     void ResetCache();
     void RebuildStaticOrder(const int *order,int count);
@@ -35,6 +36,7 @@ struct Game {
     A32X_COLD bool HandlePresentationInput(uint16_t edges);
     void Update();
     void DrawScene();
+    A32X_COLD Rect DeferredContact(const int *order,int count,int rank);
     A32X_COLD void DrawMessages();
     A32X_COLD Rect PrepareLighting(const int *order,int count,Point &center);
     A32X_COLD void DrawLighting(Rect restored,Rect light,Point center);

@@ -352,15 +352,32 @@ void Renderer::PolygonGeneral(Point *p,unsigned n,uint8_t color) {
     RasterSurface surface={target,0,GAME_HEIGHT,damage[buffer_index]};
     RasterPolygonGeneral(surface,p,n,color);damage[buffer_index]=surface.damage;
 }
-void Renderer::SortFaces(const uint8_t *m) {
-    const uint8_t *prim=m+BE32Aligned(m+32);unsigned np=BE16Aligned(m+6);
+unsigned Renderer::SortFaces(const uint8_t *m,Rect *bounds,const Rect *deferred) {
+    const uint8_t *prim=m+BE32Aligned(m+32);unsigned np=BE16Aligned(m+6),count=0;
     for(unsigned i=0;i<np;++i) {
         const uint8_t *p=m+BE32Aligned(prim+i*4);int depth=-32768;
-        for(unsigned v=0;v<p[1];++v) depth=Max(depth,single.vertices[BE16Aligned(p+6+v*2)].z);
-        Face face={i,depth};unsigned j=i,base=i&~3u;
+        if(bounds && p[0]==1 && p[1]>=3) {
+            Rect visible={4096,4096,-4096,-4096};bool rejected=false;int winding=0;
+            Point first={},previous={};
+            for(unsigned v=0;v<p[1];++v) {
+                unsigned index=BE16Aligned(p+6+v*2);int z=single.vertices[index].z;
+                if(z<=100) { rejected=true;break; }
+                depth=Max(depth,z);Point point=single.projected[index];
+                visible={Min(visible.x1,point.x),Min(visible.y1,point.y),Max(visible.x2,point.x),Max(visible.y2,point.y)};
+                if(!v) first=point;
+                else if(v>1 && !winding) winding=(previous.x-first.x)*(point.y-first.y)-(previous.y-first.y)*(point.x-first.x);
+                previous=point;
+            }
+            if(rejected || winding<=0 || visible.x2<0 || visible.y2<0 || visible.x1>=320 || visible.y1>=200) continue;
+            *bounds={Min(bounds->x1,Max(0,visible.x1)),Min(bounds->y1,Max(0,visible.y1)),Max(bounds->x2,Min(319,visible.x2)),Max(bounds->y2,Min(199,visible.y2))};
+            if(deferred && p[1]==3 && visible.x1>=deferred->x1 && visible.x2<=deferred->x2 &&
+               visible.y1>=deferred->y1 && visible.y2<=deferred->y2) continue;
+        } else for(unsigned v=0;v<p[1];++v) depth=Max(depth,single.vertices[BE16Aligned(p+6+v*2)].z);
+        Face face={i,depth};unsigned j=count++,base=j&~3u;
         while(j>base && ordering.faces[j-1].depth<depth) { ordering.faces[j]=ordering.faces[j-1];--j; }
         ordering.faces[j]=face;
     }
+    np=count;
     Face *source=ordering.faces,*dest=ordering.sort_scratch;
     for(unsigned width=4;width<np;width*=2) {
         for(unsigned base=0;base<np;base+=width*2) {
@@ -376,8 +393,9 @@ void Renderer::SortFaces(const uint8_t *m) {
         Face *old=source;source=dest;dest=old;
     }
     if(source!=ordering.faces) for(unsigned i=0;i<np;++i) ordering.faces[i]=source[i];
+    return np;
 }
-bool Renderer::DrawActor(const Actor &a) {
+bool Renderer::DrawActor(const Actor &a,const Rect *deferred) {
     last_bounds={320,200,-1,-1};
     if(!camera.data || !a.model.data) return false;
 #ifndef AITD_RASTER_BUILD
@@ -403,12 +421,14 @@ bool Renderer::DrawActor(const Actor &a) {
     }
     }
     // Stable far-to-near ordering. No z-buffer consumes SDRAM.
+    Rect bounds={320,200,-1,-1};
     {
     ProfileScope timing(PROFILE_SORT);
-    SortFaces(m);
+    np=SortFaces(m,&bounds,deferred);
     }
     uint16_t face_order[MAX_PRIMITIVES];
     RasterSurface surface={target,0,GAME_HEIGHT,damage[buffer_index]};
+    if(deferred) surface.deferred=*deferred;
     if(coverage_mode) {
         for(unsigned i=0;i<np;++i) face_order[i]=(uint16_t)ordering.faces[i].index;
         surface.coverage=CoverageBits();
@@ -416,7 +436,6 @@ bool Renderer::DrawActor(const Actor &a) {
         for(unsigned i=0;i<4000;++i) words[i]=0;
     }
     RendererWorker_Begin(surface);
-    Rect bounds={320,200,-1,-1};
     {
     ProfileScope timing(PROFILE_PRIMITIVES);
     for(unsigned f=0;f<np;++f) {
@@ -440,13 +459,7 @@ bool Renderer::DrawActor(const Actor &a) {
         int depth=single.vertices[BE16Aligned(p+6)].z;
         int size=p[0]==3?Max(0,RenderDivide(BE16Aligned(p+4)*focal_x,depth)/2):p[0]==7?Max(0,RenderDivide(20*focal_x,depth)/2):1;
         size=Min(120,size);
-        // Models contain both sides of doors and their handles. Cull the
-        // side facing away before painter ordering can expose its latch.
-        if(p[0]==1 && count>=3) {
-            int winding=0;
-            for(unsigned i=1;i+1<count && !winding;++i) winding=(screen[i].x-screen[0].x)*(screen[i+1].y-screen[0].y)-(screen[i].y-screen[0].y)*(screen[i+1].x-screen[0].x);
-            if(winding<=0) continue;
-        }
+        // Polygon near/back-face/viewport rejection precedes the stable sort.
         if(p[0]==3 || p[0]==7 || p[0]==6) { visible.x1-=size;visible.x2+=size;visible.y1-=size;visible.y2+=size; }
         if(visible.x2<0 || visible.y2<0 || visible.x1>=320 || visible.y1>=200) continue;
         bounds={Min(bounds.x1,Max(0,visible.x1)),Min(bounds.y1,Max(0,visible.y1)),Max(bounds.x2,Min(319,visible.x2)),Max(bounds.y2,Min(199,visible.y2))};
@@ -466,6 +479,17 @@ bool Renderer::DrawActor(const Actor &a) {
 #endif
     return true;
 }
+// poly_spans() stores camera masks in ascending row order. Seek the first
+// intersecting row instead of rescanning every mask row for each depth tile.
+static A32X_COLD const uint8_t *MaskRow(const uint8_t *sp,unsigned count,int y) {
+    unsigned first=0,last=count;
+    while(first<last) {
+        unsigned middle=(first+last)/2;
+        if(BE16Aligned(sp+middle*6)<y) first=middle+1;
+        else last=middle;
+    }
+    return sp+first*6;
+}
 bool Renderer::Mask(const Actor &a,Rect bounds) {
     ProfileScope timing(PROFILE_MASK);
     const uint8_t *c=camera.data,*views=c+BE32Aligned(c+20);bool erased=false;
@@ -479,7 +503,8 @@ bool Renderer::Mask(const Actor &a,Rect bounds) {
             const uint8_t *mask=m+j*12;
             if(!Renderer_MaskActive(a,c,mask)) continue;
             const uint8_t *sp=c+BE32Aligned(mask+8);
-            for(unsigned k=0;k<BE16Aligned(mask+2);++k,sp+=6) {
+            const uint8_t *end=sp+BE16Aligned(mask+2)*6;
+            for(sp=MaskRow(sp,BE16Aligned(mask+2),bounds.y1);sp<end && BE16Aligned(sp)<=bounds.y2;sp+=6) {
                 int y=BE16Aligned(sp),left=Max(bounds.x1,BE16Aligned(sp+2)),right=Min(bounds.x2,BE16Aligned(sp+4));
                 if(y<bounds.y1 || y>bounds.y2 || left>right) continue;
                 erased=true;
@@ -490,31 +515,52 @@ bool Renderer::Mask(const Actor &a,Rect bounds) {
     return erased;
 }
 
-bool Renderer::DepthMask(const Actor &a,Rect tile,uint8_t *bits) {
+static A32X_COLD void DepthMaskRows(const uint8_t *c,const uint8_t *mask,Rect tile,uint8_t *bits,bool &any) {
+    const uint8_t *sp=c+BE32Aligned(mask+8),*end=sp+BE16Aligned(mask+2)*6;
+    for(sp=MaskRow(sp,BE16Aligned(mask+2),tile.y1);sp<end && BE16Aligned(sp)<=tile.y2;sp+=6) {
+        int y=BE16Aligned(sp),left=Max(tile.x1,BE16Aligned(sp+2)),right=Min(tile.x2,BE16Aligned(sp+4));
+        if(left>right) continue;
+        if(!any) {
+            uint32_t *words=(uint32_t *)bits;
+            for(unsigned k=0;k<128;++k) words[k]=0;
+            any=true;
+        }
+        unsigned first=left-tile.x1,last=right-tile.x1;
+        uint8_t *row=bits+(y-tile.y1)*8;
+        for(unsigned b=first/8;b<=last/8;++b) {
+            unsigned value=255;
+            if(b==first/8) value&=255u<<(first&7);
+            if(b==last/8) value&=255u>>(7-(last&7));
+            if(value==255) row[b]=255;else row[b]|=(uint8_t)value;
+        }
+    }
+}
+A32X_COLD void Renderer::PrepareContactMask(const Actor &a,ContactMask &out) {
+    out={};const uint8_t *c=camera.data,*views=c+BE32Aligned(c+20),*view=nullptr;
+    for(unsigned i=0;i<BE16Aligned(c+18);++i) if(BE16Aligned(views+i*16)==(unsigned)a.room) {
+        // Unusual duplicate room records keep the generic mask path.
+        if(view) return;
+        view=views+i*16;
+    }
+    if(!view || BE16Aligned(view+4)>32) return;
+    out.records=c+BE32Aligned(view+12);
+    for(unsigned i=0;i<BE16Aligned(view+4);++i)
+        if(Renderer_MaskActive(a,c,out.records+i*12)) out.active|=uint32_t(1)<<i;
+}
+bool Renderer::DepthMask(const Actor &a,Rect tile,uint8_t *bits,const ContactMask *prepared) {
     const uint8_t *c=camera.data,*views=c+BE32Aligned(c+20);bool any=false;
+    if(prepared && prepared->records) {
+        const uint8_t *record=prepared->records;
+        for(uint32_t active=prepared->active;active;active>>=1,record+=12)
+            if(active&1) DepthMaskRows(c,record,tile,bits,any);
+        return any;
+    }
     for(unsigned i=0;i<BE16Aligned(c+18);++i) {
         const uint8_t *view=views+16*i;if(BE16Aligned(view)!=(unsigned)a.room) continue;
         const uint8_t *m=c+BE32Aligned(view+12);
         for(unsigned j=0;j<BE16Aligned(view+4);++j) {
             const uint8_t *mask=m+j*12;if(!Renderer_MaskActive(a,c,mask)) continue;
-            const uint8_t *sp=c+BE32Aligned(mask+8);
-            for(unsigned k=0;k<BE16Aligned(mask+2);++k,sp+=6) {
-                int y=BE16Aligned(sp),left=Max(tile.x1,BE16Aligned(sp+2)),right=Min(tile.x2,BE16Aligned(sp+4));
-                if(y<tile.y1 || y>tile.y2 || left>right) continue;
-                if(!any) {
-                    uint32_t *words=(uint32_t *)bits;
-                    for(unsigned k=0;k<128;++k) words[k]=0;
-                    any=true;
-                }
-                unsigned first=left-tile.x1,last=right-tile.x1;
-                uint8_t *row=bits+(y-tile.y1)*8;
-                for(unsigned b=first/8;b<=last/8;++b) {
-                    unsigned value=255;
-                    if(b==first/8) value&=255u<<(first&7);
-                    if(b==last/8) value&=255u>>(7-(last&7));
-                    if(value==255) row[b]=255;else row[b]|=(uint8_t)value;
-                }
-            }
+            DepthMaskRows(c,mask,tile,bits,any);
         }
     }
     return any;
@@ -555,13 +601,14 @@ struct Renderer::ContactContext {
     const DepthPrimitive *commands;
     const Rect *bounds;
     const uint16_t *ends;
+    const ContactMask *masks;
     unsigned count;
     Rect area;
     bool uncached;
 };
 #if !defined(__sh__)
-static unsigned contact_stats[4];
-extern "C" unsigned renderer_contact_stats(unsigned field) { return field<4?contact_stats[field]:0; }
+static unsigned contact_stats[8];
+extern "C" unsigned renderer_contact_stats(unsigned field) { return field<8?contact_stats[field]:0; }
 #endif
 template<class T> static T *ContactRead(T *p) {
 #if defined(__sh__)
@@ -575,6 +622,7 @@ void Renderer::ContactWorker(void *data,RasterSurface &surface) {
     context.actors=ContactRead(context.actors);context.commands=ContactRead(context.commands);
     context.bounds=ContactRead(context.bounds);
     context.ends=ContactRead(context.ends);context.uncached=true;
+    context.masks=ContactRead(context.masks);
     uint16_t *depths=context.renderer->contact_depth+64*32;
     ContactRead(context.renderer)->ContactTiles(context,surface,depths);
 }
@@ -594,7 +642,7 @@ void Renderer::ContactTiles(const ContactContext &context,RasterSurface &surface
                 if(bounds.x1>tile.x2 || bounds.x2<tile.x1 || bounds.y1>tile.y2 || bounds.y2<tile.y1) continue;
                 // Architectural masks are needed only if this actor actually
                 // contributes a primitive to the tile. Read them once then.
-                if(!mask_ready) { mask=DepthMask(*actor,tile,(uint8_t *)blocked)?(uint8_t *)blocked:nullptr;mask_ready=true; }
+                if(!mask_ready) { mask=DepthMask(*actor,tile,(uint8_t *)blocked,context.masks+i)?(uint8_t *)blocked:nullptr;mask_ready=true; }
                 RasterDepthVisible(surface,context.commands[f],tile,depths,mask);
             }
             begin=end;
@@ -602,10 +650,110 @@ void Renderer::ContactTiles(const ContactContext &context,RasterSurface &surface
     }
 }
 
-bool Renderer::ResolveOverlap(const Actor *const *actors,unsigned count,Rect area,const Actor *projected) {
+void Renderer::ContactVertices(const Actor &a,unsigned offset,bool reused,bool &near) {
+    const uint8_t *c=camera.data;
+    Rotation rotation=PrepareRotation(BS16Aligned(c),BS16Aligned(c+2),BS16Aligned(c+4));
+    Vec3 *vertices=Actor_GameplayScratch();
+    Vec3 translation={};
+    if(!reused) {
+        Actor_Vertices(a,vertices);
+        Asset r=Platform_ReadAsset(floor_rooms[a.floor][a.room]);
+        translation={(BS16Aligned(c+6)-BS16Aligned(r.data))*10,(BS16Aligned(r.data+2)-BS16Aligned(c+8))*10,(BS16Aligned(r.data+4)-BS16Aligned(c+10))*10};
+    }
+    for(unsigned v=0;v<BE16Aligned(a.model.data+2);++v) {
+        Vec3 q;
+        if(reused) q=single.vertices[v];
+        else {
+            q={vertices[v].x+a.pos.x-translation.x,vertices[v].y+a.pos.y-translation.y,vertices[v].z+a.pos.z-translation.z};
+            Rotate(q,rotation);q.z+=BS16Aligned(c+12);
+        }
+        if(q.z<=100) near=true;
+        CompactVertex &out=combined[offset+v];out.x=Clamp(q.x,-32768,32767);out.y=Clamp(q.y,-32768,32767);out.z=Clamp(q.z,-32768,32767);
+        if(q.z>100) { Point p=reused?single.projected[v]:RenderProject(q,BS16Aligned(c+14),BS16Aligned(c+16),{160,100});out.sx=p.x;out.sy=p.y; }
+    }
+    // Ordinary groups reuse camera-space X for reciprocal depth computed
+    // once per vertex. Near-rejected groups use their valid vertices only
+    // in the fallback path and compute those depths there.
+    if(!near) for(unsigned v=0;v<BE16Aligned(a.model.data+2);++v) { CompactVertex &q=combined[offset+v];q.x=(int16_t)RenderDivide(1<<20,q.z); }
+}
+
+bool Renderer::ContactModel(const Actor &a,unsigned offset,Rect area,DepthPrimitive *commands,unsigned &total,unsigned capacity) {
+    const uint8_t *c=camera.data;
+    const uint8_t *m=a.model.data,*directory=m+BE32Aligned(m+32);
+    for(unsigned f=0;f<BE16Aligned(m+6);++f) {
+        const uint8_t *p=m+BE32Aligned(directory+4*f);unsigned n=p[1];
+        if(p[0]!=1) {
+            const CompactVertex &v=combined[offset+BE16Aligned(p+6)];
+            DepthPrimitive out={};out.x[0]=v.sx;out.y[0]=v.sy;out.q=v.x;out.color=p[2];out.material=p[3];
+            Rect bounds={v.sx,v.sy,v.sx,v.sy};
+            if(p[0]==0 && n==2) {
+                const CompactVertex &b=combined[offset+BE16Aligned(p+8)];
+                out.kind=0;out.x[1]=b.sx;out.y[1]=b.sy;out.dx=b.x-v.x;
+                int dx=b.sx-v.sx,dy=b.sy-v.sy;out.dy=Max(dx<0?-dx:dx,dy<0?-dy:dy);
+                bounds={Min(v.sx,b.sx),Min(v.sy,b.sy),Max(v.sx,b.sx),Max(v.sy,b.sy)};
+            } else {
+                out.kind=2;int size=p[0]==3?RenderDivide(BE16Aligned(p+4)*BS16Aligned(c+14),v.z)/2:p[0]==7?RenderDivide(20*BS16Aligned(c+14),v.z)/2:p[0]==6?1:0;
+                out.dx=Clamp(size,0,120);bounds={v.sx-out.dx,v.sy-out.dx,v.sx+out.dx,v.sy+out.dx};
+            }
+            if(bounds.x1>area.x2 || bounds.x2<area.x1 || bounds.y1>area.y2 || bounds.y2<area.y1) continue;
+            if(total==capacity) return false;
+            commands[total++]=out;continue;
+        }
+        if(n<3) continue;
+        Point screen[MAX_POLY];int q[MAX_POLY];
+        for(unsigned v=0;v<n;++v) { const CompactVertex &a=combined[offset+BE16Aligned(p+6+2*v)];screen[v]={a.sx,a.sy};q[v]=a.x; }
+        int winding=0;
+        for(unsigned v=1;v+1<n && !winding;++v)
+            winding=(screen[v].x-screen[0].x)*(screen[v+1].y-screen[0].y)-(screen[v].y-screen[0].y)*(screen[v+1].x-screen[0].x);
+        if(winding<=0) continue;
+        for(unsigned v=1;v+1<n;++v) {
+            Point triangle[]={screen[0],screen[v],screen[v+1]};int inv[]={q[0],q[v],q[v+1]};
+            Rect bounds={Min(triangle[0].x,Min(triangle[1].x,triangle[2].x)),Min(triangle[0].y,Min(triangle[1].y,triangle[2].y)),
+                         Max(triangle[0].x,Max(triangle[1].x,triangle[2].x)),Max(triangle[0].y,Max(triangle[1].y,triangle[2].y))};
+            if(bounds.x1>area.x2 || bounds.x2<area.x1 || bounds.y1>area.y2 || bounds.y2<area.y1) continue;
+            if(total==capacity) return false;
+            if(RasterPrepareDepthTriangle(commands[total],triangle,inv,p[2],p[3])) ++total;
+        }
+    }
+    return true;
+}
+
+struct __attribute__((may_alias)) ContactCacheHeader {
+    uint32_t magic,key,actors_low,actors_high;
+    uint16_t count,ends[MAX_ACTIVE];
+};
+bool Renderer::ResolveOverlap(const Actor *const *actors,unsigned count,Rect area,const Actor *projected,const ContactCache *cache) {
     if(count>MAX_ACTIVE) return false;
+    ContactCacheHeader *header=nullptr;DepthPrimitive *program=nullptr;
+    unsigned cache_capacity=0;bool cache_ready=false;
+    if(cache && cache->actors && cache->data && !((uintptr_t)cache->data&3) && cache->size>=sizeof(ContactCacheHeader)+sizeof(DepthPrimitive)) {
+        header=(ContactCacheHeader *)cache->data;program=(DepthPrimitive *)(header+1);
+        cache_capacity=(cache->size-sizeof(*header))/sizeof(DepthPrimitive);
+        bool matching=header->key==cache->key && header->count==count &&
+                      header->actors_low==(uint32_t)cache->actors && header->actors_high==(uint32_t)(cache->actors>>32);
+        cache_ready=header->magic==0x43445031u && matching;
+        // Remember a program that did not fit until its key/allocation changes;
+        // scarce spare storage must not cause a failed full preparation per draw.
+        if(matching && header->magic==0x43445030u) {
+            header=nullptr;
+#if !defined(__sh__)
+            ++contact_stats[7];
+#endif
+        }
+        unsigned previous=0;
+        for(unsigned i=0;cache_ready && i<count;++i) {
+            unsigned end=header->ends[i];
+            cache_ready=end>=previous && end<=cache_capacity && ((cache->actors&(uint64_t(1)<<i)) || end==previous);
+            previous=end;
+        }
+    }
+    uint64_t skipped=cache_ready?cache->actors:0;
+#if !defined(__sh__)
+    if(cache_ready) ++contact_stats[4];
+#endif
     unsigned offsets[MAX_ACTIVE],used=0,reused=count;bool near[MAX_ACTIVE]={};
     for(unsigned i=0;i<count;++i) if(actors[i]==projected) { reused=i;break; }
+    if(reused<count && (skipped&(uint64_t(1)<<reused))) reused=count;
     // Convert the live ordinary projection first, at offset zero. Compact
     // writes trail source vertices and cannot reach the projected-point tail.
     // Other actors then occupy the rest of the union without clobbering it.
@@ -613,31 +761,10 @@ bool Renderer::ResolveOverlap(const Actor *const *actors,unsigned count,Rect are
     for(unsigned i=0;i<count;++i) if(i!=reused) { offsets[i]=used;used+=BE16Aligned(actors[i]->model.data+2); }
     // Two maximum-size source models fit; larger groups retain painter order.
     if(used>768) return false;
-    const uint8_t *c=camera.data;Rotation rotation=PrepareRotation(BS16Aligned(c),BS16Aligned(c+2),BS16Aligned(c+4));
     Vec3 *vertices=Actor_GameplayScratch();
     for(unsigned pass=0;pass<count;++pass) {
         unsigned i=reused<count?(pass==0?reused:pass<=reused?pass-1:pass):pass;
-        const Actor &a=*actors[i];Vec3 translation={};
-        if(i!=reused) {
-            Actor_Vertices(a,vertices);
-            Asset r=Platform_ReadAsset(floor_rooms[a.floor][a.room]);
-            translation={(BS16Aligned(c+6)-BS16Aligned(r.data))*10,(BS16Aligned(r.data+2)-BS16Aligned(c+8))*10,(BS16Aligned(r.data+4)-BS16Aligned(c+10))*10};
-        }
-        for(unsigned v=0;v<BE16Aligned(a.model.data+2);++v) {
-            Vec3 q;
-            if(i==reused) q=single.vertices[v];
-            else {
-                q={vertices[v].x+a.pos.x-translation.x,vertices[v].y+a.pos.y-translation.y,vertices[v].z+a.pos.z-translation.z};
-                Rotate(q,rotation);q.z+=BS16Aligned(c+12);
-            }
-            if(q.z<=100) near[i]=true;
-            CompactVertex &out=combined[offsets[i]+v];out.x=Clamp(q.x,-32768,32767);out.y=Clamp(q.y,-32768,32767);out.z=Clamp(q.z,-32768,32767);
-            if(q.z>100) { Point p=i==reused?single.projected[v]:RenderProject(q,BS16Aligned(c+14),BS16Aligned(c+16),{160,100});out.sx=p.x;out.sy=p.y; }
-        }
-        // Ordinary groups reuse camera-space X for reciprocal depth computed
-        // once per vertex. Near-rejected groups use their valid vertices only
-        // in the fallback path and compute those depths there.
-        if(!near[i]) for(unsigned v=0;v<BE16Aligned(a.model.data+2);++v) { CompactVertex &q=combined[offsets[i]+v];q.x=(int16_t)RenderDivide(1<<20,q.z); }
+        if(!(skipped&(uint64_t(1)<<i))) ContactVertices(*actors[i],offsets[i],i==reused,near[i]);
     }
     area={Max(0,area.x1),Max(0,area.y1),Min(319,area.x2),Min(199,area.y2)};
     if(area.x1>area.x2 || area.y1>area.y2) return true;
@@ -645,6 +772,7 @@ bool Renderer::ResolveOverlap(const Actor *const *actors,unsigned count,Rect are
     // vertex workspace is no longer needed after the transforms above.
     // Unusual near-clipped or oversized command groups retain the old path.
     for(unsigned i=0;i<count;++i) if(near[i]) {
+        for(unsigned j=0;j<count;++j) if(skipped&(uint64_t(1)<<j)) ContactVertices(*actors[j],offsets[j],false,near[j]);
 #if !defined(__sh__)
         ++contact_stats[1];
 #endif
@@ -654,43 +782,35 @@ bool Renderer::ResolveOverlap(const Actor *const *actors,unsigned count,Rect are
     constexpr unsigned capacity=sizeof(Vec3)*MAX_VERTICES/sizeof(DepthPrimitive);
     static_assert(capacity<=MAX_VERTICES,"Contact bounds must cover every prepared command");
     unsigned total=0;uint16_t ends[MAX_ACTIVE];
-    for(unsigned i=0;i<count;++i) {
-        const uint8_t *m=actors[i]->model.data,*directory=m+BE32Aligned(m+32);
-        for(unsigned f=0;f<BE16Aligned(m+6);++f) {
-            const uint8_t *p=m+BE32Aligned(directory+4*f);unsigned n=p[1];
-            if(p[0]!=1) {
-                const CompactVertex &v=combined[offsets[i]+BE16Aligned(p+6)];
-                DepthPrimitive out={};out.x[0]=v.sx;out.y[0]=v.sy;out.q=v.x;out.color=p[2];out.material=p[3];
-                Rect bounds={v.sx,v.sy,v.sx,v.sy};
-                if(p[0]==0 && n==2) {
-                    const CompactVertex &b=combined[offsets[i]+BE16Aligned(p+8)];
-                    out.kind=0;out.x[1]=b.sx;out.y[1]=b.sy;out.dx=b.x-v.x;
-                    int dx=b.sx-v.sx,dy=b.sy-v.sy;out.dy=Max(dx<0?-dx:dx,dy<0?-dy:dy);
-                    bounds={Min(v.sx,b.sx),Min(v.sy,b.sy),Max(v.sx,b.sx),Max(v.sy,b.sy)};
-                } else {
-                    out.kind=2;int size=p[0]==3?RenderDivide(BE16Aligned(p+4)*BS16Aligned(c+14),v.z)/2:p[0]==7?RenderDivide(20*BS16Aligned(c+14),v.z)/2:p[0]==6?1:0;
-                    out.dx=Clamp(size,0,120);bounds={v.sx-out.dx,v.sy-out.dx,v.sx+out.dx,v.sy+out.dx};
-                }
-                if(bounds.x1>area.x2 || bounds.x2<area.x1 || bounds.y1>area.y2 || bounds.y2<area.y1) continue;
-                if(total==capacity) goto fallback;
-                commands[total++]=out;continue;
-            }
-            if(n<3) continue;
-            Point screen[MAX_POLY];int q[MAX_POLY];
-            for(unsigned v=0;v<n;++v) { const CompactVertex &a=combined[offsets[i]+BE16Aligned(p+6+2*v)];screen[v]={a.sx,a.sy};q[v]=a.x; }
-            int winding=0;
-            for(unsigned v=1;v+1<n && !winding;++v)
-                winding=(screen[v].x-screen[0].x)*(screen[v+1].y-screen[0].y)-(screen[v].y-screen[0].y)*(screen[v+1].x-screen[0].x);
-            if(winding<=0) continue;
-            for(unsigned v=1;v+1<n;++v) {
-                Point triangle[]={screen[0],screen[v],screen[v+1]};int inv[]={q[0],q[v],q[v+1]};
-                Rect bounds={Min(triangle[0].x,Min(triangle[1].x,triangle[2].x)),Min(triangle[0].y,Min(triangle[1].y,triangle[2].y)),
-                             Max(triangle[0].x,Max(triangle[1].x,triangle[2].x)),Max(triangle[0].y,Max(triangle[1].y,triangle[2].y))};
-                if(bounds.x1>area.x2 || bounds.x2<area.x1 || bounds.y1>area.y2 || bounds.y2<area.y1) continue;
-                if(total==capacity) goto fallback;
-                if(RasterPrepareDepthTriangle(commands[total],triangle,inv,p[2],p[3])) ++total;
-            }
+    if(header && !cache_ready) {
+        unsigned cached_total=0;header->magic=0;bool complete=true;
+        for(unsigned i=0;i<count;++i) {
+            if((cache->actors&(uint64_t(1)<<i)) &&
+               !ContactModel(*actors[i],offsets[i],{0,0,319,199},program,cached_total,cache_capacity)) { complete=false;break; }
+            header->ends[i]=(uint16_t)cached_total;
         }
+        header->key=cache->key;header->count=(uint16_t)count;
+        header->actors_low=(uint32_t)cache->actors;header->actors_high=(uint32_t)(cache->actors>>32);
+        header->magic=complete?0x43445031u:0x43445030u;cache_ready=complete;
+        if(complete) {
+#if !defined(__sh__)
+            ++contact_stats[5];
+#endif
+        }
+#if !defined(__sh__)
+        else ++contact_stats[6];
+#endif
+    }
+    for(unsigned i=0;i<count;++i) {
+        if(cache_ready && (cache->actors&(uint64_t(1)<<i))) {
+            unsigned first=i?header->ends[i-1]:0;
+            for(unsigned f=first;f<header->ends[i];++f) {
+                Rect b=RasterDepthBounds(program[f]);
+                if(b.x1>area.x2 || b.x2<area.x1 || b.y1>area.y2 || b.y2<area.y1) continue;
+                if(total==capacity) goto fallback;
+                commands[total++]=program[f];
+            }
+        } else if(!ContactModel(*actors[i],offsets[i],area,commands,total,capacity)) goto fallback;
         ends[i]=(uint16_t)total;
     }
     {
@@ -701,7 +821,9 @@ bool Renderer::ResolveOverlap(const Actor *const *actors,unsigned count,Rect are
         // All commands now own their projection/depth data. Preserve combined
         // vertices for every fallback above, then reuse them for tile culling.
         for(unsigned f=0;f<total;++f) contact_bounds[f]=RasterDepthBounds(commands[f]);
-        ContactContext context={this,actors,commands,contact_bounds,ends,count,area,false};
+        ContactMask masks[MAX_ACTIVE];
+        for(unsigned i=0;i<count;++i) PrepareContactMask(*actors[i],masks[i]);
+        ContactContext context={this,actors,commands,contact_bounds,ends,masks,count,area,false};
         bool parallel=area.y2-area.y1>=15 && total>=12;
         FinishRestore();
         if(parallel) RendererWorker_Contact(surface,ContactWorker,&context,RendererWorker_ContactSplit(area.y1,area.y2+1));
@@ -712,6 +834,7 @@ bool Renderer::ResolveOverlap(const Actor *const *actors,unsigned count,Rect are
     return true;
 fallback:
     FinishRestore();
+    for(unsigned i=0;i<count;++i) if(skipped&(uint64_t(1)<<i)) ContactVertices(*actors[i],offsets[i],false,near[i]);
 #if !defined(__sh__)
     ++contact_stats[2];
 #endif
@@ -728,6 +851,8 @@ A32X_COLD void Renderer::ContactFallback(const Actor *const *actors,unsigned cou
     uint16_t *depths=contact_depth;
     area={Max(0,area.x1),Max(0,area.y1),Min(319,area.x2),Min(199,area.y2)};
     RasterSurface surface={target,0,GAME_HEIGHT,damage[buffer_index]};
+    ContactMask masks[MAX_ACTIVE];
+    for(unsigned i=0;i<count;++i) PrepareContactMask(*actors[i],masks[i]);
     for(int y=area.y1;y<=area.y2;y+=64) for(int x=area.x1;x<=area.x2;x+=64) {
         Rect tile={x,y,Min(x+63,area.x2),Min(y+63,area.y2)};
         for(unsigned j=0;j<64*64;++j) depths[j]=0;
@@ -735,7 +860,7 @@ A32X_COLD void Renderer::ContactFallback(const Actor *const *actors,unsigned cou
             // Clip each model before it contributes depth. Restoring a prop's
             // mask after the whole group would erase an unmasked nearer actor.
             uint32_t blocked[128];
-            const uint8_t *mask=DepthMask(*actors[i],tile,(uint8_t *)blocked)?(uint8_t *)blocked:nullptr;
+            const uint8_t *mask=DepthMask(*actors[i],tile,(uint8_t *)blocked,masks+i)?(uint8_t *)blocked:nullptr;
             const uint8_t *m=actors[i]->model.data,*directory=m+BE32Aligned(m+32);
             for(unsigned f=0;f<BE16Aligned(m+6);++f) {
                 const uint8_t *p=m+BE32Aligned(directory+4*f);unsigned n=p[1];

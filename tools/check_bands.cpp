@@ -151,6 +151,26 @@ int main() {
             ++comparisons;
         }
     }
-    std::printf("cases=%zu splits=12 comparisons=%u primitive_calls=%u pixels/damage/ownership/guards=ok\n",
-                cases.size(),comparisons,primitive_calls);
+    unsigned deferred_checks=0;
+    for(unsigned index=0;index<48;++index) {
+        Primitive p=cases[index][0];p.material=index&1?2:0;
+        Rect omit={index&1?0:37,24,210,170};
+        Buffer initial,expected;Initialize(initial,index);expected=initial;
+        RasterSurface oracle={expected.data()+guard,0,GAME_HEIGHT,empty};Draw(oracle,p);
+        // Independent bitmap oracle: restore deferred pixels after a complete
+        // ordinary triangle draw, including black and screen-door material.
+        auto *pixels=(uint8_t *)(expected.data()+guard);
+        const auto *before=(const uint8_t *)(initial.data()+guard);
+        for(int y=omit.y1;y<=omit.y2;++y) for(int x=omit.x1;x<=omit.x2;++x)
+            pixels[y*GAME_WIDTH+x]=before[y*GAME_WIDTH+x];
+        for(int split:{20,66,100,180}) {
+            Buffer actual=initial;
+            RasterSurface top={actual.data()+guard,0,split,empty},bottom={actual.data()+guard,split,GAME_HEIGHT,empty};
+            top.deferred=bottom.deferred=omit;Draw(top,p);Draw(bottom,p);
+            if(std::memcmp(actual.data()+guard,expected.data()+guard,words*2)) Fail(index,split,"deferred triangle differs from bitmap oracle");
+            CheckGuards(actual,index,split);++deferred_checks;
+        }
+    }
+    std::printf("cases=%zu splits=12 comparisons=%u primitive_calls=%u pixels/damage/ownership/guards=ok deferred=%u\n",
+                cases.size(),comparisons,primitive_calls,deferred_checks);
 }
