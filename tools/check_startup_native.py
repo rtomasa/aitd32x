@@ -342,9 +342,9 @@ def save_reload(check, core, offsets):
     assert check.read('selection') == 1
     check.press(A)
     check.wait(lambda: check.read('notice') == 1)
-    assert check.e.lib.retro_get_memory_size(0) == 131072
-    sram = C.string_at(check.e.lib.retro_get_memory_data(0), 131072)
-    assert sram[:4] == b'AITD'
+    assert check.e.lib.retro_get_memory_size(0) == 65536
+    sram = C.string_at(check.e.lib.retro_get_memory_data(0), 65536)
+    assert sram[1:8:2] == b'AITD' # PicoDrive keeps the unused even-byte lane.
     pose = check.state()
     position = check.position()
     check.capture('save')
@@ -368,7 +368,7 @@ def save_reload(check, core, offsets):
     loaded.capture('loaded')
     loaded.press(START)
     assert not loaded.state()['paused']
-    return loaded, dict(sram_bytes=131072, paused_core_restart=True, world_variable_restored=True,
+    return loaded, dict(sram_bytes=32768, frontend_bytes=65536, paused_core_restart=True, world_variable_restored=True,
                         position=position, no_sram_file=True)
 
 

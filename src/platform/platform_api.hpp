@@ -18,7 +18,7 @@ A32X_COLD void Platform_UnmapImage();
 // Offline-compiled ending deltas update only changed pixels in the RAM image.
 A32X_COLD bool Platform_ApplyDelta(const Asset &a,uint8_t *dest,uint32_t capacity,Rect &damage);
 extern "C" void Platform_Fatal(void);
-// Sequential cartridge SRAM transport. Each journal bank contains 65536 bytes.
+// Sequential cartridge SRAM transport. Two 16384-byte journal banks.
 bool Platform_SaveBegin(unsigned bank);
 void Platform_SaveSeek(unsigned offset);
 uint8_t Platform_SaveRead();

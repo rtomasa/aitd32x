@@ -97,8 +97,8 @@ def check(rom, elf_data, bank, main, extra, manifest):
             'extended mapper probe has indistinguishable ROM samples')
     require(rom[0x190:0x1A0] == b'J6              ', 'unexpected CD device flag')
     require(rom[0x1B0:0x1B4] == b'RA\xf8\x20' and
-            struct.unpack_from('>2I', rom, 0x1B4) == (0x200000, 0x21FFFF),
-            'incorrect 128 KiB word-wide SRAM header')
+            struct.unpack_from('>2I', rom, 0x1B4) == (0x200001, 0x20FFFF),
+            'incorrect 32 KiB odd-byte SRAM header')
     require(struct.unpack_from('>I', rom, 0x1A4)[0] == len(rom) - 1, 'incorrect ROM end header')
     checksum = sum(value for (value,) in struct.iter_unpack('>H', rom[512:])) & 65535
     require(struct.unpack_from('>H', rom, 0x18E)[0] == checksum, 'incorrect Mega Drive checksum')

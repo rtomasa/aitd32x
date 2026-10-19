@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "save.hpp"
+#include "save_codec.hpp"
 #include "startup.hpp"
 #include "game.hpp"
 #include "../platform/audio.hpp"
 #include "../platform/platform_api.hpp"
 #include "../render/book.hpp"
-// Both journal records must fit even with the complete active-actor pool.
-static constexpr unsigned HEADER=24,LIMIT=65536-HEADER;
-static constexpr uint32_t MAGIC=0x41495444,LEGACY_FORMAT=0x53313401,FORMAT=0x53313601;
+// Two compressed journals fit the 32 KiB odd-byte cartridge SRAM.
+static constexpr unsigned HEADER=24,LIMIT=65536-HEADER,PACKED_LIMIT=16384-HEADER;
+static constexpr uint32_t MAGIC=0x41495444,FORMAT=0x53313602;
 struct Stream {
-    bool reading,apply,ok,legacy;unsigned count;uint32_t checksum;
-    Stream(bool read,bool change,bool old=false):reading(read),apply(change),ok(true),legacy(old),count(0),checksum(2166136261u) {}
+    bool reading,apply,ok;unsigned count;SaveCodec codec;
+    Stream(bool read,bool change,bool dry=false,unsigned length=PACKED_LIMIT):reading(read),apply(change),ok(true),count(0),codec(read,dry,length) {}
     uint8_t Byte(uint8_t value) {
         if(count==LIMIT) { ok=false;return 0; }
-        if(reading) value=Platform_SaveRead();else Platform_SaveWrite(value);
-        checksum=(checksum^value)*16777619u;++count;return value;
+        value=codec.Byte(value);++count;return value;
     }
     unsigned Word(unsigned value,unsigned bytes=4) {
         unsigned result=0;for(unsigned n=bytes;n;--n) result=(result<<8)|Byte((uint8_t)(value>>((n-1)*8)));
@@ -32,7 +32,7 @@ struct Stream {
 static void Object(Stream &s,WorldObject &o) {
     for(int i=0;i<26;++i) {
         int v=s.Field(o.v[i],2);
-        if(i==O_SLOT) s.Check(v>=-1 && v<(s.legacy?24:MAX_ACTIVE));
+        if(i==O_SLOT) s.Check(v>=-1 && v<MAX_ACTIVE);
         if(i==O_BODY) s.Check(v>=-1 && v<A32X_MODEL_COUNT);
     }
 }
@@ -62,9 +62,9 @@ static void Pose(Stream &s,Actor &a,int body,int character) {
     unsigned groups=a.model.data?BE16(a.model.data+4):0,saved=s.Word(groups,2);
     s.Check(saved==groups && saved<=MAX_GROUPS);
     if(saved>MAX_GROUPS) return;
-    for(unsigned i=0;i<saved;++i) for(unsigned j=0;j<2;++j) { GroupState &p=j?a.state[i]:a.previous[i];unsigned bytes=s.legacy?4:2;s.Field(p.type,bytes);s.Vector(p.delta,bytes); }
+    for(unsigned i=0;i<saved;++i) for(unsigned j=0;j<2;++j) { GroupState &p=j?a.state[i]:a.previous[i];s.Field(p.type,2);s.Vector(p.delta,2); }
 }
-static bool Payload(Stream &s,Game &g) {
+static A32X_COLD bool Payload(Stream &s,Game &g) {
     World &w=g.world;int character=s.Field(w.character);s.Check(character==0 || character==1);
     if(character<0 || character>1) return false;
     s.Field(g.tick);int floor=s.Field(w.floor),room=s.Field(w.room),camera=s.Field(w.camera);
@@ -81,7 +81,7 @@ static bool Payload(Stream &s,Game &g) {
     for(auto &v:w.vars) s.Field(v,2);
     for(auto &v:w.cvars) s.Field(v,2);
     bool applying=s.apply;
-    for(int k=0;k<(s.legacy?24:MAX_ACTIVE);++k) {
+    for(int k=0;k<MAX_ACTIVE;++k) {
         ActiveObject temporary{};Actor dummy{};
         ActiveObject &a=s.reading&&!applying?temporary:w.active[k];
         s.apply=true;int id=s.Field(a.id);s.Check(id>=-1 && id<A32X_OBJECT_COUNT);
@@ -93,24 +93,21 @@ static bool Payload(Stream &s,Game &g) {
         } else if(s.reading) { a={};a.id=-1; }
         s.apply=applying;
     }
-    if(s.reading && s.apply && s.legacy) for(int k=24;k<MAX_ACTIVE;++k) { w.active[k]={};w.active[k].id=-1; }
     for(auto &e:w.effects) {
         s.Field(e.since);s.Field(e.duration,2);s.Field(e.floor,2);s.Field(e.room,2);
         int count=s.Field(e.count,1);s.Check(count<=30);s.Field(e.color,1);s.Field(e.mode,1);
         for(auto &v:e.points) { s.Field(v.x,2);s.Field(v.y,2);s.Field(v.z,2); }
     }
-    if(!s.legacy) s.Field(w.dark,1);
-    else if(s.reading && s.apply) w.dark=!w.cvars[12] && ((floor==2 && room==0 && !w.vars[70]) || (floor==2 && room==6 && !w.vars[85]) || (floor==6 && w.player->room<6 && !w.vars[178]));
+    s.Field(w.dark,1);
     return s.ok;
 }
-struct Record { uint32_t generation,length,checksum;bool valid,legacy; };
+struct Record { uint32_t generation,length,checksum;bool valid; };
 static uint32_t RawRead() { unsigned v=0;for(int i=0;i<4;++i) v=(v<<8)|Platform_SaveRead();return v; }
 static void RawWrite(uint32_t v) { for(int i=3;i>=0;--i) Platform_SaveWrite((uint8_t)(v>>(8*i))); }
 static Record Inspect(unsigned bank) {
     Record r{};if(!Platform_SaveBegin(bank)) return r;
     uint32_t magic=RawRead(),format=RawRead();r.generation=RawRead();r.length=RawRead();r.checksum=RawRead();unsigned game=RawRead();
-    r.legacy=format==LEGACY_FORMAT;
-    if(magic==MAGIC && (format==FORMAT || r.legacy) && game==A32X_SAVE_FINGERPRINT && r.length && r.length<=LIMIT) {
+    if(magic==MAGIC && format==FORMAT && game==A32X_SAVE_FINGERPRINT && r.length && r.length<=PACKED_LIMIT) {
         unsigned sum=2166136261u;for(unsigned i=0;i<r.length;++i) sum=(sum^Platform_SaveRead())*16777619u;r.valid=sum==r.checksum;
     }
     Platform_SaveEnd();return r;
@@ -120,27 +117,33 @@ static int Newest(const Record &a,const Record &b) {
     if(!b.valid) return 0;
     return (int32_t)(b.generation-a.generation)>0?1:0;
 }
-bool Game_Save(Game &g) {
+static A32X_COLD bool Measure(Game &g) {
+    Stream s(false,false,true);return Payload(s,g) && s.codec.Finish();
+}
+static A32X_COLD bool ReadPayload(Game &g,unsigned bank,const Record &r,bool apply) {
+    if(!Platform_SaveBegin(bank)) return false;
+    Platform_SaveSeek(HEADER);Stream s(true,apply,false,r.length);
+    bool good=Payload(s,g) && s.codec.Finish() && s.codec.checksum==r.checksum;
+    Platform_SaveEnd();return good;
+}
+A32X_COLD bool Game_Save(Game &g) {
     g.resync_clock=true;
-    if(!g.mode || g.world.finished || g.world.fault_code) return false;
+    if(!g.mode || g.world.finished || g.world.fault_code || !Measure(g)) return false;
     Record a=Inspect(0),b=Inspect(1);int latest=Newest(a,b);unsigned bank=latest==0?1:0;
     uint32_t generation=latest<0?1:(latest?b.generation:a.generation)+1;
     if(!Platform_SaveBegin(bank)) return false;
     RawWrite(0);Platform_SaveSeek(HEADER);
-    Stream s(false,false);bool good=Payload(s,g);Platform_SaveSeek(4);
-    RawWrite(FORMAT);RawWrite(generation);RawWrite(s.count);RawWrite(s.checksum);RawWrite(A32X_SAVE_FINGERPRINT);
+    Stream s(false,false);bool good=Payload(s,g) && s.codec.Finish();Platform_SaveSeek(4);
+    RawWrite(FORMAT);RawWrite(generation);RawWrite(s.codec.encoded);RawWrite(s.codec.checksum);RawWrite(A32X_SAVE_FINGERPRINT);
     if(good) { Platform_SaveSeek(0);RawWrite(MAGIC); }
     Platform_SaveEnd();return good && Inspect(bank).valid;
 }
-bool Game_Load(Game &g) {
+A32X_COLD bool Game_Load(Game &g) {
     g.resync_clock=true;
     Record a=Inspect(0),b=Inspect(1);int bank=Newest(a,b);if(bank<0) return false;
     Record r=bank?b:a;
-    if(!Platform_SaveBegin(bank)) return false;
-    Platform_SaveSeek(HEADER);
-    Stream verify(true,false,r.legacy);bool valid=Payload(verify,g)&&verify.count==r.length&&verify.checksum==r.checksum;
-    Platform_SaveEnd();if(!valid) return false;
-    g.world.player=&g.player;Platform_SaveBegin(bank);Platform_SaveSeek(HEADER);Stream read(true,true,r.legacy);valid=Payload(read,g);Platform_SaveEnd();if(!valid) return false;
+    if(!ReadPayload(g,bank,r,false)) return false;
+    g.world.player=&g.player;if(!ReadPayload(g,bank,r,true)) return false;
     Audio_Reset();Audio_UpdateMusic(g.world.music,g.world.next_music,g.tick);
     g.world.player=&g.player;g.world.pad=0;g.world.click=0;g.world.view_changed=false;g.world.fault_code=0;
     g.world.intro=false;g.world.picture_id=-1;g.world.picture_duration=0;

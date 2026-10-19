@@ -77,6 +77,29 @@ SH2 queue ownership and mapper/audio/save exchanges. See
 [framebuffer and synchronization validation](validation/framebuffer-sync.md).
 
 Do not run the entire historical test collection for every change.
+For SRAM/serialization changes, use the current compact-save checks:
+
+```sh
+make -j2 host all build/check_save_capacity
+python3 tools/check_save.py
+./build/check_save_capacity
+python3 tools/check_full_game_save.py
+python3 tools/check_bank_layout.py
+python3 tools/check_ssf_sram_native.py .local/tools/picodrive_libretro.so --mode stock
+python3 tools/check_ssf_sram_native.py .local/tools/picodrive_libretro.so --mode stock --region PAL
+python3 tools/check_ssf_sram_native.py .local/tools/picodrive_libretro.so --mode extended
+python3 tools/check_ssf_sram_native.py .local/tools/picodrive_libretro.so --mode mister
+```
+
+The extended and MiSTer checks install private bus models after boot; stock
+PicoDrive cannot validate extended-mapper autodetection, physical arbitration
+or SD export. New SRAM is 32 KiB packed / 64 KiB in PicoDrive's lane-preserving
+file layout. Historical fixture tools that assume 128 KiB raw records must be
+adapted before use with this ROM. The host allocation retains its old diagnostic
+size to keep old clear/hash helpers safe, but only 32 KiB is addressable through
+the save API. See [SRAM validation](validation/sram.md). Never replace a user's real save as part of a test. Earlier save formats are
+intentionally unsupported in this build.
+
 The following historical host checks cover scripts, documents and saves:
 
 ```sh
@@ -99,7 +122,8 @@ Older gameplay checks assume immediate Start-to-gameplay and must use the new co
 For startup changes, build the host library and run `python3 tools/check_startup.py`.
 It checks real controller navigation, timed credits and animated logo, both
 biographies, the full original arrival, the paused frog picture, skipping,
-clean gameplay initialization and old-save compatibility. Evidence and captures
+clean gameplay initialization. Its historical old-save comparison does not
+apply to the current SRAM format; use `--world-only` for that startup check. Evidence and captures
 are written under `build/`. The old-save comparison uses the preserved
 `build/startup-reference/libaitd32x.so` and its `assets/bank.bin`; it copies only
 private host SRAM arrays and never reads or writes emulator battery saves.
@@ -160,9 +184,10 @@ For gameplay text/inventory/death changes, use the focused checks in
 `tools/check_gameplay_ui.py`, `tools/check_death.py` and
 `tools/check_death_native.py` as documented in
 [gameplay UI/death validation](validation/gameplay-ui-death.md).
-The inventory host check compares legacy save payloads with the preserved
+The historical inventory save comparison uses legacy payloads from the preserved
 `build/gameplay-ui-reference/libaitd32x.so` and its asset bank. Preserve those
 preceding-release files before rebuilding if that comparison is needed.
+That legacy comparison requires adaptation for the new SRAM format.
 Host SRAM is private memory; native checks alter only private emulator RAM
 to acquire test items or shorten combat and never access battery-save files.
 
@@ -178,7 +203,11 @@ Presentation input consumes an edge once without advancing world time;
 arrival/death scripts retain their 25 Hz update path. Current evidence and
 limits are in [menu feedback validation](validation/menu-feedback.md).
 
-One visible save slot uses two 64 KiB SRAM journals. New format `0x53313601` stores 50 actor slots, signed-word bone channels and lighting state; it reads legacy `0x53313401` saves with 24 slots and 32-bit channels. Older builds cannot read the new format; preserve backups. A frontend usually associates `.srm` with the ROM basename. Copy an existing battery file when changing ROM names; do not overwrite it with an empty file. The user tests on a separate device and confirmed no local save backup is needed. Preserve battery saves on that device when changing ROM filenames.
+One visible save slot uses two compressed 16 KiB SRAM journals. Format
+`0x53313602` stores 50 actors, signed-word bone channels and lighting. Earlier
+battery saves and emulator savestates are intentionally unsupported. Use a
+separate ROM basename for test builds to preserve existing battery files on
+the user's device. See [SRAM validation](validation/sram.md).
 
 The historical v15 ROM was near the 4 MiB direct SH2 ROM window. Startup now uses an extension bank for raw arrival cameras and compressed presentation images, reusing existing framebuffer/background scratch. SH2 RAM remains 256 KiB with 12 KiB master and 4 KiB slave stack reservations. Avoid adding global buffers casually. See docs/ARCHITECTURE.md for current layout details and limits. Physical 32X hardware and CD narration remain unvalidated/unimplemented respectively.
 

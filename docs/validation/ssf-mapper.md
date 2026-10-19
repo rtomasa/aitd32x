@@ -1,5 +1,9 @@
 # Large SSF-banked 32X cartridge candidate
 
+The SRAM implementation described below is historical. The subsequent
+[SRAM fix](sram.md) replaces it with 32 KiB odd-byte storage and compressed
+16 KiB journals; mapper selection and the read-only bank-0 probe are retained.
+
 ## Change and scope
 
 The reported Mega EverDrive Pro launch was classified as `10M+32x (3)` and

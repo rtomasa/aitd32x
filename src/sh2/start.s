@@ -23,8 +23,8 @@
 		.long	0xFFFFFF
 		.ascii	"RA"
 		.word	0xF820
-		.long	0x200000
-		.long	0x21FFFF
+		.long	0x200001
+		.long	0x20FFFF
 		.ascii	"            "
 		.ascii	"                                        "
 		.ascii	"JUE             "

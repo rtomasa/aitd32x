@@ -196,14 +196,18 @@ comparing 256 ROM bytes against bank 2, restores bank 0, and writes `0xC000`
 to `A130F0` (protected control update, 32X mode, ROM writes disabled). Standard
 SSF2 emulation ignores bank-0 remapping and retains conventional SRAM access.
 
-On extended hardware, each SRAM word temporarily selects page 31 in bank 4.
-The supervisor sets RV, uses `0x8000` for reads or `0xA000` for writes, accesses
-the word at `0x200000 + journal offset`, restores bank 4/page 4 and `0xC000`,
-then restores RV before acknowledging. This targets Mega EverDrive Pro's
-word-wide SRAM at the start of page 31; older EverDrive layouts are not
-validated. The retained image bank is untouched, and music pumping remains
-suspended during save transactions. The header declares 128 KiB SRAM. No
-serialization migration is introduced or required for this mapper change.
+On extended hardware, each two-byte SRAM exchange temporarily selects page
+31 in bank 4. The supervisor sets RV, uses `0x8000` for reads or `0xA000` for
+writes, and accesses odd bytes at `0x240001 + 2 * logical offset`, in the
+manufacturer-documented upper 256 KiB of page 31. It restores bank 4/page 4,
+`0xC000` and then RV before acknowledging. Conventional hardware instead
+uses `0x200001 + 2 * logical offset`, with SRAM enabled/write-protected only
+for each access and disabled/write-protected again before restoring RV.
+Leaving conventional SRAM mapped during serialization could hide immutable
+model/animation data; both backends now restore ROM before each SH2 ack.
+The retained image bank is untouched, and music pumping remains suspended
+during transactions. The header declares 32 KiB on the odd lane. See
+[SRAM validation](validation/sram.md).
 
 The [Krikzz extended SSF specification](https://krikzz.com/pub/support/mega-everdrive/x3x5x7/dev/extended_ssf-v2.txt)
 documents the header/control protocol; the
@@ -425,23 +429,39 @@ remain outside the cartridge where applicable.
 
 ## Persistent saves
 
-The RA header advertises 128 KiB SRAM at `0x200000–0x21FFFF`. SH2 transports
-sequential bytes through blocking COMM commands serviced by the 68000, batching
-two bytes per exchange. Conventional SRAM is enabled during a transaction;
-extended SSF maps it only for each protected word access. Six u32
-header words store magic AITD, schema, generation, length, FNV-1a checksum and
-the original imported-game fingerprint. Two 64 KiB journal records alternate;
-magic clears first and commits last, followed by readback. A damaged newest
-record falls back to the older valid record.
+The RA header advertises odd-byte SRAM at `0x200001–0x20FFFF`: 32 KiB
+of data. SH2 transports sequential logical bytes through blocking COMM commands
+serviced by the 68000, still batching two bytes per exchange. Each exchange
+uses two odd-byte bus accesses, with RV and mapping/write protection restored
+before the acknowledgement. Bounds prevent wrapping into the other record.
+Six u32 header words store magic AITD, schema, generation, compressed length,
+FNV-1a checksum of compressed bytes and the imported-game fingerprint.
+Two 16 KiB journal records alternate; magic clears first and commits last,
+followed by readback. A damaged newest record falls back to the older valid
+record. Save preparation measures and validates the full encoded stream
+without touching SRAM before starting a write.
 
-New writes use S16/01 (`0x53313601`): 50 actor slots, signed 16-bit bone states
-and a trailing darkness flag. Loading also accepts S14/01 (`0x53313401`): 24
-slots and signed 32-bit bone states; remaining slots clear and darkness is
-reconstructed from original saved room/script variables. The fingerprint and
-original resource IDs remain stable. Older ROMs cannot read S16 records.
-Migration preserves the valid old journal until a later normal save reuses it.
-The expanded pool's worst-case record remains within the 65512-byte payload
-limit; measured evidence belongs in the full-game validation report.
+New writes use S16/02 (`0x53313602`). The logical payload is unchanged from
+S16/01: 50 actor slots, signed 16-bit bone states and the darkness flag. A
+bounded LZSS codec uses one 1024-byte stack ring, 66-byte lookahead within that
+ring, and eight-token packets. A flag byte selects literals or big-endian
+10-bit-distance/6-bit-length pairs; match lengths are 3–66. The encoder's
+history is limited to 958 bytes to retain pending input safely. Decoder
+references, compressed and expanded lengths, final tokens and checksum are
+validated before applying gameplay state. No full-state buffer or heap is
+added. Save-only heavy routines execute from protected ROM; gameplay rendering
+and its clocks are unchanged. Sampled saves are approximately 5 KiB, including
+a 50-actor/largest-skeleton fixture. Incompressible synthetic states can exceed
+the 16360-byte payload limit; these fail before overwriting either record.
+A full playthrough is still needed to establish capacity for every natural
+world state.
+
+Backward compatibility is intentionally omitted at the user's request. Only
+S16/02 is accepted; earlier S14/S16 battery records and emulator savestates
+are not loaded or converted. Keep a separate ROM basename for hardware tests
+so the frontend does not reuse an older battery file. PicoDrive's new battery
+image is 64 KiB because it retains the unused even-byte lane; the logical store
+and MiSTer bus model are 32 KiB. Validation never opens a user's battery file.
 
 Loads validate length/schema/resource bounds in bounded scratch before applying
 state, then rebuild pointers and renderer caches. Scheduling rebases after

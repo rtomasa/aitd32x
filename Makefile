@@ -18,7 +18,7 @@ ifeq ($(BUILD),PROFILE)
 OPT := -O2 -g -DPROFILE
 endif
 SHFLAGS := -m2 -mb -std=c++17 -ffreestanding -fno-exceptions -fno-rtti -fno-threadsafe-statics -fno-unwind-tables -fno-asynchronous-unwind-tables -fno-builtin -Wall -Wextra $(OPT) -MMD -MP
-CORE := src/render/project.cpp src/render/book.cpp src/render/preview.cpp src/platform/audio.cpp src/engine/save.cpp src/engine/startup.cpp src/engine/death.cpp src/engine/ending.cpp src/engine/lighting.cpp src/engine/inventory.cpp src/platform/save_bridge.cpp src/engine/math.cpp src/engine/trig.cpp src/engine/actor.cpp src/engine/collision.cpp src/engine/game.cpp src/engine/world.cpp src/engine/life.cpp src/platform/storage.cpp src/render/render.cpp src/render/raster.cpp src/render/worker.cpp src/render/font.cpp
+CORE := src/render/project.cpp src/render/book.cpp src/render/preview.cpp src/platform/audio.cpp src/engine/save.cpp src/engine/save_codec.cpp src/engine/startup.cpp src/engine/death.cpp src/engine/ending.cpp src/engine/lighting.cpp src/engine/inventory.cpp src/platform/save_bridge.cpp src/engine/math.cpp src/engine/trig.cpp src/engine/actor.cpp src/engine/collision.cpp src/engine/game.cpp src/engine/world.cpp src/engine/life.cpp src/platform/storage.cpp src/render/render.cpp src/render/raster.cpp src/render/worker.cpp src/render/font.cpp
 SHSRC := $(CORE) src/sh2/master.cpp src/sh2/slave.cpp src/sh2/memory.cpp src/sh2/profile.cpp
 SHOBJ := $(patsubst %.cpp,build/%.o,$(SHSRC))
 .PHONY: all assets clean host check FORCE
@@ -56,7 +56,7 @@ build/AITD32X.32x: build/AITD32X.elf tools/finalize_rom.py
 	"$(SHOBCOPY)" -O binary $< build/unpadded.bin
 	python3 tools/finalize_rom.py build/unpadded.bin $@
 host: build/libaitd32x.so
-build/libaitd32x.so: $(CORE) tools/host.cpp assets/resource_ids.h src/platform/pixel_words.hpp src/render/project.hpp
+build/libaitd32x.so: $(CORE) tools/host.cpp assets/resource_ids.h src/platform/pixel_words.hpp src/render/project.hpp src/engine/save_codec.hpp
 	@mkdir -p build
 	c++ -std=c++17 -O2 -fPIC -shared -Wall -Wextra $(CORE) tools/host.cpp -o $@
 check: build/check_clock build/check_render build/check_animation

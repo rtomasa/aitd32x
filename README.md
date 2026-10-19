@@ -11,11 +11,13 @@ Load `AITD32X.32x` in a 32X-capable emulator with **SSF2 cartridge mapper suppor
 The current development build uses the `SEGA SSF` header and extended SSF
 initialization for large cartridge ROMs. Keep the **`.32x` extension**. This
 addresses the reported EverDrive Pro selection of `10M+32x (3)`; the intended
-mapper is **SSF (5)**. The engine enables 32X mapper mode and uses page-31 SRAM
-on extended hardware, with standard SRAM access in PicoDrive. This is a
-hardware test candidate, not confirmed EverDrive compatibility. Startup and
-save/load pass in PicoDrive NTSC/PAL; physical boot and SD save persistence
-still need testing. See [mapper validation](docs/validation/ssf-mapper.md).
+mapper is **SSF (5)**. Saving now uses **32 KiB of odd-byte SRAM**,
+with conventional access for PicoDrive/MiSTer and the documented upper-half
+page-31 window on extended SSF hardware. Save/load and core-restart checks
+pass in PicoDrive, including private models of both hardware layouts. This
+is a hardware test candidate: physical SRAM access and flashcart SD export
+still need confirmation. See [SRAM validation](docs/validation/sram.md) and
+[mapper validation](docs/validation/ssf-mapper.md).
 
 ## Features
 
@@ -66,7 +68,11 @@ Focused checks cover all 144 cameras in sampled states and both reported scenes 
 
 Enable cartridge SRAM in your emulator. The frontend usually stores it in a `.srm` battery file associated with the ROM's filename. When changing ROM filenames, back up your existing battery file and copy it to the new ROM's basename without overwriting another save.
 
-A new game does not erase your save. Saving can take a few seconds; wait for the saved confirmation. Loading restores world, characters, inventory, scripts and animation state. Music restarts at the beginning of the restored track; the exact audio playhead and active sample voices are not saved. Saves use this port's own format. This build reads existing port battery saves and writes an expanded format for the original 50-actor capacity and lighting state. Older builds cannot read new saves; keep a backup before upgrading.
+A new game does not erase your save. Saving can take a few seconds; wait for the saved confirmation. Loading restores world, characters, inventory, scripts and animation state. Music restarts at the beginning of the restored track; the exact audio playhead and active sample voices are not saved. Saves use this port's own format. The compact format retains the original 50-actor capacity, animation poses and lighting state in two 16 KiB recovery records. A size check runs before writing; an oversized state fails without changing the previous save.
+
+**This build starts a new save format and does not load earlier battery saves or emulator savestates.** Use a new ROM filename for testing so the frontend keeps previous battery files separate. No existing files are converted or modified automatically.
+
+On flash cartridges, use the cartridge's normal SRAM-to-SD backup procedure after the game confirms saving. On MiSTer, enable cartridge backup saving and verify loading again after reloading the core. These are in-game saves; EverDrive emulator-style savestates are a separate feature.
 
 ## Performance
 

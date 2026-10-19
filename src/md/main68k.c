@@ -118,9 +118,11 @@ RAM_CODE void ServiceMusic(void) {
     else if(op==0x5014) value=music_active;
     comm[1]=value;comm[0]=0x5FFF;
 }
-// The extended SSF SRAM is physical page 31 on Mega EverDrive Pro. Each
-// word access borrows bank 4 only while RV stalls SH2 cartridge reads; fixed
-// world/audio assets and the retained image page are restored before ack.
+// Both backends expose 32 KiB on the odd byte lane. Extended SSF places it
+// in page 31's upper 256 KiB. Batch two bytes per SH2 exchange, but use two
+// byte bus cycles: MiSTer's conventional SRAM has no high byte lane.
+// Borrow bank 4 only while RV stalls SH2 cartridge reads, restoring it and
+// write protection before acknowledgement. Never write/probe ROM contents.
 static uint32_t save_cursor,save_base;
 RAM_CODE uint16_t SaveWord(uint16_t value,uint16_t write) {
     volatile uint8_t *rv=(volatile uint8_t *)0xA15107;
@@ -128,13 +130,16 @@ RAM_CODE uint16_t SaveWord(uint16_t value,uint16_t write) {
     if(extended_mapper) {
         SSF_CTRL=write?0xA000:0x8000; // MD access, enable writes only for this word.
         *(volatile uint16_t *)0xA130F8=31;
-    }
-    volatile uint16_t *word=(volatile uint16_t *)(0x200000+save_cursor);
-    if(write) *word=value;else value=*word;
+    } else *(volatile uint8_t *)0xA130F1=write?1:3;
+    if(save_cursor+1<save_base+16384) {
+        volatile uint8_t *byte=(volatile uint8_t *)((extended_mapper?0x240001:0x200001)+save_cursor*2);
+        if(write) { byte[0]=(uint8_t)(value>>8);byte[2]=(uint8_t)value; }
+        else value=((uint16_t)byte[0]<<8)|byte[2];
+    } else value=0xffff;
     if(extended_mapper) {
         *(volatile uint16_t *)0xA130F8=4;
         SSF_CTRL=SSF_ROM_32X;
-    }
+    } else *(volatile uint8_t *)0xA130F1=2;
     *rv=previous;
     save_cursor+=2;return value;
 }
@@ -143,11 +148,11 @@ RAM_CODE void ServiceSave(void) {
     uint16_t op=comm[0];if(op<0x5001 || op>0x5005) return;
     uint16_t value=comm[1];
     switch(op) {
-    case 0x5001:save_active=1;save_base=(uint32_t)(value&1)*65536;save_cursor=save_base;if(!extended_mapper) *(volatile uint8_t *)0xA130F1=1;value=0x5341;break;
+    case 0x5001:save_active=1;save_base=(uint32_t)(value&1)*16384;save_cursor=save_base;value=0x5341;break;
     case 0x5002:save_cursor=save_base+value;break;
     case 0x5003:value=SaveWord(0,0);break;
     case 0x5004:(void)SaveWord(value,1);break;
-    case 0x5005:if(!extended_mapper) *(volatile uint8_t *)0xA130F1=0;music_bank=0xffff;save_active=0;break;
+    case 0x5005:music_bank=0xffff;save_active=0;break;
     }
     comm[1]=value;comm[0]=0x5FFF;
 }

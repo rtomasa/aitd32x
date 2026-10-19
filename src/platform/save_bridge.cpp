@@ -10,7 +10,7 @@ static uint16_t Command(uint16_t op,uint16_t arg=0) {
 }
 static unsigned read_word,write_word;static bool read_pending,write_pending;
 static void Flush() { if(write_pending) { Command(0x5004,write_word<<8);write_pending=false; } }
-bool Platform_SaveBegin(unsigned bank) { read_pending=write_pending=false;return Command(0x5001,bank)==0x5341; }
+bool Platform_SaveBegin(unsigned bank) { read_pending=write_pending=false;return bank<2 && Command(0x5001,bank)==0x5341; }
 void Platform_SaveSeek(unsigned offset) { Flush();read_pending=false;Command(0x5002,offset); }
 uint8_t Platform_SaveRead() {
     if(read_pending) { read_pending=false;return (uint8_t)read_word; }
@@ -23,11 +23,13 @@ void Platform_SaveWrite(uint8_t value) {
 void Platform_SaveEnd() { Flush();read_pending=false;Command(0x5005); }
 #else
 // Host diagnostics emulate the same persistent byte store across Game::Init.
-static uint8_t sram[131072];static unsigned cursor;
-bool Platform_SaveBegin(unsigned bank) { cursor=(bank&1)*65536;return bank<2; }
-void Platform_SaveSeek(unsigned offset) { cursor=(cursor&65536)+(offset&65535); }
-uint8_t Platform_SaveRead() { return sram[(cursor++)&131071]; }
-void Platform_SaveWrite(uint8_t value) { sram[(cursor++)&131071]=value; }
+// Keep the historical diagnostic allocation safe for old host tools that
+// clear/hash 128 KiB. The transport exposes only the first 32 KiB.
+static uint8_t sram[131072];static unsigned cursor,base;
+bool Platform_SaveBegin(unsigned bank) { cursor=base=bank*16384;return bank<2; }
+void Platform_SaveSeek(unsigned offset) { cursor=base+offset; }
+uint8_t Platform_SaveRead() { return cursor<base+16384?sram[cursor++]:0xff; }
+void Platform_SaveWrite(uint8_t value) { if(cursor<base+16384) sram[cursor++]=value; }
 void Platform_SaveEnd() {}
 extern "C" const void *host_sram() { return sram; }
 #endif
