@@ -17,10 +17,13 @@ static Queue storage;
 static volatile Queue &Shared() { return *(volatile Queue *)((uintptr_t)&storage|0x20000000u); }
 struct Voice { const uint8_t *data;uint32_t count,pos;int predictor,index,next,repeat; };
 static Voice voices[2];static unsigned replacement;
-static uint16_t cycle;static bool running;
+static uint16_t cycle,previous_width;static bool running;
+static uint16_t first_width;static int16_t third_width;
+static uint8_t pending;static bool draining;
 static const int16_t steps[]={7,8,9,10,11,12,13,14,16,17,19,21,23,25,28,31,34,37,41,45,50,55,60,66,73,80,88,97,107,118,130,143,157,173,190,209,230,253,279,307,337,371,408,449,494,544,598,658,724,796,876,963,1060,1166,1282,1411,1552,1707,1878,2066,2272,2499,2749,3024,3327,3660,4026,4428,4871,5358,5894,6484,7132,7845,8630,9493,10442,11487,12635,13899,15289,16818,18500,20350,22385,24623,27086,29794,32767};
 static const int8_t indices[]={-1,-1,-1,-1,2,4,6,8};
-static void Start(Voice &v,int id,int next,int repeat) {
+// Effect setup is infrequent; keep its code out of the tight SDRAM budget.
+static A32X_COLD void Start(Voice &v,int id,int next,int repeat) {
     Asset a{};
     if(id>=0 && id<A32X_SOUND_COUNT) {
         const uint8_t *e=asset_bank+16+16*sound_assets[id];
@@ -86,19 +89,46 @@ void Audio_SlavePoll() {
         }
     }
     if(!running && (voices[0].count || voices[1].count)) {
-        cycle=COMM(7)==50?2851:2877;REG16(0x20004032)=cycle;REG16(0x20004030)=0x0305;
-        running=true;Audio_PWMInterrupt();*(volatile uint8_t *)0x20004001=1;
+        // Three output pulses per 8 kHz source sample keep the carrier above
+        // audibility. Changing the cycle alone would speed up every effect.
+        cycle=COMM(7)==50?951:960;previous_width=cycle/2;
+        pending=0;draining=false;
+        REG16(0x2000401c)=0;REG16(0x20004032)=cycle;REG16(0x20004030)=0x0305;
+        running=true;Audio_PWMInterrupt();*(volatile uint8_t *)0x20004001|=1;
     }
     asm volatile("ldc %0,sr"::"r"(saved):"memory");
 }
 extern "C" void Audio_PWMInterrupt() {
-    for(int i=0;i<3;++i) {
-        int mix=Clamp((Sample(voices[0])+Sample(voices[1]))*3/4,-32768,32767);
-        unsigned value=(cycle/2)+((mix*(int)(cycle/2-1))>>15);REG16(0x20004038)=(uint16_t)value;
+    if(!running) return;
+    bool active=voices[0].count || voices[1].count;
+    if(draining && !active) {
+        // This interrupt follows three carrier periods: the final ramp has
+        // had time to play. Never wait for EMPTY inside an interrupt, since
+        // a status/clock mismatch would also stop slave rendering forever.
+        *(volatile uint8_t *)0x20004001&=(uint8_t)~1;
+        REG16(0x20004030)=0;REG16(0x2000401c)=0;
+        running=false;pending=0;draining=false;return;
     }
-    if(!voices[0].count && !voices[1].count) {
-        // Keep centered output after the last sample; no DC click / IRQ overhead.
-        REG16(0x20004038)=cycle/2;*(volatile uint8_t *)0x20004001=0;REG16(0x20004030)=5;running=false;
+    if(active) draining=false;
+    else pending=0; // An explicit stop discards any unqueued old audio.
+    if(!pending) {
+        if(active && (REG16(0x20004038)&0x8000)) return;
+        int mix=Clamp((Sample(voices[0])+Sample(voices[1]))*3/4,-32768,32767);
+        int value=(cycle/2)+((mix*(int)(cycle/2-1))>>15);
+        // Interpolate without extra ADPCM decodes or DIVU. Retain a partial
+        // group rather than advancing the source again when FIFO is full.
+        third_width=(int16_t)(((value-(int)previous_width)*21846)/65536);
+        first_width=(uint16_t)(previous_width+third_width);
+        previous_width=(uint16_t)value;pending=3;
+        draining=!voices[0].count && !voices[1].count;
+    }
+    while(pending) {
+        // At most three writes, with no busy wait. An early interrupt or a
+        // stuck FULL flag must always return control to the drawing worker.
+        if(REG16(0x20004038)&0x8000) return;
+        uint16_t pulse=pending==3?first_width:pending==2?(uint16_t)(previous_width-third_width):previous_width;
+        REG16(0x20004038)=pulse;
+        --pending;
     }
 }
 #else

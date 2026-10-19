@@ -405,11 +405,11 @@ separate from the engine license and are excluded from source archives/Git.
 ## Memory and diagnostics
 
 The complete-game RELEASE ROM is 14,155,776 bytes (13.5 MiB). Fixed bank data
-uses 3,964,720 bytes and the extension 9,932,868 bytes. The 84,612-byte BIOS
-module ends at physical byte 4,180,404, leaving 13,900 bytes below the 4 MiB
-direct-window limit. BSS uses 160,696 bytes; module/BSS/linker overhead total
-245,312 bytes, ending at `0x0603BE40`. The static margin below the reserved
-stacks is 448 bytes. Camera setup, video initialization, scenery readback,
+uses 3,964,720 bytes and the extension 9,932,868 bytes. The 84,724-byte BIOS
+module ends at physical byte 4,180,516, leaving 13,788 bytes below the 4 MiB
+direct-window limit. BSS uses 160,704 bytes; module/BSS/linker overhead total
+245,432 bytes, ending at `0x0603BEB8`. The static margin below the reserved
+stacks is 328 bytes. Camera setup, video initialization, scenery readback,
 prepared-prop lookup/coverage construction, fallback depth wrappers and
 worker control/copy helpers, face sorting, panels and effects dispatch execute from
 protected ROM; hot raster loops remain in SDRAM. `build/bank-layout.json` is the authoritative
@@ -476,11 +476,27 @@ and exact audio playheads are presentation state.
 Type 15 stores u32 PCM count, i16 predictor, u8 IMA step index, one reserved
 byte and low-nibble-first ADPCM. Two slave-owned voices mix at 8 kHz. A
 cache-through eight-request ring carries sample/next/repeat state from the
-master. PWM level-6 IRQ refills three samples per interrupt and preserves
-ABI registers/PR/MACH/MACL. Voice updates briefly protect against the ISR;
-the idle slave polls requests while rendering interrupts remain available.
-IRQ disables after centered silence when voices finish. Sample headers come
-from immutable protected bank data, independent of master-cached globals.
+master. The carrier runs near 24 kHz (cycle 960 NTSC / 951 PAL), with one
+source sample decoded/mixed per level-6 IRQ and three interpolated PWM widths
+queued per IRQ. Fixed-point interpolation requires no DIVU access, keeping
+rendering divisions safe. Every interrupt returns without waiting for FIFO
+flags: a full FIFO defers the retained partial group without advancing the
+source. At completion/stop, the final midpoint ramp is allowed one more
+three-period interrupt interval, then PWM interrupts and both outputs stop.
+Shutdown does not depend on EMPTY, and an explicit stop completes even if FULL
+remains asserted. Pending PWM IRQ is cleared.
+The physical carrier no longer runs during idle. Source rates, repeats and
+chaining remain independent of draw rate; no samples are reimported.
+
+ABI registers/PR/MACH/MACL remain preserved. Voice updates briefly protect
+against the ISR; the idle slave polls requests while rendering interrupts
+remain available. Sample headers come from immutable protected bank data,
+independent of master-cached globals. Interrupt frequency rises from roughly
+2.67 to 8 kHz, while the maximum number of ADPCM decodes per second is unchanged.
+Pending interpolation/drain state adds 8 bytes of BSS relative to the original
+8 kHz driver. Moving infrequent effect setup to protected ROM keeps the loaded
+code increase to 112 bytes; total static SDRAM grows by 120 bytes. See [PWM validation](validation/pwm.md)
+for the focused render comparison and pending physical listening tests.
 
 Type 16 stores driver duration/count followed by four-byte
 `(delta ticks, port, register, value)` commands: ports 0/1 YM2612, 2 PSG,

@@ -47,7 +47,7 @@ framebuffer banks; use NTSC/PAL for shared-worker changes. Preserve the
 last-projection hint's lifetime and overwrite compact vertices with bounds
 only after all contact fallback decisions have passed. Run
 `check_bank_layout.py` after code-placement changes: the current RELEASE
-static stack margin is only 448 bytes.
+static stack margin is only 328 bytes.
 
 The shared [render preparation paths](validation/render-preparation.md) also
 borrow unused scenery-span storage for stationary contact programs. Preserve
@@ -77,6 +77,20 @@ SH2 queue ownership and mapper/audio/save exchanges. See
 [framebuffer and synchronization validation](validation/framebuffer-sync.md).
 
 Do not run the entire historical test collection for every change.
+For PWM changes, run `make -j2 all`, `tools/check_bank_layout.py`,
+`tools/check_pwm_irq.py` (FULL/EMPTY fault injection), and
+`tools/check_pwm_native.py .local/tools/picodrive_libretro.so` in NTSC and with
+`--region PAL`. The PWM check covers duration, both footsteps, repeats, chaining,
+two voices, explicit stop, idle output disable and a frozen rendering comparison.
+Also run `tools/check_startup_native.py .local/tools/picodrive_libretro.so`
+without `--short-arrival` in both NTSC and PAL: skipping the intro misses the
+reported logo/car freezes. Never wait for PWM FIFO status inside the ISR.
+`--baseline` records the preceding driver without enforcing the new carrier/
+idle policy; preserve the reference ROM/ELF before changing code. Keep all
+reports/audio captures in ignored `build/`. Inspect the audio object's undefined
+symbols/disassembly to ensure the IRQ and its callees never use DIVU; preserve
+MACH/MACL in the assembly wrapper. See [PWM validation](validation/pwm.md).
+
 For SRAM/serialization changes, use the current compact-save checks:
 
 ```sh

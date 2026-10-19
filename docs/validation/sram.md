@@ -105,6 +105,7 @@ need updating to match the new header.
 4. Follow the device's normal SRAM backup procedure, reload the ROM/core,
    and select Resume a Saved Game. Confirm persistence after a cold restart.
 
-Physical EverDrive Pro and MiSTer confirmation remain pending. Existing
+The user subsequently confirmed saves working on MiSTer. Cold-restart details
+were not specified. Physical EverDrive Pro confirmation remains pending. Existing
 release bundles and the preserved baseline were not replaced; no commit or
 GitHub publication was made.

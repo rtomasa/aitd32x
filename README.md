@@ -14,9 +14,9 @@ addresses the reported EverDrive Pro selection of `10M+32x (3)`; the intended
 mapper is **SSF (5)**. Saving now uses **32 KiB of odd-byte SRAM**,
 with conventional access for PicoDrive/MiSTer and the documented upper-half
 page-31 window on extended SSF hardware. Save/load and core-restart checks
-pass in PicoDrive, including private models of both hardware layouts. This
-is a hardware test candidate: physical SRAM access and flashcart SD export
-still need confirmation. See [SRAM validation](docs/validation/sram.md) and
+pass in PicoDrive, including private models of both hardware layouts. The user
+has also confirmed saving works on MiSTer. Physical cartridge SRAM access and
+flashcart SD export still need confirmation. See [SRAM validation](docs/validation/sram.md) and
 [mapper validation](docs/validation/ssf-mapper.md).
 
 ## Features
@@ -29,8 +29,14 @@ still need confirmation. See [SRAM validation](docs/validation/sram.md) and
 - All eight floors, 58 original rooms and 144 camera views, with the full original script and track resources for enemies, puzzles, the final ritual and escape.
 - Dark-room lighting follows the held or dropped lantern; the original 50-actor capacity is supported.
 - Original scripted death cinematic, final picture, destruction animation and escape progression.
-- 101 original sound effects through 32X PWM and eight original AdLib music tracks adapted to YM2612/PSG. Instrument timbre differs from the PC version.
+- 101 original sound effects through 32X PWM and eight original AdLib music tracks adapted to YM2612/PSG. Effects decode at 8 kHz with interpolated output through a roughly 24 kHz PWM carrier; outputs stop at idle. Instrument timbre differs from the PC version.
 - Persistent saving with one visible slot and two alternating SRAM records for recovery if the newest record is damaged.
+
+The PWM update applies to all effects, including both alternating footsteps.
+The user reports improved sound quality. A follow-up removes blocking FIFO
+waits that could freeze the drawing processor. The full logo and arrival,
+effect durations, chaining and repeats pass native NTSC/PAL checks; device
+confirmation of the revised driver remains pending. See [PWM validation](docs/validation/pwm.md).
 
 ## Latest rendering changes
 
