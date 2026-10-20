@@ -77,6 +77,15 @@ SH2 queue ownership and mapper/audio/save exchanges. See
 [framebuffer and synchronization validation](validation/framebuffer-sync.md).
 
 Do not run the entire historical test collection for every change.
+For shared original-font decoding/batching changes, preserve the preceding host
+library, then run `tools/check_font_spans.py --reference /path/to/libaitd32x.so`,
+`tools/check_menu_messages.py` and
+`tools/check_gameplay_ui.py --core .local/tools/picodrive_libretro.so --native-only`.
+The latter covers both NTSC and PAL; the font comparison covers all layout
+pages, bit alignments, clipping and both framebuffer banks. Run the linked
+layout check for ROM/stack constraints. See
+[MiSTer text measurements](validation/mister-optimization.md) for scope and limits.
+
 For PWM changes, run `make -j2 all`, `tools/check_bank_layout.py`,
 `tools/check_pwm_irq.py` (FULL/EMPTY fault injection), and
 `tools/check_pwm_native.py .local/tools/picodrive_libretro.so` in NTSC and with

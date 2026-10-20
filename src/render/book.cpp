@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "book.hpp"
+#include "raster.hpp"
 #include "../platform/platform_api.hpp"
 #include "../../assets/resource_ids.h"
 A32X_COLD unsigned Book_Pages(int book) {
@@ -33,23 +34,32 @@ struct OriginalFont {
 static A32X_COLD unsigned TextWidth(const OriginalFont &font,const char *begin,const char *end=nullptr) {
     unsigned width=0;while(begin!=end && *begin) width+=font.Advance((uint8_t)*begin++);return width;
 }
-static A32X_COLD unsigned Glyph(Renderer &r,const OriginalFont &font,int x,int y,unsigned c,uint8_t color) {
+static A32X_COLD unsigned Glyph(RasterSurface &surface,const OriginalFont &font,int x,int y,unsigned c,uint8_t color) {
     unsigned glyph=font.Glyph(c),width=glyph>>12,bit=glyph&4095;
     if(!width) return 2;
     const uint8_t *pixels=font.data+8+(bit>>3);bit&=7;
     for(unsigned row=0;row<font.height;++row) {
+        // A glyph is at most 15 pixels wide and can begin at any bit.
+        // Fetch only the bytes it touches, then scan the row in a register.
+        unsigned bits=unsigned(pixels[0])<<24;
+        if(bit+width>8) bits|=unsigned(pixels[1])<<16;
+        if(bit+width>16) bits|=unsigned(pixels[2])<<8;
+        bits<<=bit;
         unsigned col=0;
         while(col<width) {
-            while(col<width && !(pixels[(bit+col)>>3]&(128>>((bit+col)&7)))) ++col;
+            while(col<width && !(bits&0x80000000u)) { bits<<=1;++col; }
             unsigned first_col=col;
-            while(col<width && (pixels[(bit+col)>>3]&(128>>((bit+col)&7)))) ++col;
-            if(first_col<col) r.Span(y+row,x+first_col,x+col-1,color);
+            while(col<width && (bits&0x80000000u)) { bits<<=1;++col; }
+            if(first_col<col) RasterSpan(surface,y+row,x+first_col,x+col-1,color);
         }
         pixels+=font.stride;
     }
     return width;
 }
 static A32X_COLD void DrawRange(Renderer &r,const OriginalFont &font,int x,int y,const char *begin,const char *end,uint8_t color,bool center,int limit=0,bool more=false) {
+    // One fence and damage accumulator cover the complete text range.
+    r.FinishRestore();
+    RasterSurface surface={r.target,0,GAME_HEIGHT,r.damage[r.buffer_index]};
     unsigned total=center || limit>0?TextWidth(font,begin,end):0,dots=more?font.Advance('.')*3:0;
     if(limit>0 && total+dots>(unsigned)limit) {
         const char *p=begin;total=0;
@@ -62,8 +72,9 @@ static A32X_COLD void DrawRange(Renderer &r,const OriginalFont &font,int x,int y
     }
     if(dots && dots>(unsigned)Max(0,limit)) dots=0;
     if(center) x-=(int)(total+dots)/2;
-    while(begin!=end && *begin) x+=Glyph(r,font,x,y,(uint8_t)*begin++,color);
-    if(dots) for(unsigned i=0;i<3;++i) x+=Glyph(r,font,x,y,'.',color);
+    while(begin!=end && *begin) x+=Glyph(surface,font,x,y,(uint8_t)*begin++,color);
+    if(dots) for(unsigned i=0;i<3;++i) x+=Glyph(surface,font,x,y,'.',color);
+    r.damage[r.buffer_index]=surface.damage;
 }
 }
 A32X_COLD unsigned Book_TextWidth(const char *text) {
@@ -145,8 +156,11 @@ A32X_COLD void Book_DrawLayout(Renderer &r,unsigned asset,unsigned page,uint8_t 
         int x=BE16(p),y=p[2];unsigned length=p[3];p+=4;
         if(!length) { if(p==limit || *p>5) return;Sprite(r,AS_READ_GRAPHIC_0+*p++,x,y);continue; }
         if((unsigned)(limit-p)<length) return;
+        r.FinishRestore();
+        RasterSurface surface={r.target,0,GAME_HEIGHT,r.damage[r.buffer_index]};
         for(unsigned j=0;j<length;++j) {
-            x+=Glyph(r,font,x,y,*p++,color);
+            x+=Glyph(surface,font,x,y,*p++,color);
         }
+        r.damage[r.buffer_index]=surface.damage;
     }
 }

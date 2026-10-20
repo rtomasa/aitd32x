@@ -1,0 +1,872 @@
+{
+  "date": "2026-10-20",
+  "scope": "MiSTer scheduling experiments and shared text-rendering optimization",
+  "core": "S32X_20260603",
+  "region": "NTSC",
+  "character": "Edward",
+  "warmup_seconds": 1,
+  "measure_seconds": 3,
+  "report_seconds": 4,
+  "baseline_release_sha256": "4b6b7894573dd084e03dc6e7b413083cfb0e65f3769b0eb0a73744290d30de21",
+  "candidate_release_sha256": "242ee06415658f53388319389a844d0c412d6841d40b115d27adfa217238c282",
+  "candidate_filename": "AITD32X-text-perf-242ee064.32x",
+  "production_change": "Shared original-font row decoding and per-text/per-layout-line surface batching only",
+  "simulation_hz": 25,
+  "animation_hz": 60,
+  "assets_and_save_format_unchanged": true,
+  "existing_device_roms_save_and_config_hashes_unchanged": true,
+  "physical_32x_validation": false,
+  "memory": {
+    "rom_bytes": 14155776,
+    "module_bytes": 84724,
+    "module_physical_end": 4180516,
+    "static_sdram_end": 100908728,
+    "stack_margin": 328
+  },
+  "bss_bytes": 160704,
+  "fixed_rom_code_bytes_before": 69176,
+  "fixed_rom_code_bytes_after": 69400,
+  "variants": [
+    {
+      "variant": "baseline",
+      "rom_sha256": "8dea4f22b6e08298d30fe0e63b3ee8200d100bd944bbb4ae60ef017523510367",
+      "cases": [
+        {
+          "case": 0,
+          "name": "live_start",
+          "pico_fps": 19.78021978021978,
+          "mister_fps": 12.197802197802197,
+          "pico_draw_ms": 34.621800458538445,
+          "mister_draw_ms": 59.256076170890715,
+          "mister_flip_ms": 10.187122292508347,
+          "pixel_hash": null,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 1,
+          "name": "frozen_start_quiet",
+          "pico_fps": 24.0,
+          "mister_fps": 15.0,
+          "pico_draw_ms": 34.89589122300026,
+          "mister_draw_ms": 60.439266054592835,
+          "mister_flip_ms": 6.168637574024761,
+          "pixel_hash": 2488136085,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 2,
+          "name": "frozen_start_two_voices",
+          "pico_fps": 20.0,
+          "mister_fps": 15.0,
+          "pico_draw_ms": 36.378372119949056,
+          "mister_draw_ms": 65.98286609841716,
+          "mister_flip_ms": 0.626148489287145,
+          "pixel_hash": 2488136085,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 3,
+          "name": "frozen_near_quiet",
+          "pico_fps": 20.0,
+          "mister_fps": 12.0,
+          "pico_draw_ms": 41.31098761143916,
+          "mister_draw_ms": 70.50978170025172,
+          "mister_flip_ms": 12.765374990895435,
+          "pixel_hash": 2801146074,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 4,
+          "name": "frozen_near_two_voices",
+          "pico_fps": 20.0,
+          "mister_fps": 12.0,
+          "pico_draw_ms": 43.001620933194395,
+          "mister_draw_ms": 77.34900923789526,
+          "mister_flip_ms": 5.9278449149602555,
+          "pixel_hash": 2801146074,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 5,
+          "name": "frozen_floor3_room1_camera3",
+          "pico_fps": 29.834254143646408,
+          "mister_fps": 15.0,
+          "pico_draw_ms": 31.72823012525383,
+          "mister_draw_ms": 57.14186952877228,
+          "mister_flip_ms": 9.465663744563493,
+          "pixel_hash": 3119088774,
+          "mister_scene_phases_ms": null
+        }
+      ]
+    },
+    {
+      "variant": "fixed100",
+      "rom_sha256": "2fdc669e92c9fa7bc0cdd3d399e44066348431b30d36d05f034cbb291864c68f",
+      "cases": [
+        {
+          "case": 0,
+          "name": "live_start",
+          "pico_fps": 19.78021978021978,
+          "mister_fps": 12.0,
+          "pico_draw_ms": 36.56275424859573,
+          "mister_draw_ms": 62.43074611322413,
+          "mister_flip_ms": 8.182844074329653,
+          "pixel_hash": null,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 1,
+          "name": "frozen_start_quiet",
+          "pico_fps": 20.0,
+          "mister_fps": 15.0,
+          "pico_draw_ms": 36.78719462776427,
+          "mister_draw_ms": 63.6740725377855,
+          "mister_flip_ms": 2.9270412439987012,
+          "pixel_hash": 2488136085,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 2,
+          "name": "frozen_start_two_voices",
+          "pico_fps": 20.0,
+          "mister_fps": 15.0,
+          "pico_draw_ms": 36.87799727220732,
+          "mister_draw_ms": 64.6300829719283,
+          "mister_flip_ms": 1.973746748589255,
+          "pixel_hash": 2488136085,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 3,
+          "name": "frozen_near_quiet",
+          "pico_fps": 20.0,
+          "mister_fps": 12.0,
+          "pico_draw_ms": 42.026416518660376,
+          "mister_draw_ms": 71.25882525773642,
+          "mister_flip_ms": 12.009850215978856,
+          "pixel_hash": 2801146074,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 4,
+          "name": "frozen_near_two_voices",
+          "pico_fps": 20.0,
+          "mister_fps": 12.0,
+          "pico_draw_ms": 43.34874760044553,
+          "mister_draw_ms": 76.49858092201183,
+          "mister_flip_ms": 6.7717920134118,
+          "pixel_hash": 2801146074,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 5,
+          "name": "frozen_floor3_room1_camera3",
+          "pico_fps": 24.0,
+          "mister_fps": 15.0,
+          "pico_draw_ms": 35.21197560881479,
+          "mister_draw_ms": 57.04545370373799,
+          "mister_flip_ms": 9.557018047412884,
+          "pixel_hash": 3119088774,
+          "mister_scene_phases_ms": null
+        }
+      ]
+    },
+    {
+      "variant": "fixed140",
+      "rom_sha256": "225634ec5902c70bc893d5ec0e83cf1d452d687874dd8fca88dbdcda1076aa95",
+      "cases": [
+        {
+          "case": 0,
+          "name": "live_start",
+          "pico_fps": 19.78021978021978,
+          "mister_fps": 12.0,
+          "pico_draw_ms": 37.73276967436653,
+          "mister_draw_ms": 64.38018072556883,
+          "mister_flip_ms": 6.1993038113804495,
+          "pixel_hash": null,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 1,
+          "name": "frozen_start_quiet",
+          "pico_fps": 20.0,
+          "mister_fps": 15.0,
+          "pico_draw_ms": 37.964571031608195,
+          "mister_draw_ms": 65.60399194352318,
+          "mister_flip_ms": 0.9981093327852064,
+          "pixel_hash": 2488136085,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 2,
+          "name": "frozen_start_two_voices",
+          "pico_fps": 20.0,
+          "mister_fps": 15.0,
+          "pico_draw_ms": 38.03383574427291,
+          "mister_draw_ms": 66.44506993568139,
+          "mister_flip_ms": 0.15888300433317282,
+          "pixel_hash": 2488136085,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 3,
+          "name": "frozen_near_quiet",
+          "pico_fps": 20.0,
+          "mister_fps": 12.0,
+          "pico_draw_ms": 44.13501415997648,
+          "mister_draw_ms": 74.87378577252859,
+          "mister_flip_ms": 8.394426636495,
+          "pixel_hash": 2801146074,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 4,
+          "name": "frozen_near_two_voices",
+          "pico_fps": 20.0,
+          "mister_fps": 12.0,
+          "pico_draw_ms": 44.212702992467314,
+          "mister_draw_ms": 75.86894929817414,
+          "mister_flip_ms": 7.4012690887991806,
+          "pixel_hash": 2801146074,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 5,
+          "name": "frozen_floor3_room1_camera3",
+          "pico_fps": 30.0,
+          "mister_fps": 15.0,
+          "pico_draw_ms": 33.055073779305054,
+          "mister_draw_ms": 53.45631620498709,
+          "mister_flip_ms": 13.145414715353661,
+          "pixel_hash": 3119088774,
+          "mister_scene_phases_ms": null
+        }
+      ]
+    },
+    {
+      "variant": "fixed60",
+      "rom_sha256": "b6dd49b3f9df60a0797a0362cc3cb84a2a098b1b99ce764a48a40087426af318",
+      "cases": [
+        {
+          "case": 0,
+          "name": "live_start",
+          "pico_fps": 19.78021978021978,
+          "mister_fps": 12.197802197802197,
+          "pico_draw_ms": 34.987712624664596,
+          "mister_draw_ms": 59.77713420754869,
+          "mister_flip_ms": 9.649675378470326,
+          "pixel_hash": null,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 1,
+          "name": "frozen_start_quiet",
+          "pico_fps": 24.0,
+          "mister_fps": 15.0,
+          "pico_draw_ms": 35.424129730530815,
+          "mister_draw_ms": 61.05020801698702,
+          "mister_flip_ms": 5.550658617582064,
+          "pixel_hash": 2488136085,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 2,
+          "name": "frozen_start_two_voices",
+          "pico_fps": 20.0,
+          "mister_fps": 12.391304347826088,
+          "pico_draw_ms": 37.45493237250811,
+          "mister_draw_ms": 69.2589355865362,
+          "mister_flip_ms": 11.379371035746288,
+          "pixel_hash": 2488136085,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 3,
+          "name": "frozen_near_quiet",
+          "pico_fps": 20.0,
+          "mister_fps": 12.0,
+          "pico_draw_ms": 43.95277537854492,
+          "mister_draw_ms": 74.0352381358009,
+          "mister_flip_ms": 9.232819958236192,
+          "pixel_hash": 2801146074,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 4,
+          "name": "frozen_near_two_voices",
+          "pico_fps": 20.0,
+          "mister_fps": 10.0,
+          "pico_draw_ms": 48.218594419358574,
+          "mister_draw_ms": 89.2507883952661,
+          "mister_flip_ms": 10.68588073426774,
+          "pixel_hash": 2801146074,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 5,
+          "name": "frozen_floor3_room1_camera3",
+          "pico_fps": 24.0,
+          "mister_fps": 15.0,
+          "pico_draw_ms": 35.21286572728641,
+          "mister_draw_ms": 57.065046973568876,
+          "mister_flip_ms": 9.536190017653666,
+          "pixel_hash": 3119088774,
+          "mister_scene_phases_ms": null
+        }
+      ]
+    },
+    {
+      "variant": "serial",
+      "rom_sha256": "54ace6560fd4a0f6397afba336c4a358a7f301fdee90a31d5881731af964e9dd",
+      "cases": [
+        {
+          "case": 0,
+          "name": "live_start",
+          "pico_fps": 19.78021978021978,
+          "mister_fps": 12.0,
+          "pico_draw_ms": 38.078580308385234,
+          "mister_draw_ms": 62.616436825927615,
+          "mister_flip_ms": 7.993827271711751,
+          "pixel_hash": null,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 1,
+          "name": "frozen_start_quiet",
+          "pico_fps": 20.0,
+          "mister_fps": 15.0,
+          "pico_draw_ms": 38.32638647678592,
+          "mister_draw_ms": 63.89331772900189,
+          "mister_flip_ms": 2.7133512709073657,
+          "pixel_hash": 2488136085,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 2,
+          "name": "frozen_start_two_voices",
+          "pico_fps": 20.0,
+          "mister_fps": 15.0,
+          "pico_draw_ms": 38.3403071892852,
+          "mister_draw_ms": 62.50078700497387,
+          "mister_flip_ms": 4.106746268361906,
+          "pixel_hash": 2488136085,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 3,
+          "name": "frozen_near_quiet",
+          "pico_fps": 20.0,
+          "mister_fps": 12.0,
+          "pico_draw_ms": 46.54452577393592,
+          "mister_draw_ms": 76.60766896102189,
+          "mister_flip_ms": 6.665790157543256,
+          "pixel_hash": 2801146074,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 4,
+          "name": "frozen_near_two_voices",
+          "pico_fps": 20.0,
+          "mister_fps": 12.0,
+          "pico_draw_ms": 46.56258755913498,
+          "mister_draw_ms": 74.98691411337563,
+          "mister_flip_ms": 8.28731668956697,
+          "pixel_hash": 2801146074,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 5,
+          "name": "frozen_floor3_room1_camera3",
+          "pico_fps": 24.0,
+          "mister_fps": 15.0,
+          "pico_draw_ms": 35.691115742348806,
+          "mister_draw_ms": 56.6776909088889,
+          "mister_flip_ms": 9.927496780995343,
+          "pixel_hash": 3119088774,
+          "mister_scene_phases_ms": null
+        }
+      ]
+    },
+    {
+      "variant": "no-overlap",
+      "rom_sha256": "ca9cb2b7c0e177ba2b60ebe4f5dd18a4177e2f9b69e3de907a0c10355ff27d23",
+      "cases": [
+        {
+          "case": 0,
+          "name": "live_start",
+          "pico_fps": 19.78021978021978,
+          "mister_fps": 12.197802197802197,
+          "pico_draw_ms": 35.61485039605829,
+          "mister_draw_ms": 59.247454533387554,
+          "mister_flip_ms": 10.17747774886074,
+          "pixel_hash": null,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 1,
+          "name": "frozen_start_quiet",
+          "pico_fps": 22.0,
+          "mister_fps": 15.0,
+          "pico_draw_ms": 35.7476817497658,
+          "mister_draw_ms": 60.397662811268184,
+          "mister_flip_ms": 6.204315132840267,
+          "pixel_hash": 2488136085,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 2,
+          "name": "frozen_start_two_voices",
+          "pico_fps": 20.0,
+          "mister_fps": 15.0,
+          "pico_draw_ms": 37.17011191359983,
+          "mister_draw_ms": 63.347666082739835,
+          "mister_flip_ms": 3.2570278001019712,
+          "pixel_hash": 2488136085,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 3,
+          "name": "frozen_near_quiet",
+          "pico_fps": 20.0,
+          "mister_fps": 12.0,
+          "pico_draw_ms": 42.23123253159076,
+          "mister_draw_ms": 70.62071042916232,
+          "mister_flip_ms": 12.648427869780372,
+          "pixel_hash": 2801146074,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 4,
+          "name": "frozen_near_two_voices",
+          "pico_fps": 20.0,
+          "mister_fps": 12.0,
+          "pico_draw_ms": 43.76972613239289,
+          "mister_draw_ms": 74.58135887308086,
+          "mister_flip_ms": 8.690557095619122,
+          "pixel_hash": 2801146074,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 5,
+          "name": "frozen_floor3_room1_camera3",
+          "pico_fps": 29.834254143646408,
+          "mister_fps": 15.0,
+          "pico_draw_ms": 31.892068206366883,
+          "mister_draw_ms": 57.37284777286851,
+          "mister_flip_ms": 9.230117785324795,
+          "pixel_hash": 3119088774,
+          "mister_scene_phases_ms": null
+        }
+      ]
+    },
+    {
+      "variant": "compact",
+      "rom_sha256": "5921ebed5374a4b62f588d782d3ddbf186daaed8aa8088f88c45739b0ecd107d",
+      "cases": [
+        {
+          "case": 0,
+          "name": "live_start",
+          "pico_fps": 19.78021978021978,
+          "mister_fps": 12.197802197802197,
+          "pico_draw_ms": 34.59051201134536,
+          "mister_draw_ms": 58.71656624442161,
+          "mister_flip_ms": 10.752497131486942,
+          "pixel_hash": null,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 1,
+          "name": "frozen_start_quiet",
+          "pico_fps": 24.0,
+          "mister_fps": 15.0,
+          "pico_draw_ms": 34.86820066565398,
+          "mister_draw_ms": 59.83978430508387,
+          "mister_flip_ms": 6.767872420012518,
+          "pixel_hash": 2488136085,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 2,
+          "name": "frozen_start_two_voices",
+          "pico_fps": 20.0,
+          "mister_fps": 15.0,
+          "pico_draw_ms": 36.342248465902514,
+          "mister_draw_ms": 65.28141702606494,
+          "mister_flip_ms": 1.327350872092485,
+          "pixel_hash": 2488136085,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 3,
+          "name": "frozen_near_quiet",
+          "pico_fps": 20.0,
+          "mister_fps": 12.0,
+          "pico_draw_ms": 41.21604723862452,
+          "mister_draw_ms": 70.03186907200077,
+          "mister_flip_ms": 13.2435962485479,
+          "pixel_hash": 2801146074,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 4,
+          "name": "frozen_near_two_voices",
+          "pico_fps": 20.0,
+          "mister_fps": 12.0,
+          "pico_draw_ms": 42.944656709505615,
+          "mister_draw_ms": 75.69012620473488,
+          "mister_flip_ms": 7.585030486412283,
+          "pixel_hash": 2801146074,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 5,
+          "name": "frozen_floor3_room1_camera3",
+          "pico_fps": 29.834254143646408,
+          "mister_fps": 15.0,
+          "pico_draw_ms": 31.679429513153163,
+          "mister_draw_ms": 57.07409451219888,
+          "mister_flip_ms": 9.533685664658107,
+          "pixel_hash": 3119088774,
+          "mister_scene_phases_ms": null
+        }
+      ]
+    },
+    {
+      "variant": "compact-sort",
+      "rom_sha256": "9715b3add363976fe49d18d794c394d59444d02fd43c4d9e3b4852b24e7c6ea9",
+      "cases": [
+        {
+          "case": 0,
+          "name": "live_start",
+          "pico_fps": 19.78021978021978,
+          "mister_fps": 12.391304347826088,
+          "pico_draw_ms": 34.59051201134536,
+          "mister_draw_ms": 58.10996501399758,
+          "mister_flip_ms": 10.187354889475856,
+          "pixel_hash": null,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 1,
+          "name": "frozen_start_quiet",
+          "pico_fps": 24.0,
+          "mister_fps": 15.0,
+          "pico_draw_ms": 34.86820066565398,
+          "mister_draw_ms": 58.94992972495514,
+          "mister_flip_ms": 7.658714506781526,
+          "pixel_hash": 2488136085,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 2,
+          "name": "frozen_start_two_voices",
+          "pico_fps": 20.0,
+          "mister_fps": 15.0,
+          "pico_draw_ms": 36.342248465902514,
+          "mister_draw_ms": 65.70374293392985,
+          "mister_flip_ms": 0.9053952122938201,
+          "pixel_hash": 2488136085,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 3,
+          "name": "frozen_near_quiet",
+          "pico_fps": 20.0,
+          "mister_fps": 12.596685082872929,
+          "pico_draw_ms": 41.21604723862452,
+          "mister_draw_ms": 69.105533477465,
+          "mister_flip_ms": 10.221077114448596,
+          "pixel_hash": 2801146074,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 4,
+          "name": "frozen_near_two_voices",
+          "pico_fps": 20.0,
+          "mister_fps": 12.0,
+          "pico_draw_ms": 42.944656709505615,
+          "mister_draw_ms": 76.14705203368258,
+          "mister_flip_ms": 7.128413286866091,
+          "pixel_hash": 2801146074,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 5,
+          "name": "frozen_floor3_room1_camera3",
+          "pico_fps": 29.834254143646408,
+          "mister_fps": 15.0,
+          "pico_draw_ms": 31.679429513153163,
+          "mister_draw_ms": 56.3980726711134,
+          "mister_flip_ms": 10.209213698701165,
+          "pixel_hash": 3119088774,
+          "mister_scene_phases_ms": null
+        }
+      ]
+    },
+    {
+      "variant": "phases",
+      "rom_sha256": "5d8d390835d015f299b37446b5a4e021b50f89f3039b2418ccf3f32215fb4971",
+      "cases": [
+        {
+          "case": 0,
+          "name": "live_start",
+          "pico_fps": 19.78021978021978,
+          "mister_fps": 12.197802197802197,
+          "pico_draw_ms": 34.637749080441985,
+          "mister_draw_ms": 58.71063810606181,
+          "mister_flip_ms": 10.720971389823358,
+          "pixel_hash": null,
+          "mister_scene_phases_ms": {
+            "draw_list": 3.2698042120149315,
+            "static_prepare": 3.777313598336341,
+            "actor_draw": 36.966644678120716,
+            "contact": 0.3423825200550136,
+            "effects": 0.062982017133466
+          }
+        },
+        {
+          "case": 1,
+          "name": "frozen_start_quiet",
+          "pico_fps": 24.0,
+          "mister_fps": 15.0,
+          "pico_draw_ms": 34.9084861073482,
+          "mister_draw_ms": 59.791970282527096,
+          "mister_flip_ms": 6.815933019640667,
+          "pixel_hash": 2488136085,
+          "mister_scene_phases_ms": {
+            "draw_list": 3.3872882250439336,
+            "static_prepare": 3.9339356578194473,
+            "actor_draw": 37.3749812506597,
+            "contact": 0.35196292476128926,
+            "effects": 0.0658001539452007
+          }
+        },
+        {
+          "case": 2,
+          "name": "frozen_start_two_voices",
+          "pico_fps": 20.0,
+          "mister_fps": 15.0,
+          "pico_draw_ms": 36.38890818571263,
+          "mister_draw_ms": 65.91706480006913,
+          "mister_flip_ms": 0.6919496808760168,
+          "pixel_hash": 2488136085,
+          "mister_scene_phases_ms": {
+            "draw_list": 3.32827179240275,
+            "static_prepare": 3.7324543535424612,
+            "actor_draw": 44.0424428724862,
+            "contact": 0.3427033566658025,
+            "effects": 0.06345443995901386
+          }
+        },
+        {
+          "case": 3,
+          "name": "frozen_near_quiet",
+          "pico_fps": 20.0,
+          "mister_fps": 12.0,
+          "pico_draw_ms": 41.3699201111497,
+          "mister_draw_ms": 69.96685307951557,
+          "mister_flip_ms": 13.306760243447775,
+          "pixel_hash": 2801146074,
+          "mister_scene_phases_ms": {
+            "draw_list": 3.3447835265360544,
+            "static_prepare": 4.159413848869795,
+            "actor_draw": 47.37432564226017,
+            "contact": 0.3472093626161994,
+            "effects": 0.06373220744910682
+          }
+        },
+        {
+          "case": 4,
+          "name": "frozen_near_two_voices",
+          "pico_fps": 20.0,
+          "mister_fps": 12.0,
+          "pico_draw_ms": 43.012735903670254,
+          "mister_draw_ms": 76.56429391504018,
+          "mister_flip_ms": 6.711634137007271,
+          "pixel_hash": 2801146074,
+          "mister_scene_phases_ms": {
+            "draw_list": 3.2858350925274373,
+            "static_prepare": 3.844919323975655,
+            "actor_draw": 54.63439625692876,
+            "contact": 0.33841339209658905,
+            "effects": 0.060337271459081764
+          }
+        },
+        {
+          "case": 5,
+          "name": "frozen_floor3_room1_camera3",
+          "pico_fps": 29.834254143646408,
+          "mister_fps": 15.0,
+          "pico_draw_ms": 31.740515657104602,
+          "mister_draw_ms": 56.66839499771613,
+          "mister_flip_ms": 9.939261508833006,
+          "pixel_hash": 3119088774,
+          "mister_scene_phases_ms": {
+            "draw_list": 7.543547769835684,
+            "static_prepare": 1.23057170722072,
+            "actor_draw": 46.83159882967297,
+            "contact": 0.86712837796131,
+            "effects": 0.07444168734491315
+          }
+        }
+      ]
+    },
+    {
+      "variant": "font-bits",
+      "rom_sha256": "ad9b2282cad0a6c7fd3f70c7588309f624cfb5e61055a6153df2e575a4c14894",
+      "cases": [
+        {
+          "case": 0,
+          "name": "live_start",
+          "pico_fps": 24.0,
+          "mister_fps": 13.0,
+          "pico_draw_ms": 32.23711625819687,
+          "mister_draw_ms": 56.93124231360532,
+          "mister_flip_ms": 8.015371326775668,
+          "pixel_hash": null,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 1,
+          "name": "frozen_start_quiet",
+          "pico_fps": 30.0,
+          "mister_fps": 15.0,
+          "pico_draw_ms": 32.137936464197146,
+          "mister_draw_ms": 57.797242077453916,
+          "mister_flip_ms": 8.804982531511177,
+          "pixel_hash": 2488136085,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 2,
+          "name": "frozen_start_two_voices",
+          "pico_fps": 28.50828729281768,
+          "mister_fps": 15.0,
+          "pico_draw_ms": 33.59447555741726,
+          "mister_draw_ms": 63.095317457378115,
+          "mister_flip_ms": 3.508512030418626,
+          "pixel_hash": 2488136085,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 3,
+          "name": "frozen_near_quiet",
+          "pico_fps": 20.0,
+          "mister_fps": 13.333333333333334,
+          "pico_draw_ms": 38.7690430264142,
+          "mister_draw_ms": 68.30646527096667,
+          "mister_flip_ms": 6.628349745122525,
+          "pixel_hash": 2801146074,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 4,
+          "name": "frozen_near_two_voices",
+          "pico_fps": 20.0,
+          "mister_fps": 12.0,
+          "pico_draw_ms": 40.234919532244994,
+          "mister_draw_ms": 74.52085107958965,
+          "mister_flip_ms": 8.750293199017321,
+          "pixel_hash": 2801146074,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 5,
+          "name": "frozen_floor3_room1_camera3",
+          "pico_fps": 29.834254143646408,
+          "mister_fps": 15.0,
+          "pico_draw_ms": 31.726617114431,
+          "mister_draw_ms": 57.12084737602311,
+          "mister_flip_ms": 9.481130328506351,
+          "pixel_hash": 3119088774,
+          "mister_scene_phases_ms": null
+        }
+      ]
+    },
+    {
+      "variant": "font-batch",
+      "rom_sha256": "b93751816e621ee8ee8f71dc04df43533304f4dcf56c0c9898919ffc904841b0",
+      "cases": [
+        {
+          "case": 0,
+          "name": "live_start",
+          "pico_fps": 24.666666666666668,
+          "mister_fps": 15.0,
+          "pico_draw_ms": 30.613679253662397,
+          "mister_draw_ms": 52.36119344003161,
+          "mister_flip_ms": 3.9892641085744796,
+          "pixel_hash": null,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 1,
+          "name": "frozen_start_quiet",
+          "pico_fps": 30.0,
+          "mister_fps": 15.0,
+          "pico_draw_ms": 30.4645197842157,
+          "mister_draw_ms": 53.422860715910424,
+          "mister_flip_ms": 13.184795899912533,
+          "pixel_hash": 2488136085,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 2,
+          "name": "frozen_start_two_voices",
+          "pico_fps": 30.0,
+          "mister_fps": 15.0,
+          "pico_draw_ms": 31.939951511053582,
+          "mister_draw_ms": 58.87550260298037,
+          "mister_flip_ms": 7.733388639722085,
+          "pixel_hash": 2488136085,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 3,
+          "name": "frozen_near_quiet",
+          "pico_fps": 20.0,
+          "mister_fps": 15.0,
+          "pico_draw_ms": 36.81405580641427,
+          "mister_draw_ms": 63.50494362575352,
+          "mister_flip_ms": 3.103083454624688,
+          "pixel_hash": 2801146074,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 4,
+          "name": "frozen_near_two_voices",
+          "pico_fps": 20.0,
+          "mister_fps": 12.0,
+          "pico_draw_ms": 38.56663193238393,
+          "mister_draw_ms": 70.29945076311706,
+          "mister_flip_ms": 12.977712019139963,
+          "pixel_hash": 2801146074,
+          "mister_scene_phases_ms": null
+        },
+        {
+          "case": 5,
+          "name": "frozen_floor3_room1_camera3",
+          "pico_fps": 29.834254143646408,
+          "mister_fps": 15.0,
+          "pico_draw_ms": 31.728306935293013,
+          "mister_draw_ms": 57.37110223491308,
+          "mister_flip_ms": 9.236307476931453,
+          "pixel_hash": 3119088774,
+          "mister_scene_phases_ms": null
+        }
+      ]
+    }
+  ],
+  "checks": {
+    "font_pixel_comparisons": 5898,
+    "layout_pages": 181,
+    "menu_message_cleanup": true,
+    "native_inventory_previews_regions": [
+      "NTSC",
+      "PAL"
+    ],
+    "bank_layout": true
+  },
+  "deployment_verified": true,
+  "temporary_device_experiment_roms_removed": 11,
+  "release_screenshot": "build/mister-text-release-verified.png"
+}

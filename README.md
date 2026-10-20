@@ -115,6 +115,13 @@ preceding changes. MiSTer and physical 32X comparisons remain pending.
 
 Static presentation screens redraw when their content changes; palette fades do not require full redraws. Inventory and pickup screens cache their panels and labels and update the rotating preview at up to 30 FPS. Menu input follows controller snapshots independently of the world clock. Compressed presentation images share the same optimized decoder across the game.
 
+Shared original-font rendering now batches text spans and decodes glyph rows
+with fewer memory reads. In matched MiSTer NTSC diagnostics with an initial
+message visible, the live starting-room sample improves from 12.2 to 15 FPS
+and the frozen near-camera sample from 12 to 15 FPS. These are scoped,
+three-second diagnostic results; the broader PicoDrive/MiSTer rendering gap
+remains. See [MiSTer optimization measurements](docs/validation/mister-optimization.md).
+
 The ending animation applies precompiled changed spans to the retained image. Dark rooms use a bounded lamp mask, restoring each framebuffer's previous illuminated footprint. Compact original bone channels let the 50-actor pool fit in the existing RAM budget.
 
 The FPS counter measures completed draws and is hidden during startup. Zero FPS on an idle, static screen is normal. Room transitions and complex scenes can still take longer to render; emulator results do not establish hardware performance.

@@ -79,6 +79,16 @@ at 29 simulation ticks/s. MiSTer v260603 US/NTSC previously reported 17.4 FPS
 in the starting room versus 25 in PicoDrive; this new ROM needs a matched
 MiSTer retest before claiming an improvement there.
 
+A later [matched instrumented MiSTer/PicoDrive comparison](mister-performance.md)
+reproduces the slowdown and measures draw work, queue waits and audio contention
+using an isolated automatic diagnostic. Its added profiling overhead means
+those figures do not replace the production measurements above.
+
+The subsequent [MiSTer optimization experiments](mister-optimization.md) retain
+the production scheduling policy: fixed splits, serial drawing and synchronous
+restoration do not improve the sampled FPS. The selected change instead reduces
+shared text-rendering cost, with scoped gains while messages are visible.
+
 ## Memory and artifacts
 
 RELEASE ROM remains 14,155,776 bytes. BIOS module is 84,468 bytes (+48), BSS
