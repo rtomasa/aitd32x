@@ -15,11 +15,11 @@ static FrameStats frame_stats;
 static unsigned displayed;
 // Stable diagnostic layout for emulator / hardware debugger comparison.
 extern "C" { volatile int32_t debug_state[32]; }
-struct InputSnapshot { uint16_t sequence,pad; };
+struct InputSnapshot { uint16_t sequence,pad,toggles; };
 static InputSnapshot ReadInput() {
-    uint16_t first,pad,second;
-    do { first=COMM(6);pad=COMM(4);second=COMM(6); } while((first&1) || first!=second);
-    return {second,pad};
+    uint16_t first,pad,extra,second;
+    do { first=COMM(6);pad=COMM(4);extra=COMM(5);second=COMM(6); } while((first&1) || first!=second);
+    return {second,(uint16_t)((pad&255)|((extra&15)<<8)),(uint16_t)((pad>>8)|(extra&0x0F00))};
 }
 static void Flip() {
     unsigned next=displayed^1;
@@ -51,7 +51,7 @@ extern "C" int m_main(void) {
     SH2WaitMask16(&COMM(2),0xffff,0x534c);
     unsigned refresh=COMM(7)==50?50:60;
     InputSnapshot initial=ReadInput();
-    uint16_t last_toggles=initial.pad>>8;
+    uint16_t last_toggles=initial.toggles;
     clock_state.Init(initial.sequence);
     frame_stats.Init(initial.sequence);
     Profile_Init();
@@ -59,8 +59,9 @@ extern "C" int m_main(void) {
     for(;;) {
         InputSnapshot input=ReadInput();
         int previous_mode=game.mode;
-        uint16_t toggles=input.pad>>8;
-        game.InputSnapshot(input.pad&255,toggles^last_toggles);last_toggles=toggles;
+        uint16_t pressed=input.toggles^last_toggles;last_toggles=input.toggles;
+        if(pressed&PAD_X) frame_stats.Toggle(input.sequence);
+        game.InputSnapshot(input.pad&255,pressed&255);
         // Menu edges follow coherent VBlank input, independently of the
         // fixed 25 Hz world clock and the presentation animation clock.
         game.PresentationInput();
@@ -74,10 +75,12 @@ extern "C" int m_main(void) {
         // Save/load blocks while the world is paused. Discard elapsed wall
         // time before Resume so an input during SRAM I/O cannot fast-forward.
         if(game.resync_clock) { clock_state.Init(ReadInput().sequence);game.resync_clock=false; }
-        if(game.mode!=previous_mode) frame_stats.ResetWindow(input.sequence);
+        if(game.mode!=previous_mode && frame_stats.enabled) {
+            frame_stats.ResetWindow(input.sequence);frame_stats.repaint_banks=3;
+        }
         bool game_frame=game.dirty;
         bool stats_changed=frame_stats.Sample(input.sequence,refresh);
-        if(game_frame || (game.mode && stats_changed)) {
+        if(game_frame || frame_stats.repaint_banks || (game.mode && stats_changed)) {
             {
             ProfileScope timing(PROFILE_FRAME);
             game.renderer.buffer_index=displayed^1;
@@ -87,8 +90,10 @@ extern "C" int m_main(void) {
                 ProfileScope palette(PROFILE_PALETTE);LoadPalette();
             }
             { ProfileScope ui(PROFILE_UI);
-              if(game.mode) Renderer_DrawFPS(FRAMEBUFFER+256,frame_stats.fps_tenths,frame_stats.ready);
-              else PixelFillWords(FRAMEBUFFER+256,GAME_Y_OFFSET*160,0);
+              if(game.mode && frame_stats.enabled) Renderer_DrawFPS(FRAMEBUFFER+256,frame_stats.fps_tenths,frame_stats.ready);
+              else if(frame_stats.repaint_banks&(1u<<game.renderer.buffer_index))
+                  PixelFillWords(FRAMEBUFFER+256,GAME_Y_OFFSET*160,0);
+              frame_stats.repaint_banks&=~(1u<<game.renderer.buffer_index);
             }
             { ProfileScope flip(PROFILE_FLIP);Flip(); }
             if(game_frame) frame_stats.Rendered();
@@ -106,7 +111,7 @@ extern "C" int m_main(void) {
         debug_state[5]=game.player.beta;debug_state[6]=game.mode;debug_state[7]=game.paused;
         debug_state[8]=game.character;debug_state[9]=input.sequence;
         debug_state[10]=(int32_t)frame_stats.rendered_total;
-        debug_state[11]=frame_stats.ready?(int32_t)frame_stats.fps_tenths:-1;
+        debug_state[11]=frame_stats.enabled && frame_stats.ready?(int32_t)frame_stats.fps_tenths:-1;
         debug_state[12]=(int32_t)ticks;
         debug_state[13]=(int32_t)game.player.frame;
         debug_state[14]=(int32_t)game.player.frame_phase;

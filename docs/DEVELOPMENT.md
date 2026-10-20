@@ -47,7 +47,7 @@ framebuffer banks; use NTSC/PAL for shared-worker changes. Preserve the
 last-projection hint's lifetime and overwrite compact vertices with bounds
 only after all contact fallback decisions have passed. Run
 `check_bank_layout.py` after code-placement changes: the current RELEASE
-static stack margin is only 328 bytes.
+static stack margin is only 200 bytes.
 
 The shared [render preparation paths](validation/render-preparation.md) also
 borrow unused scenery-span storage for stationary contact programs. Preserve

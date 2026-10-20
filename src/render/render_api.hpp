@@ -41,7 +41,7 @@ public:
     bool ResolveOverlap(const Actor *const *actors,unsigned count,Rect area,const Actor *projected=nullptr,const ContactCache *cache=nullptr);
     void DrawText(int x,int y,const char *s,uint8_t color=1);
     void Span(int y,int x1,int x2,uint8_t color);
-    void Box(int x,int y,int w,int h,uint8_t color);
+    A32X_COLD void Box(int x,int y,int w,int h,uint8_t color);
     A32X_COLD void Panel(int x,int y,unsigned asset);
 private:
     struct ContactContext;
@@ -90,7 +90,7 @@ public:
     BackgroundComposition &operator=(const BackgroundComposition &)=delete;
 };
 // Presentation-layer overlay. screen points to physical pixel row zero.
-void Renderer_DrawFPS(volatile uint16_t *screen,unsigned fps_tenths,bool ready);
+A32X_COLD void Renderer_DrawFPS(volatile uint16_t *screen,unsigned fps_tenths,bool ready);
 
 // Geometry-only key; conditional camera masks still use the current actor ZV.
 uint32_t Renderer_RasterKey(const Actor &actor);

@@ -8,14 +8,19 @@
 struct FrameStats {
     uint16_t last_sequence;
     unsigned window_frames,window_draws,rendered_total,fps_tenths;
-    bool ready;
+    bool ready,enabled;
+    uint8_t repaint_banks; // One refresh per physical bank after toggling.
     void ResetWindow(uint16_t sequence) {
         last_sequence=sequence;window_frames=window_draws=fps_tenths=0;
         ready=false;
     }
-    void Init(uint16_t sequence) { rendered_total=0;ResetWindow(sequence); }
-    void Rendered() { ++window_draws;++rendered_total; }
+    void Init(uint16_t sequence) { enabled=true;repaint_banks=0;rendered_total=0;ResetWindow(sequence); }
+    void Toggle(uint16_t sequence) {
+        enabled=!enabled;ResetWindow(sequence);repaint_banks=3;
+    }
+    void Rendered() { if(enabled) { ++window_draws;++rendered_total; } }
     bool Sample(uint16_t sequence,unsigned refresh) {
+        if(!enabled) return false;
         window_frames+=(uint16_t)(sequence-last_sequence)/2;
         last_sequence=sequence;
         if(window_frames<refresh) return false;

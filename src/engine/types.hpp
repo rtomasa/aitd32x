@@ -7,7 +7,7 @@ enum { SCREEN_WIDTH=320, SCREEN_HEIGHT=224, GAME_WIDTH=320, GAME_HEIGHT=200,
        GAME_X_OFFSET=0, GAME_Y_OFFSET=12, GAME_HZ=25,
        ANIMATION_HZ=60 }; // Original DOS PIT: 1,193,182 / 19,886 = 60.0011 Hz.
 enum Pad { PAD_UP=1, PAD_DOWN=2, PAD_LEFT=4, PAD_RIGHT=8,
-           PAD_B=16, PAD_C=32, PAD_A=64, PAD_START=128 };
+           PAD_B=16, PAD_C=32, PAD_A=64, PAD_START=128, PAD_X=1024 };
 inline int Min(int a,int b) { return a<b?a:b; }
 inline int Max(int a,int b) { return a>b?a:b; }
 inline int Clamp(int a,int lo,int hi) { return Max(lo,Min(a,hi)); }
@@ -40,6 +40,8 @@ void Rotate(Vec3 &v,int a,int b,int c);
 struct Rotation { int sx,cx,sy,cy,sz,cz; unsigned enabled; };
 Rotation PrepareRotation(int a,int b,int c);
 void Rotate(Vec3 &v,const Rotation &rotation);
+// Rotate a disjoint vertex range with the same per-axis Q15 truncation.
+void RotateVertices(Vec3 *vertices,unsigned count,const Rotation &rotation);
 
 #if defined(__sh__)
 #define A32X_COLD __attribute__((section(".romcode")))

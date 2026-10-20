@@ -307,8 +307,19 @@ void Renderer::BackgroundSpan(int y,int left,int right,bool original) {
     const uint16_t *words=(const uint16_t *)source;
     if(left<=right) PixelCopyWords(p+left/2,words+left/2,(right-left+1)/2);
 }
-void Renderer::Box(int x,int y,int w,int h,uint8_t color) {
-    for(int j=Max(0,y);j<Min(GAME_HEIGHT,y+h);++j) Span(j,x,x+w-1,color);
+A32X_COLD void Renderer::Box(int x,int y,int w,int h,uint8_t color) {
+    int first=Max(0,y),last=Min(GAME_HEIGHT,y+h),left=Max(0,x),right=Min(GAME_WIDTH-1,x+w-1);
+    if(first>=last || left>right) return;
+    FinishRestore();
+    if(left==0 && right==GAME_WIDTH-1) {
+        PixelFillWords(target+first*160,(last-first)*160,Pair(color,color));
+        Rect &d=damage[buffer_index];
+        d={Min(d.x1,left),Min(d.y1,first),Max(d.x2,right),Max(d.y2,last-1)};
+    } else {
+        RasterSurface surface={target,0,GAME_HEIGHT,damage[buffer_index]};
+        for(int j=first;j<last;++j) RasterSpan(surface,j,left,right,color);
+        damage[buffer_index]=surface.damage;
+    }
 }
 void Renderer::Panel(int x,int y,unsigned asset) {
     FinishRestore();
@@ -442,27 +453,28 @@ bool Renderer::DrawActor(const Actor &a,const Rect *deferred) {
         unsigned index=coverage_mode?face_order[f]:ordering.faces[f].index;
         const uint8_t *p=m+BE32Aligned(prim+index*4);unsigned n=p[1];uint8_t color=p[2];
         Point screen[MAX_POLY];
-        // FITD rejects the complete primitive when any vertex reaches Z<=100.
-        // Clipping it into a new face can expose camera-side doors as enormous
-        // panels, including faces that the original fixed camera never drew.
-        bool rejected=false;
-        Rect visible={4096,4096,-4096,-4096};
-        for(unsigned i=0;i<n;++i) {
-            unsigned vertex=BE16Aligned(p+6+i*2);
-            if(single.vertices[vertex].z<=100) { rejected=true;break; }
-            screen[i]=single.projected[vertex];
-            visible.x1=Min(visible.x1,screen[i].x);visible.x2=Max(visible.x2,screen[i].x);
-            visible.y1=Min(visible.y1,screen[i].y);visible.y2=Max(visible.y2,screen[i].y);
+        unsigned count=n;int size=1;
+        if(p[0]==1 && n>=3) {
+            // SortFaces already rejected near/back-facing/off-screen polygons
+            // and included their bounds. Copy only the accepted projection.
+            for(unsigned i=0;i<n;++i) screen[i]=single.projected[BE16Aligned(p+6+i*2)];
+        } else {
+            bool rejected=false;Rect visible={4096,4096,-4096,-4096};
+            for(unsigned i=0;i<n;++i) {
+                unsigned vertex=BE16Aligned(p+6+i*2);
+                if(single.vertices[vertex].z<=100) { rejected=true;break; }
+                screen[i]=single.projected[vertex];
+                visible.x1=Min(visible.x1,screen[i].x);visible.x2=Max(visible.x2,screen[i].x);
+                visible.y1=Min(visible.y1,screen[i].y);visible.y2=Max(visible.y2,screen[i].y);
+            }
+            if(rejected || !n) continue;
+            int depth=single.vertices[BE16Aligned(p+6)].z;
+            size=p[0]==3?Max(0,RenderDivide(BE16Aligned(p+4)*focal_x,depth)/2):p[0]==7?Max(0,RenderDivide(20*focal_x,depth)/2):1;
+            size=Min(120,size);
+            if(p[0]==3 || p[0]==7 || p[0]==6) { visible.x1-=size;visible.x2+=size;visible.y1-=size;visible.y2+=size; }
+            if(visible.x2<0 || visible.y2<0 || visible.x1>=320 || visible.y1>=200) continue;
+            bounds={Min(bounds.x1,Max(0,visible.x1)),Min(bounds.y1,Max(0,visible.y1)),Max(bounds.x2,Min(319,visible.x2)),Max(bounds.y2,Min(199,visible.y2))};
         }
-        if(rejected || !n) continue;
-        unsigned count=n;
-        int depth=single.vertices[BE16Aligned(p+6)].z;
-        int size=p[0]==3?Max(0,RenderDivide(BE16Aligned(p+4)*focal_x,depth)/2):p[0]==7?Max(0,RenderDivide(20*focal_x,depth)/2):1;
-        size=Min(120,size);
-        // Polygon near/back-face/viewport rejection precedes the stable sort.
-        if(p[0]==3 || p[0]==7 || p[0]==6) { visible.x1-=size;visible.x2+=size;visible.y1-=size;visible.y2+=size; }
-        if(visible.x2<0 || visible.y2<0 || visible.x1>=320 || visible.y1>=200) continue;
-        bounds={Min(bounds.x1,Max(0,visible.x1)),Min(bounds.y1,Max(0,visible.y1)),Max(bounds.x2,Min(319,visible.x2)),Max(bounds.y2,Min(199,visible.y2))};
         bool master_rows=RendererWorker_Submit(p[0],screen,count,color,size,p[3]);
         if(master_rows && p[0]==1) {
             ProfileScope timing(PROFILE_FILL);

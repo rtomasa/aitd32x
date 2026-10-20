@@ -140,7 +140,7 @@ extern const unsigned char msx[]=
 "\xa0\x50\x50\x50\x00\x00\x00\x00\x40\xa0\x20\x40\xe0\x00\x00\x00"
 "\x00\x38\x38\x38\x38\x38\x38\x00\x00\x00\x00\x00\x00\x00\x00";
 
-void Renderer_DrawFPS(volatile uint16_t *screen,unsigned fps_tenths,bool ready) {
+A32X_COLD void Renderer_DrawFPS(volatile uint16_t *screen,unsigned fps_tenths,bool ready) {
     char text[]="FPS --.-";
     if(ready) {
         unsigned value=Min((int)fps_tenths,999);

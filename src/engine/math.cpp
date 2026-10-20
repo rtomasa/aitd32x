@@ -41,3 +41,20 @@ void Rotate(Vec3 &v,const Rotation &r) {
     if(r.enabled&4) { t=x; x=TruncateQ15(t*r.cz-y*r.sz); y=TruncateQ15(t*r.sz+y*r.cz); }
     v.x=x;v.y=y;v.z=z;
 }
+
+void RotateVertices(Vec3 *vertices,unsigned count,const Rotation &r) {
+    // Preserve Y, X, Z order and round after each axis, as for one vertex.
+    // Select axes and load their coefficients once for the complete range.
+    if(r.enabled&2) for(unsigned i=0;i<count;++i) {
+        Vec3 &v=vertices[i];int x=v.x,z=v.z;
+        v.x=TruncateQ15(x*r.cy-z*r.sy);v.z=TruncateQ15(x*r.sy+z*r.cy);
+    }
+    if(r.enabled&1) for(unsigned i=0;i<count;++i) {
+        Vec3 &v=vertices[i];int y=v.y,z=v.z;
+        v.y=TruncateQ15(y*r.cx-z*r.sx);v.z=TruncateQ15(y*r.sx+z*r.cx);
+    }
+    if(r.enabled&4) for(unsigned i=0;i<count;++i) {
+        Vec3 &v=vertices[i];int x=v.x,y=v.y;
+        v.x=TruncateQ15(x*r.cz-y*r.sz);v.y=TruncateQ15(x*r.sz+y*r.cz);
+    }
+}

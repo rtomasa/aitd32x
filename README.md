@@ -57,6 +57,7 @@ Focused checks cover all 144 cameras in sampled states and both reported scenes 
 | Hold A + direction | Selected action / attack |
 | C | Inventory |
 | Start | Pause menu |
+| X (six-button pad) | Toggle FPS counter and its measurement |
 
 **Startup:** A/B/C/Start skips the logo, title or credits. Up/Down selects Begin a New Game, Resume a Saved Game or Replay Intro; A/Start confirms. B loads the latest valid save directly.
 
@@ -122,9 +123,23 @@ and the frozen near-camera sample from 12 to 15 FPS. These are scoped,
 three-second diagnostic results; the broader PicoDrive/MiSTer rendering gap
 remains. See [MiSTer optimization measurements](docs/validation/mister-optimization.md).
 
+The rotating logo now clears its retained background once and repairs only
+moving geometry. Shared drawing also reuses accepted polygon checks and batches
+rectangle fills. Matched MiSTer frozen-logo samples improve from 15 to 20 FPS
+and about 19 to 30 FPS; sampled gameplay FPS remains unchanged. Accurate door
+clipping is retained. See the [base-renderer review](docs/validation/logo-performance.md)
+for scope, pixel checks and the remaining bottlenecks. Shared model rotations
+also batch vertex ranges while retaining exact per-axis rounding. The follow-up
+[geometry measurements](docs/validation/geometry-batching.md) show modest draw-time
+savings, with sampled gameplay FPS unchanged.
+
 The ending animation applies precompiled changed spans to the retained image. Dark rooms use a bounded lamp mask, restoring each framebuffer's previous illuminated footprint. Compact original bone channels let the 50-actor pool fit in the existing RAM budget.
 
-The FPS counter measures completed draws and is hidden during startup. Zero FPS on an idle, static screen is normal. Room transitions and complex scenes can still take longer to render; emulator results do not establish hardware performance.
+The FPS counter measures completed draws and is hidden during startup.
+Press **X on a six-button controller** to turn the counter and its measurement
+off/on. It starts enabled; the choice lasts until the core restarts. Disabling
+it stops counting, calculation, overlay drawing and periodic FPS redraws after
+clearing both framebuffer borders. Zero FPS on an idle, static screen is normal. Room transitions and complex scenes can still take longer to render; emulator results do not establish hardware performance.
 
 The latest rendering fixes retain approximately 24.2 completed draws/s in short early-game PicoDrive traces in both regions, with no material loss in the sampled comparisons. Complex animated scenes remain slower; these measurements are not a whole-game FPS guarantee.
 

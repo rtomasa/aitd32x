@@ -105,7 +105,7 @@ static void RotateGroup(const uint8_t *groups,unsigned ng,unsigned i,Vec3 *out,c
     if(i>=ng || depth>=ng) return;
     const uint8_t *g=groups+i*16;
     unsigned start=BE16Aligned(g),count=BE16Aligned(g+2);int num=(int8_t)g[7];
-    for(unsigned v=0;v<count;++v) Rotate(out[start+v],rotation);
+    RotateVertices(out+start,count,rotation);
     // FITD applies a parent's rotation to all its descendants before translating anchors.
     for(unsigned j=i+1;j<ng;++j) if((int8_t)groups[j*16+6]==num) RotateGroup(groups,ng,j,out,rotation,depth+1);
 }
@@ -129,7 +129,7 @@ void Actor_Vertices(const Actor &a,Vec3 *out) {
         Vec3 anchor=out[base];
         for(unsigned j=0;j<count;++j) { out[start+j].x+=anchor.x;out[start+j].y+=anchor.y;out[start+j].z+=anchor.z; }
     }
-    if(!ng) { Rotation rotation=PrepareRotation(a.alpha,a.beta,a.gamma);for(unsigned i=0;i<nv;++i) Rotate(out[i],rotation); }
+    if(!ng) { Rotation rotation=PrepareRotation(a.alpha,a.beta,a.gamma);RotateVertices(out,nv,rotation); }
 }
 
 Vec3 *Actor_GameplayScratch() { static Vec3 points[MAX_VERTICES];return points; }

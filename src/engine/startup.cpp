@@ -57,7 +57,10 @@ A32X_COLD void Game::StartupEnter(unsigned phase) {
         player.model=Platform_ReadAsset(AS_STARTUP_LOGO_MODEL);player.animation={};player.floor=player.room=0;
         player.alpha=player.beta=player.gamma=0;player.collision_min=player.collision_max={0,0,0};break;
     case STARTUP_FLASH:Audio_Sample(6);break;
-    case STARTUP_ROTATE:break;
+    case STARTUP_ROTATE:
+        // The static logo is gone during rotation. Clear its restore image once;
+        // subsequent draws repair only the moving geometry in either bank.
+        PixelFillWords((uint16_t *)renderer.background,320*141/2,0);break;
     case STARTUP_TITLE:startup_palette=AS_TITLE_PALETTE;if(!renderer.SetTitle()) Platform_Fatal();break;
     case STARTUP_CREDITS:
         startup_palette=AS_GAME_PALETTE;book_line=0;
@@ -200,7 +203,7 @@ A32X_COLD void Game::StartupDraw() {
         uint8_t camera_record[24]={};
         auto word=[&](unsigned offset,unsigned value) { camera_record[offset]=(uint8_t)(value>>8);camera_record[offset+1]=(uint8_t)value; };
         word(0,8);word(2,beta);word(12,128);word(14,500);word(16,490);word(22,24);
-        r.camera={camera_record,24,24,4,0};r.room=room;r.Box(0,0,320,141,0);r.DrawActor(player);r.camera=r.room={};break;
+        r.camera={camera_record,24,24,4,0};r.room=room;r.DrawActor(player);r.camera=r.room={};break;
     }
     case STARTUP_CREDITS:Book_DrawLayout(r,book_assets[18],book_line);break;
     case STARTUP_MENU:

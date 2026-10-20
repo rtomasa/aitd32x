@@ -235,6 +235,21 @@ and depth-tested pixels retain selective stores. FPS counts completed draws
 against VBlank and requests a repaint only when its displayed value changes;
 idle static presentation screens retain their pixels.
 
+Model/group rotations process contiguous vertex ranges one enabled axis at a
+time. They retain Y/X/Z order and Q15 truncation after each axis, sharing the
+same geometry behavior across ordinary, contact and preview models. See the
+[batched-rotation measurements](validation/geometry-batching.md).
+
+The six-button X press toggles FPS measurement and display, initially enabled.
+Disabled measurement skips draw counting and sampling; two pending bank bits
+clear the overlay once, then no FPS-only redraw or border clearing occurs.
+The setting is runtime-only and excluded from saves. The 68000 retains the
+original eight-button held/press-parity word in COMM4 and publishes player 1's
+Z/Y/X/Mode extension in COMM5, previously an unused player-2 snapshot. Both
+words share COMM6's coherent sequence. Extended buttons are consumed by the
+master and do not enter gameplay actions. Disabled FPS reports -1 at debug
+word 11; diagnostic completed-draw word 10 pauses with measurement.
+
 Original FITD group geometry, Q15 arithmetic, flat primitives, stable depth
 order, projection and conditional foreground masks remain. World primitives
 are rejected in full when any referenced vertex has camera Z <=100, matching
@@ -405,14 +420,14 @@ separate from the engine license and are excluded from source archives/Git.
 ## Memory and diagnostics
 
 The complete-game RELEASE ROM is 14,155,776 bytes (13.5 MiB). Fixed bank data
-uses 3,964,720 bytes and the extension 9,932,868 bytes. The 84,724-byte BIOS
-module ends at physical byte 4,180,516, leaving 13,788 bytes below the 4 MiB
+uses 3,964,720 bytes and the extension 9,932,868 bytes. The 84,852-byte BIOS
+module ends at physical byte 4,180,644, leaving 13,660 bytes below the 4 MiB
 direct-window limit. BSS uses 160,704 bytes; module/BSS/linker overhead total
-245,432 bytes, ending at `0x0603BEB8`. The static margin below the reserved
-stacks is 328 bytes. Camera setup, video initialization, scenery readback,
+245,560 bytes, ending at `0x0603BF38`. The static margin below the reserved
+stacks is 200 bytes. Camera setup, video initialization, scenery readback,
 prepared-prop lookup/coverage construction, fallback depth wrappers and
-worker control/copy helpers, face sorting, panels and effects dispatch execute from
-protected ROM; hot raster loops remain in SDRAM. `build/bank-layout.json` is the authoritative
+worker control/copy helpers, face sorting, rectangle fills, panels and effects
+dispatch and the FPS overlay execute from protected ROM; hot raster loops remain in SDRAM. `build/bank-layout.json` is the authoritative
 generated layout report for this build; later changes require fresh figures.
 
 SH2 SDRAM remains 256 KiB. The master reserves 12 KiB and the slave 4 KiB at

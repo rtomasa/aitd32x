@@ -53,11 +53,11 @@ POLL=C.CFUNCTYPE(None)
 INPUT=C.CFUNCTYPE(C.c_int16,C.c_uint,C.c_uint,C.c_uint,C.c_uint)
 
 class Emulator:
-    def __init__(self,core,region):
+    def __init__(self,core,region,six_button=False):
         self.lib=C.CDLL(str(core.resolve()))
         self.pixel_format=0;self.rgb=b'';self.raw=b'';self.width=self.height=0;self.pad=0
         self.defaults={};self.buffers={};self.capture_audio=False;self.audio=bytearray()
-        self.options={'picodrive_region':b'Europe' if region=='PAL' else b'US','picodrive_input1':b'3 button pad','picodrive_input2':b'3 button pad'}
+        self.options={'picodrive_region':b'Europe' if region=='PAL' else b'US','picodrive_input1':b'6 button pad' if six_button else b'3 button pad','picodrive_input2':b'3 button pad'}
         self.system=C.create_string_buffer(str((ROOT/'build').resolve()).encode())
         def env(cmd,data):
             if cmd==10:
@@ -88,7 +88,7 @@ class Emulator:
             self.width,self.height=w,h
             self.raw=b''.join(C.string_at(data+y*pitch,w*(4 if self.pixel_format==1 else 2)) for y in range(h))
         def input_state(port,device,index,key):
-            bits={4:1,5:2,6:4,7:8,0:16,8:32,1:64,3:128}
+            bits={4:1,5:2,6:4,7:8,0:16,8:32,1:64,3:128,11:256,9:512,10:1024,2:2048}
             return int(port==0 and bool(self.pad&bits.get(key,0)))
         def audio_batch(data,n):
             if self.capture_audio:self.audio.extend(C.string_at(data,n*4))

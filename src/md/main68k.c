@@ -180,22 +180,23 @@ RAM_CODE void main(void) {
     *(volatile uint16_t *)Z80_RESET=0x100;
     while(*(volatile uint16_t *)Z80_BUS_REQ&0x100) { }
     MusicSilence();
-    uint16_t previous1=0,previous2=0,toggle1=0,toggle2=0;
+    uint16_t previous=0,toggles=0;
     comm[7]=(*(volatile uint8_t *)(IO_BASE+1)&0x40)?50:60;
     comm[6]=0;pal_audio=comm[7]==50;
     for(;;) {
         while(*status&8) { ServiceSave();ServiceMusic();ServiceMapper(); }
         while(!(*status&8)) { ServiceSave();ServiceMusic();ServiceMapper(); }
         comm[6]=sequence+1; // Odd = snapshot being written.
-        uint16_t pad1=read_joypad(0)&0xFF,pad2=read_joypad(1)&0xFF;
-        toggle1^=pad1&~previous1;toggle2^=pad2&~previous2;
-        previous1=pad1;previous2=pad2;
+        uint16_t pad=read_joypad(0)&0x0FFF;
+        toggles^=pad&~previous;previous=pad;
         // High byte toggles on each press. A release during a slow render
         // still leaves a detectable press event for the next SH-2 snapshot.
-        comm[4]=pad1|(toggle1<<8);
-        comm[5]=pad2|(toggle2<<8);
+        // Preserve the original low-eight-button word; COMM5 extends player 1
+        // with Z/Y/X/Mode held bits and their press parity. Player 2 is unused.
+        comm[4]=(pad&255)|(toggles<<8);
+        comm[5]=(pad>>8)|(toggles&0x0F00);
         sequence+=2;
-        comm[6]=sequence; // Even = both pads committed.
+        comm[6]=sequence; // Even = complete player-1 snapshot committed.
         MusicFrame(comm[7]);
     }
 }

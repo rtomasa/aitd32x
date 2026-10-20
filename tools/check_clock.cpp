@@ -27,6 +27,16 @@ int main() {
         if(stats.fps_tenths!=0) {
             std::fprintf(stderr,"idle FPS did not return to zero\n");return 1;
         }
+        unsigned rendered=stats.rendered_total;
+        stats.Toggle(100);stats.Rendered();
+        if(stats.enabled || stats.ready || stats.repaint_banks!=3 ||
+           stats.Sample(500,hz) || stats.window_frames || stats.window_draws ||
+           stats.last_sequence!=100 || stats.rendered_total!=rendered) return 1;
+        stats.Toggle(500);
+        for(unsigned frame=1;frame<=hz;++frame) {
+            stats.Rendered();stats.Sample((uint16_t)(500+frame*2),hz);
+        }
+        if(!stats.enabled || !stats.ready || stats.fps_tenths!=hz*10) return 1;
     }
-    std::puts("PAL and NTSC: 25 Hz clock with wrap; FPS counts draws, not refresh rate");
+    std::puts("PAL and NTSC: 25 Hz clock with wrap; FPS counts draws, not refresh rate; toggle stops and restarts measurement");
 }
