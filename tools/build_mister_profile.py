@@ -122,6 +122,7 @@ static inline uint16_t Profile_ReadTimer() {
         source = source.replace('void RendererWorker_Begin(RasterSurface &surface) {',
             'void RendererWorker_Begin(RasterSurface &surface) { RendererWorker_WaitRestore();return;')
         source = source.replace('uint8_t material) {', 'uint8_t material) { return true;')
+        source = source.replace('uint8_t material,bool deferred_polygons) {', 'uint8_t material,bool deferred_polygons) { return true;')
         source = source.replace('void *context,int split) {', 'void *context,int split) { RendererWorker_WaitRestore();return;')
         source = source.replace('void RendererWorker_Finish(RasterSurface &surface) {',
             'void RendererWorker_Finish(RasterSurface &surface) { return;')

@@ -8,6 +8,7 @@ struct RasterSurface {
     uint8_t material=0;
     volatile uint8_t *coverage=nullptr; // Optional per-pixel bits, disjoint rows.
     Rect deferred={320,200,-1,-1}; // Triangles later shaded by contact depth.
+    bool deferred_polygons=false; // Pair planner has validated convex polygons.
 };
 void RasterCoverageSpan(volatile uint8_t *,int,int,int,bool clear=false,uint8_t material=0);
 void RasterSpan(RasterSurface &,int,int,int,uint8_t);

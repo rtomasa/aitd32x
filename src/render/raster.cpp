@@ -168,7 +168,13 @@ void RasterPolygonGeneral(RasterSurface &surface,const Point *p,unsigned n,uint8
                 intersections[k]=x;++count;StepEdge(e);
             }
         }
-        for(int i=0;i+1<count;i+=2) RasterSpan(surface,y,intersections[i],intersections[i+1],color);
+        for(int i=0;i+1<count;i+=2) {
+            int left=intersections[i],right=intersections[i+1];const Rect &omit=surface.deferred;
+            if(surface.deferred_polygons && y>=omit.y1 && y<=omit.y2 && left<=omit.x2 && right>=omit.x1) {
+                if(left<omit.x1) RasterSpan(surface,y,left,omit.x1-1,color);
+                if(right>omit.x2) RasterSpan(surface,y,omit.x2+1,right,color);
+            } else RasterSpan(surface,y,left,right,color);
+        }
     }
 }
 static A32X_COLD __attribute__((noinline)) void RasterLine(RasterSurface &surface,const Point *screen,uint8_t color) {

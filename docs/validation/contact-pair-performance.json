@@ -1,0 +1,981 @@
+{
+  "baseline_commit": "3ad514c",
+  "baseline_rom_sha256": "c94626606e7b39fedfee7421bd185031c1cf1d984cb4ef2def711fbd89a95c64",
+  "candidate_rom_sha256": "f88affea8388d574318e25df52b7a4129243fae1224d29a0a32cc3fc62bbfce9",
+  "assets_sha256": "94c7dc55da69f2445bbafd7e1f6531cb67f2e0c878328305a30ad4645a7dfe6e",
+  "scope": "Pixel-preserving bounded dynamic character/prop pair preparation; no simulation or save changes",
+  "layout": {
+    "rom_bytes": 14155776,
+    "module_bytes": 84804,
+    "static_sdram_end": 100908808,
+    "stack_margin": 248
+  },
+  "bss_bytes": 160704,
+  "module_delta_bytes": 224,
+  "master_face_index_stack_bytes": 1536,
+  "mister": {
+    "status": "passed",
+    "platform": "MiSTer S32X_20260603",
+    "nominal_hz": 60,
+    "physical_32x_validated": false,
+    "warmup_seconds": 1,
+    "timing_seconds_minimum": 3,
+    "frozen_simulation": true,
+    "baseline_diagnostic_rom_sha256": "1a1bd95fd3ac6a3449949c84df14ef14b3c43386d9b68e9866abde92ea6aaf20",
+    "candidate_diagnostic_rom_sha256": "1e15cc0f5dd5b6a27e1e6e0c0c496dc868d387db625c6189679e12e104eb28d0",
+    "all_pixels_match": true,
+    "protected_save_config_files": 5,
+    "protected_files_unchanged": true,
+    "restored_core": "MENU",
+    "cases": [
+      {
+        "name": "Edward corridor door 96",
+        "before_draw_ms": 114.9165203047746,
+        "after_draw_ms": 104.95215995965967,
+        "draw_reduction_percent": 8.670955506386772,
+        "before_fps": 8.571428571428571,
+        "after_fps": 8.571428571428571,
+        "pixel_hash": 522589803,
+        "planned_draws": 26,
+        "draws": 26,
+        "before_screenshot": "build/contact-pair-profile/before/mister/capture-8.png",
+        "after_screenshot": "build/contact-pair-profile/after/mister/capture-8.png"
+      },
+      {
+        "name": "Edward bathroom door 160",
+        "before_draw_ms": 73.46749503104823,
+        "after_draw_ms": 60.199140403799106,
+        "draw_reduction_percent": 18.06017017681324,
+        "before_fps": 12.0,
+        "after_fps": 15.0,
+        "pixel_hash": 294836146,
+        "planned_draws": 45,
+        "draws": 45,
+        "before_screenshot": "build/contact-pair-profile/before/mister/capture-11.png",
+        "after_screenshot": "build/contact-pair-profile/after/mister/capture-12.png"
+      },
+      {
+        "name": "Edward moved chest 800",
+        "before_draw_ms": 69.13273895972507,
+        "after_draw_ms": 62.87285656086811,
+        "draw_reduction_percent": 9.05487399031566,
+        "before_fps": 12.265193370165745,
+        "after_fps": 15.0,
+        "pixel_hash": 2293730579,
+        "planned_draws": 45,
+        "draws": 45,
+        "before_screenshot": "build/contact-pair-profile/before/mister/capture-14.png",
+        "after_screenshot": "build/contact-pair-profile/after/mister/capture-15.png"
+      },
+      {
+        "name": "Emily corridor door 96",
+        "before_draw_ms": 125.45778753586065,
+        "after_draw_ms": 114.60563105136565,
+        "draw_reduction_percent": 8.650046121204742,
+        "before_fps": 7.5,
+        "after_fps": 8.571428571428571,
+        "pixel_hash": 1259812648,
+        "planned_draws": 26,
+        "draws": 26,
+        "before_screenshot": "build/contact-pair-profile/before/mister/capture-18.png",
+        "after_screenshot": "build/contact-pair-profile/after/mister/capture-19.png"
+      },
+      {
+        "name": "Emily bathroom door 160",
+        "before_draw_ms": 67.34546637052692,
+        "after_draw_ms": 58.073420601544505,
+        "draw_reduction_percent": 13.767884118536946,
+        "before_fps": 14.098360655737705,
+        "after_fps": 15.0,
+        "pixel_hash": 2677102799,
+        "planned_draws": 45,
+        "draws": 45,
+        "before_screenshot": "build/contact-pair-profile/before/mister/capture-21.png",
+        "after_screenshot": "build/contact-pair-profile/after/mister/capture-22.png"
+      },
+      {
+        "name": "Emily moved chest 800",
+        "before_draw_ms": 66.9673461388713,
+        "after_draw_ms": 62.51101811044035,
+        "draw_reduction_percent": 6.654479063855685,
+        "before_fps": 14.505494505494505,
+        "after_fps": 15.0,
+        "pixel_hash": 758776906,
+        "planned_draws": 45,
+        "draws": 45,
+        "before_screenshot": "build/contact-pair-profile/before/mister/capture-25.png",
+        "after_screenshot": "build/contact-pair-profile/after/mister/capture-25.png"
+      }
+    ]
+  },
+  "checks": {
+    "final-pair-validation": {
+      "passed": true,
+      "private_memory_only": true,
+      "route_comparisons": 900,
+      "isolated_pair_comparisons": 8,
+      "near_fallbacks": 2,
+      "guard_fallbacks": 8,
+      "routes": [
+        {
+          "character": 0,
+          "direction": "enter",
+          "comparisons": 225,
+          "planned_draws": 49
+        },
+        {
+          "character": 0,
+          "direction": "exit",
+          "comparisons": 225,
+          "planned_draws": 37
+        },
+        {
+          "character": 1,
+          "direction": "enter",
+          "comparisons": 225,
+          "planned_draws": 49
+        },
+        {
+          "character": 1,
+          "direction": "exit",
+          "comparisons": 225,
+          "planned_draws": 32
+        }
+      ],
+      "host_sha256": "f98379f2e5e98a993be3184d02b9c6e09296b52773c37f67e8d63da53e31881b"
+    },
+    "final-full-pixels": {
+      "passed": true,
+      "comparisons": 2660,
+      "camera_views": 144,
+      "full_house_sweep": true,
+      "oracle": "Preserved renderer with scenery cache",
+      "scope": "Cache composition and framebuffer histories, not DOS visual or hardware validation",
+      "host_sha256": "f98379f2e5e98a993be3184d02b9c6e09296b52773c37f67e8d63da53e31881b",
+      "bank_sha256": "94c7dc55da69f2445bbafd7e1f6531cb67f2e0c878328305a30ad4645a7dfe6e",
+      "failures": [],
+      "reference_sha256": "f12532a7d71a954bb8f3d7ce54530298bcc12fc91d380871f678f47223bea3dd",
+      "contact_cache": {
+        "hits": 59,
+        "builds": 309,
+        "capacity_failures": 0,
+        "negative_hits": 0
+      }
+    },
+    "sh2-scheduling-native-NTSC": {
+      "passed": true,
+      "emulator_only": true,
+      "private_sram_only": true,
+      "region": "NTSC",
+      "rom_sha256": "f88affea8388d574318e25df52b7a4129243fae1224d29a0a32cc3fc62bbfce9",
+      "scene_count": 10
+    },
+    "sh2-scheduling-native-PAL": {
+      "passed": true,
+      "emulator_only": true,
+      "private_sram_only": true,
+      "region": "PAL",
+      "rom_sha256": "f88affea8388d574318e25df52b7a4129243fae1224d29a0a32cc3fc62bbfce9",
+      "scene_count": 10
+    }
+  },
+  "frozen_picodrive": [
+    {
+      "name": "Edward corridor door 96",
+      "before_draw_ms": 73.94120502982125,
+      "after_draw_ms": 68.72713315796298,
+      "draw_reduction_percent": 7.0516457904024925,
+      "before_fps": 12.0,
+      "after_fps": 13.333333333333334,
+      "pixel_hash": 522589803,
+      "planned_draws": 40,
+      "draws": 40
+    },
+    {
+      "name": "Edward bathroom door 160",
+      "before_draw_ms": 49.66356424095661,
+      "after_draw_ms": 41.780729927683396,
+      "draw_reduction_percent": 15.872469956097891,
+      "before_fps": 20.10989010989011,
+      "after_fps": 20.0,
+      "pixel_hash": 294836146,
+      "planned_draws": 60,
+      "draws": 60
+    },
+    {
+      "name": "Edward moved chest 800",
+      "before_draw_ms": 42.83883292810003,
+      "after_draw_ms": 40.54694917216626,
+      "draw_reduction_percent": 5.350014459498542,
+      "before_fps": 20.0,
+      "after_fps": 20.0,
+      "pixel_hash": 2293730579,
+      "planned_draws": 60,
+      "draws": 60
+    },
+    {
+      "name": "Emily corridor door 96",
+      "before_draw_ms": 83.70849274588093,
+      "after_draw_ms": 78.05103303377014,
+      "draw_reduction_percent": 6.758525361680438,
+      "before_fps": 11.666666666666666,
+      "after_fps": 12.0,
+      "pixel_hash": 1259812648,
+      "planned_draws": 36,
+      "draws": 36
+    },
+    {
+      "name": "Emily bathroom door 160",
+      "before_draw_ms": 46.05836272232784,
+      "after_draw_ms": 40.658909343522055,
+      "draw_reduction_percent": 11.723068428110405,
+      "before_fps": 20.0,
+      "after_fps": 20.0,
+      "pixel_hash": 2677102799,
+      "planned_draws": 60,
+      "draws": 60
+    },
+    {
+      "name": "Emily moved chest 800",
+      "before_draw_ms": 41.65485701053606,
+      "after_draw_ms": 40.094384405732534,
+      "draw_reduction_percent": 3.74619604241788,
+      "before_fps": 20.0,
+      "after_fps": 20.0,
+      "pixel_hash": 758776906,
+      "planned_draws": 60,
+      "draws": 60
+    }
+  ],
+  "live_picodrive": [
+    {
+      "scene": "bath-enter",
+      "character": "Edward",
+      "before_windows": [
+        {
+          "phase": "idle",
+          "seconds": 3,
+          "fps": 20.0,
+          "world_ticks": 75,
+          "player_before": [
+            -710,
+            0,
+            -700
+          ],
+          "player_after": [
+            -710,
+            0,
+            -700
+          ],
+          "object_before": {
+            "pos": [
+              -310,
+              0,
+              -1400
+            ],
+            "beta": 0,
+            "flags": 0
+          },
+          "object_after": {
+            "pos": [
+              -310,
+              0,
+              -1400
+            ],
+            "beta": 0,
+            "flags": 0
+          },
+          "vblank_start": 399,
+          "vblank_end": 579
+        },
+        {
+          "phase": "action",
+          "seconds": 8,
+          "fps": 19.5,
+          "world_ticks": 200,
+          "player_before": [
+            -710,
+            0,
+            -700
+          ],
+          "player_after": [
+            1090,
+            0,
+            -931
+          ],
+          "object_before": {
+            "pos": [
+              -310,
+              0,
+              -1400
+            ],
+            "beta": 0,
+            "flags": 0
+          },
+          "object_after": {
+            "pos": [
+              -310,
+              0,
+              -1400
+            ],
+            "beta": 256,
+            "flags": 0
+          },
+          "vblank_start": 579,
+          "vblank_end": 1059
+        },
+        {
+          "phase": "settle",
+          "seconds": 3,
+          "fps": 25.0,
+          "world_ticks": 75,
+          "player_before": [
+            1090,
+            0,
+            -931
+          ],
+          "player_after": [
+            1090,
+            0,
+            -931
+          ],
+          "object_before": {
+            "pos": [
+              -310,
+              0,
+              -1400
+            ],
+            "beta": 256,
+            "flags": 0
+          },
+          "object_after": {
+            "pos": [
+              -310,
+              0,
+              -1400
+            ],
+            "beta": 256,
+            "flags": 0
+          },
+          "vblank_start": 1059,
+          "vblank_end": 1239
+        }
+      ],
+      "after_windows": [
+        {
+          "phase": "idle",
+          "seconds": 3,
+          "fps": 20.0,
+          "world_ticks": 75,
+          "player_before": [
+            -710,
+            0,
+            -700
+          ],
+          "player_after": [
+            -710,
+            0,
+            -700
+          ],
+          "object_before": {
+            "pos": [
+              -310,
+              0,
+              -1400
+            ],
+            "beta": 0,
+            "flags": 0
+          },
+          "object_after": {
+            "pos": [
+              -310,
+              0,
+              -1400
+            ],
+            "beta": 0,
+            "flags": 0
+          },
+          "vblank_start": 399,
+          "vblank_end": 579
+        },
+        {
+          "phase": "action",
+          "seconds": 8,
+          "fps": 19.75,
+          "world_ticks": 200,
+          "player_before": [
+            -710,
+            0,
+            -700
+          ],
+          "player_after": [
+            1090,
+            0,
+            -931
+          ],
+          "object_before": {
+            "pos": [
+              -310,
+              0,
+              -1400
+            ],
+            "beta": 0,
+            "flags": 0
+          },
+          "object_after": {
+            "pos": [
+              -310,
+              0,
+              -1400
+            ],
+            "beta": 256,
+            "flags": 0
+          },
+          "vblank_start": 579,
+          "vblank_end": 1059
+        },
+        {
+          "phase": "settle",
+          "seconds": 3,
+          "fps": 25.0,
+          "world_ticks": 75,
+          "player_before": [
+            1090,
+            0,
+            -931
+          ],
+          "player_after": [
+            1090,
+            0,
+            -931
+          ],
+          "object_before": {
+            "pos": [
+              -310,
+              0,
+              -1400
+            ],
+            "beta": 256,
+            "flags": 0
+          },
+          "object_after": {
+            "pos": [
+              -310,
+              0,
+              -1400
+            ],
+            "beta": 256,
+            "flags": 0
+          },
+          "vblank_start": 1059,
+          "vblank_end": 1239
+        }
+      ],
+      "emulator_only": true,
+      "before_swing": {
+        "samples": 17,
+        "mean_interval_ms": 116.66666666666667
+      },
+      "before_view_changes": [
+        {
+          "room": 3,
+          "camera": 12,
+          "interval_ms": 66.66666666666667
+        },
+        {
+          "room": 3,
+          "camera": 11,
+          "interval_ms": 50.0
+        }
+      ],
+      "after_swing": {
+        "samples": 19,
+        "mean_interval_ms": 107.01754385964912
+      },
+      "after_view_changes": [
+        {
+          "room": 3,
+          "camera": 12,
+          "interval_ms": 66.66666666666667
+        },
+        {
+          "room": 3,
+          "camera": 11,
+          "interval_ms": 50.0
+        }
+      ]
+    },
+    {
+      "scene": "bath-exit",
+      "character": "Edward",
+      "before_windows": [
+        {
+          "phase": "idle",
+          "seconds": 3,
+          "fps": 25.0,
+          "world_ticks": 75,
+          "player_before": [
+            1100,
+            0,
+            1700
+          ],
+          "player_after": [
+            1100,
+            0,
+            1700
+          ],
+          "object_before": {
+            "pos": [
+              -310,
+              0,
+              -1400
+            ],
+            "beta": 0,
+            "flags": 0
+          },
+          "object_after": {
+            "pos": [
+              -310,
+              0,
+              -1400
+            ],
+            "beta": 0,
+            "flags": 0
+          },
+          "vblank_start": 384,
+          "vblank_end": 564
+        },
+        {
+          "phase": "action",
+          "seconds": 8,
+          "fps": 20.125,
+          "world_ticks": 197,
+          "player_before": [
+            1100,
+            0,
+            1700
+          ],
+          "player_after": [
+            -700,
+            0,
+            413
+          ],
+          "object_before": {
+            "pos": [
+              -310,
+              0,
+              -1400
+            ],
+            "beta": 0,
+            "flags": 0
+          },
+          "object_after": {
+            "pos": [
+              -310,
+              0,
+              -1400
+            ],
+            "beta": 256,
+            "flags": 0
+          },
+          "vblank_start": 564,
+          "vblank_end": 1044
+        },
+        {
+          "phase": "settle",
+          "seconds": 3,
+          "fps": 16.333333333333332,
+          "world_ticks": 77,
+          "player_before": [
+            -700,
+            0,
+            413
+          ],
+          "player_after": [
+            -700,
+            0,
+            426
+          ],
+          "object_before": {
+            "pos": [
+              -310,
+              0,
+              -1400
+            ],
+            "beta": 256,
+            "flags": 0
+          },
+          "object_after": {
+            "pos": [
+              -310,
+              0,
+              -1400
+            ],
+            "beta": 256,
+            "flags": 0
+          },
+          "vblank_start": 1044,
+          "vblank_end": 1224
+        }
+      ],
+      "after_windows": [
+        {
+          "phase": "idle",
+          "seconds": 3,
+          "fps": 25.0,
+          "world_ticks": 75,
+          "player_before": [
+            1100,
+            0,
+            1700
+          ],
+          "player_after": [
+            1100,
+            0,
+            1700
+          ],
+          "object_before": {
+            "pos": [
+              -310,
+              0,
+              -1400
+            ],
+            "beta": 0,
+            "flags": 0
+          },
+          "object_after": {
+            "pos": [
+              -310,
+              0,
+              -1400
+            ],
+            "beta": 0,
+            "flags": 0
+          },
+          "vblank_start": 384,
+          "vblank_end": 564
+        },
+        {
+          "phase": "action",
+          "seconds": 8,
+          "fps": 20.875,
+          "world_ticks": 197,
+          "player_before": [
+            1100,
+            0,
+            1700
+          ],
+          "player_after": [
+            -700,
+            0,
+            413
+          ],
+          "object_before": {
+            "pos": [
+              -310,
+              0,
+              -1400
+            ],
+            "beta": 0,
+            "flags": 0
+          },
+          "object_after": {
+            "pos": [
+              -310,
+              0,
+              -1400
+            ],
+            "beta": 256,
+            "flags": 0
+          },
+          "vblank_start": 564,
+          "vblank_end": 1044
+        },
+        {
+          "phase": "settle",
+          "seconds": 3,
+          "fps": 16.333333333333332,
+          "world_ticks": 77,
+          "player_before": [
+            -700,
+            0,
+            413
+          ],
+          "player_after": [
+            -700,
+            0,
+            426
+          ],
+          "object_before": {
+            "pos": [
+              -310,
+              0,
+              -1400
+            ],
+            "beta": 256,
+            "flags": 0
+          },
+          "object_after": {
+            "pos": [
+              -310,
+              0,
+              -1400
+            ],
+            "beta": 256,
+            "flags": 0
+          },
+          "vblank_start": 1044,
+          "vblank_end": 1224
+        }
+      ],
+      "emulator_only": true,
+      "before_swing": {
+        "samples": 37,
+        "mean_interval_ms": 53.60360360360361
+      },
+      "before_view_changes": [
+        {
+          "room": 1,
+          "camera": 3,
+          "interval_ms": 183.33333333333334
+        }
+      ],
+      "after_swing": {
+        "samples": 43,
+        "mean_interval_ms": 46.89922480620155
+      },
+      "after_view_changes": [
+        {
+          "room": 1,
+          "camera": 3,
+          "interval_ms": 183.33333333333334
+        }
+      ]
+    },
+    {
+      "scene": "push",
+      "character": "Edward",
+      "before_windows": [
+        {
+          "phase": "idle",
+          "seconds": 3,
+          "fps": 25.0,
+          "world_ticks": 75,
+          "player_before": [
+            -4000,
+            0,
+            1200
+          ],
+          "player_after": [
+            -4000,
+            0,
+            1200
+          ],
+          "object_before": {
+            "pos": [
+              -4000,
+              0,
+              300
+            ],
+            "beta": 768,
+            "flags": 0
+          },
+          "object_after": {
+            "pos": [
+              -4000,
+              0,
+              300
+            ],
+            "beta": 768,
+            "flags": 0
+          },
+          "vblank_start": 693,
+          "vblank_end": 873
+        },
+        {
+          "phase": "action",
+          "seconds": 5,
+          "fps": 17.0,
+          "world_ticks": 123,
+          "player_before": [
+            -4000,
+            0,
+            1200
+          ],
+          "player_after": [
+            -4000,
+            0,
+            -280
+          ],
+          "object_before": {
+            "pos": [
+              -4000,
+              0,
+              300
+            ],
+            "beta": 768,
+            "flags": 0
+          },
+          "object_after": {
+            "pos": [
+              -4000,
+              0,
+              -1176
+            ],
+            "beta": 768,
+            "flags": 16
+          },
+          "vblank_start": 873,
+          "vblank_end": 1173
+        },
+        {
+          "phase": "settle",
+          "seconds": 3,
+          "fps": 22.666666666666668,
+          "world_ticks": 77,
+          "player_before": [
+            -4000,
+            0,
+            -280
+          ],
+          "player_after": [
+            -4000,
+            0,
+            -290
+          ],
+          "object_before": {
+            "pos": [
+              -4000,
+              0,
+              -1176
+            ],
+            "beta": 768,
+            "flags": 16
+          },
+          "object_after": {
+            "pos": [
+              -4000,
+              0,
+              -1186
+            ],
+            "beta": 768,
+            "flags": 0
+          },
+          "vblank_start": 1173,
+          "vblank_end": 1353
+        }
+      ],
+      "after_windows": [
+        {
+          "phase": "idle",
+          "seconds": 3,
+          "fps": 25.0,
+          "world_ticks": 75,
+          "player_before": [
+            -4000,
+            0,
+            1200
+          ],
+          "player_after": [
+            -4000,
+            0,
+            1200
+          ],
+          "object_before": {
+            "pos": [
+              -4000,
+              0,
+              300
+            ],
+            "beta": 768,
+            "flags": 0
+          },
+          "object_after": {
+            "pos": [
+              -4000,
+              0,
+              300
+            ],
+            "beta": 768,
+            "flags": 0
+          },
+          "vblank_start": 693,
+          "vblank_end": 873
+        },
+        {
+          "phase": "action",
+          "seconds": 5,
+          "fps": 20.0,
+          "world_ticks": 124,
+          "player_before": [
+            -4000,
+            0,
+            1200
+          ],
+          "player_after": [
+            -4000,
+            0,
+            -280
+          ],
+          "object_before": {
+            "pos": [
+              -4000,
+              0,
+              300
+            ],
+            "beta": 768,
+            "flags": 0
+          },
+          "object_after": {
+            "pos": [
+              -4000,
+              0,
+              -1176
+            ],
+            "beta": 768,
+            "flags": 16
+          },
+          "vblank_start": 873,
+          "vblank_end": 1173
+        },
+        {
+          "phase": "settle",
+          "seconds": 3,
+          "fps": 23.0,
+          "world_ticks": 76,
+          "player_before": [
+            -4000,
+            0,
+            -280
+          ],
+          "player_after": [
+            -4000,
+            0,
+            -290
+          ],
+          "object_before": {
+            "pos": [
+              -4000,
+              0,
+              -1176
+            ],
+            "beta": 768,
+            "flags": 16
+          },
+          "object_after": {
+            "pos": [
+              -4000,
+              0,
+              -1186
+            ],
+            "beta": 768,
+            "flags": 0
+          },
+          "vblank_start": 1173,
+          "vblank_end": 1353
+        }
+      ],
+      "emulator_only": true
+    }
+  ]
+}

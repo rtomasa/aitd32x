@@ -6,7 +6,9 @@ void RendererWorker_Init(); // CPU-local free-running timer, both SH2s.
 int RendererWorker_Restore(volatile uint16_t *,const uint16_t *,Rect);
 void RendererWorker_WaitRestore();
 void RendererWorker_Begin(RasterSurface &);
-bool RendererWorker_Submit(unsigned,const Point *,unsigned,uint8_t,int,uint8_t material=0);
+// PRIMITIVE bit 23 carries per-face convex-polygon deferral; material retains
+// all six bits and BEGIN still supplies the immutable exclusion rectangle.
+bool RendererWorker_Submit(unsigned,const Point *,unsigned,uint8_t,int,uint8_t material=0,bool deferred_polygons=false);
 void RendererWorker_Finish(RasterSurface &);
 // A contact job owns complete rows below split until Finish returns. Its
 // immutable context and geometry must remain alive for that interval.

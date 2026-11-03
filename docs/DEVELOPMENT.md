@@ -37,6 +37,18 @@ The importer vendors its decompressor and music-capture driver; a separate FITD 
 
 ## Relevant verification
 
+For planned character/prop contacts, see [contact-pair performance](validation/contact-pair-performance.md).
+Preserve a pre-change host library, build `make -j2 host all build/check_bands`,
+then run `tools/check_contact_pair.py --reference /path/to/libaitd32x.so`
+and `build/check_bands`. The existing preserved-renderer camera sweep and
+NTSC/PAL scheduling check cover painter repairs and per-primitive worker flags.
+`tools/profile_contact_pair.py --source /path/to/reference --label before`
+and `--label after` build matched frozen diagnostic cartridges separately from
+the playable ROM. They do not access battery saves. Optional `--core` measurement
+requires a calibrated FRC-enabled core. A successful plan must finish every
+fallback check before drawing; compact vertices remain live until both ordinary
+draws finish. Only proven convex polygon faces may omit their overlap fill.
+
 For direct RAM scenery composition and exact incremental lines, see the
 [scenery performance review](validation/scenery-performance.md). Preserve the
 uncached SH2 composition alias, worker completion and master cache purge before
@@ -56,7 +68,7 @@ framebuffer banks; use NTSC/PAL for shared-worker changes. Preserve the
 last-projection hint's lifetime and overwrite compact vertices with bounds
 only after all contact fallback decisions have passed. Run
 `check_bank_layout.py` after code-placement changes: the current RELEASE
-static stack margin is only 472 bytes.
+static stack margin is only 248 bytes.
 
 The shared [render preparation paths](validation/render-preparation.md) also
 borrow unused scenery-span storage for stationary contact programs. Preserve

@@ -132,14 +132,14 @@ A32X_COLD void RendererWorker_Begin(RasterSurface &surface) {
     c.points[3].x=surface.deferred.x2;c.points[3].y=surface.deferred.y2;
     Publish();surface.last=Min(surface.last,job_split);
 }
-bool RendererWorker_Submit(unsigned type,const Point *points,unsigned count,uint8_t color,int size,uint8_t material) {
+bool RendererWorker_Submit(unsigned type,const Point *points,unsigned count,uint8_t color,int size,uint8_t material,bool deferred_polygons) {
     int first=points[0].y,last=first;
     if(type==1 || (type==0 && count==2)) for(unsigned i=1;i<count;++i) {
         first=Min(first,points[i].y);last=Max(last,points[i].y);
     } else if(type!=2) { first-=size;last+=size; }
     bool master=first<job_split && first<job_last && last>=job_first;
     if(last<job_split || first>=job_last) return master;
-    volatile Command &c=Acquire();c.header=(uint32_t(PRIMITIVE)<<30)|(type<<16)|(unsigned(material)<<24)|(count<<8)|color;c.argument=(unsigned)size;
+    volatile Command &c=Acquire();c.header=(uint32_t(PRIMITIVE)<<30)|(type<<16)|(deferred_polygons?1u<<23:0)|(unsigned(material)<<24)|(count<<8)|color;c.argument=(unsigned)size;
     for(unsigned i=0;i<count;++i) { c.points[i].x=points[i].x;c.points[i].y=points[i].y; }
     Publish();return master;
 }
@@ -172,7 +172,7 @@ void RendererWorker_Poll() {
     if(read==s.written) return;
     Barrier();volatile Command &c=s.commands[read&(capacity-1)];
     unsigned header=c.header,argument=c.argument;
-    unsigned kind=header>>30,type=(header>>16)&255,count=(header>>8)&255;
+    unsigned kind=header>>30,type=(header>>16)&127,count=(header>>8)&255;
     if(kind==BEGIN && (header&1)) {
         RestoreRows(c,read);return;
     }
@@ -208,6 +208,7 @@ void RendererWorker_Poll() {
         slave_surface.deferred=deferred;
     }
     else if(kind==PRIMITIVE) {
+        slave_surface.deferred_polygons=(header&(1u<<23))!=0;
         uint16_t timed=Timer();
 #ifdef PROFILE
         uint16_t begin=Profile_ReadTimer();
@@ -231,7 +232,7 @@ int RendererWorker_Restore(volatile uint16_t *,const uint16_t *,Rect area) { ret
 void RendererWorker_WaitRestore() {}
 int RendererWorker_ContactSplit(int first,int last) { return first+(last-first+1)/2; }
 void RendererWorker_Begin(RasterSurface &) {}
-bool RendererWorker_Submit(unsigned,const Point *,unsigned,uint8_t,int,uint8_t) { return true; }
+bool RendererWorker_Submit(unsigned,const Point *,unsigned,uint8_t,int,uint8_t,bool) { return true; }
 void RendererWorker_Finish(RasterSurface &) {}
 void RendererWorker_Contact(RasterSurface &,void (*)(void *,RasterSurface &),void *,int) {}
 void RendererWorker_Poll() {}

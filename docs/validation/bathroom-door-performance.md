@@ -1,5 +1,10 @@
 # Bathroom door investigation — 2026-10-20
 
+The later [contact-pair optimization](contact-pair-performance.md) preserves
+accurate depth correction while reducing repeated preparation and overlap fill
+for simple dynamic pairs. Door routes improve modestly; the sampled transition
+stall remains. The player-front experiment below remains rolled back.
+
 The later [scenery/Amiga-port review](scenery-performance.md) retains direct RAM
 scenery construction and exact incremental lines. Cold construction improves,
 but the sampled bathroom crossing interval and sustained door cost remain.

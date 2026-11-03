@@ -168,6 +168,35 @@ A32X_COLD Rect Game::DeferredContact(const int *order,int count,int rank) {
     if(vertices>768) return empty;
     return static_bounds[order[candidate]];
 }
+A32X_COLD int Game::PlanContactPair(const int *order,int count,int &last,Rect &guard) {
+    int source=-1,prop=-1;
+    for(int i=0;i<count;++i) {
+        int flags=world.active[order[i]].value.v[O_FLAGS];
+        if((flags&F_ANIMATED) && (flags&F_TRIGGER) && !(flags&F_MOVABLE)) {
+            if(source>=0) return -1;
+            source=i;
+        }
+    }
+    if(source<0 || !Dynamic(order[source])) return -1;
+    Bounds a=world.Box(order[source],world.room);
+    for(int i=0;i<count;++i) {
+        int s=order[i],flags=world.active[s].value.v[O_FLAGS];
+        if(i==source || (flags&F_FOUNDABLE)) continue;
+        Bounds b=world.Box(s,world.room);
+        if(b.hi.y-b.lo.y<=20 || a.lo.x>b.hi.x+300 || a.hi.x<b.lo.x-300 ||
+           a.lo.y>b.hi.y+100 || a.hi.y<b.lo.y-100 || a.lo.z>b.hi.z+300 || a.hi.z<b.lo.z-300) continue;
+        if(prop>=0 || !Dynamic(s)) return -1;
+        prop=i;
+    }
+    if(prop<0) return -1;
+    int first=Min(prop,source);last=Max(prop,source);
+    for(int i=first+1;i<last;++i) {
+        int s=order[i];if(Dynamic(s) || static_span_count[s]==65535) return -1;
+        Rect b=static_bounds[s];
+        if(b.x1<=b.x2 && b.y1<=b.y2) guard={Min(guard.x1,b.x1),Min(guard.y1,b.y1),Max(guard.x2,b.x2),Max(guard.y2,b.y2)};
+    }
+    return first;
+}
 void Game::DrawScene() {
     if(world.dark!=lighting_dark) { renderer.full_restore[0]=renderer.full_restore[1]=true;lighting_dark=world.dark; }
     if(renderer.camera_id!=((unsigned)world.floor<<8 | (unsigned)camera)) ResetCache();
@@ -278,7 +307,29 @@ void Game::DrawScene() {
     }
     Rect dynamic_bounds={320,200,-1,-1};
     const Actor *projected=nullptr;
+    int pair_last=-1;Rect pair_guard={320,200,-1,-1};
+    int pair=!world.intro && startup_phase<STARTUP_DEATH && contact_sources==1?PlanContactPair(order,count,pair_last,pair_guard):-1;
+    bool paired=false;
     for(int i=0;i<count;++i) {
+        if(paired && i==pair_last) {
+            Rect b=static_bounds[order[i]];
+            dynamic_bounds={Min(dynamic_bounds.x1,b.x1),Min(dynamic_bounds.y1,b.y1),Max(dynamic_bounds.x2,b.x2),Max(dynamic_bounds.y2,b.y2)};
+            continue;
+        }
+        if(i==pair) {
+            Rect bounds[2];
+            bool drawn=renderer.TryDrawContactPair(world.Pose(order[i]),world.Pose(order[pair_last]),bounds,pair_guard);
+            projected=nullptr;
+            if(drawn) {
+                static_bounds[order[i]]=bounds[0];static_bounds[order[pair_last]]=bounds[1];
+                // Intervening cached scenery must see the same repair clip
+                // as the original painter pass. Publish the second footprint
+                // only when its original rank is reached.
+                Rect b=bounds[0];
+                dynamic_bounds={Min(dynamic_bounds.x1,b.x1),Min(dynamic_bounds.y1,b.y1),Max(dynamic_bounds.x2,b.x2),Max(dynamic_bounds.y2,b.y2)};
+                paired=true;continue;
+            }
+        }
         int slot=order[i];bool full_draw=false;
         if(Dynamic(slot)) {
             const Actor &actor=world.Pose(slot);
@@ -306,6 +357,7 @@ void Game::DrawScene() {
     // every character pose, including the reach of search/push limbs.
     // The original arrival uses its scripted painter order and camera masks.
     for(int i=0;!world.intro && startup_phase<STARTUP_DEATH && i<count;++i) {
+        if(paired && (i==pair || i==pair_last)) continue;
         int s=order[i];if(!(world.active[s].value.v[O_FLAGS]&F_ANIMATED) || (world.active[s].value.v[O_FLAGS]&F_MOVABLE)) continue;
         if(!(world.active[s].value.v[O_FLAGS]&F_TRIGGER)) continue;
         Bounds a=world.Box(s,world.room);uint64_t group_mask=uint64_t(1)<<s;Rect area={320,200,-1,-1};

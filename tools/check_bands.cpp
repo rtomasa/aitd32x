@@ -171,6 +171,41 @@ int main() {
             CheckGuards(actual,index,split);++deferred_checks;
         }
     }
-    std::printf("cases=%zu splits=12 comparisons=%u primitive_calls=%u pixels/damage/ownership/guards=ok deferred=%u\n",
-                cases.size(),comparisons,primitive_calls,deferred_checks);
+    unsigned polygon_checks=0;
+    // Convex polygon omission must retain ordinary coverage outside the area
+    // and leave no holes when the depth fan supplies its interior. This oracle
+    // deliberately draws the complete ordinary polygon before the depth fan.
+    const Point convex[][4]={
+        {{-4096,-4096},{4096,-4096},{4096,4096},{-4096,4096}},
+        {{0,0},{319,17},{270,199},{13,193}},
+        {{25,30},{140,33},{115,111},{70,135}},
+        {{37,40},{92,40},{92,100},{37,100}},
+        {{40,-4096},{41,-4096},{41,4096},{40,4096}}
+    };
+    const Rect tile={37,40,92,100};
+    for(const auto &points:convex) for(uint8_t color:colors) for(uint8_t material:{0,2}) {
+        Primitive p=Make(1,{points[0],points[1],points[2],points[3]},color);p.material=material;
+        Buffer expected;Initialize(expected,polygon_checks);
+        RasterSurface oracle={expected.data()+guard,0,GAME_HEIGHT,empty};Draw(oracle,p);
+        auto depth=[&](RasterSurface &surface) {
+            uint16_t depths[64*64]={};
+            for(unsigned k=1;k<3;++k) {
+                Point triangle[]={points[0],points[k],points[k+1]};int q[]={500,500,500};
+                RasterDepthTriangle(surface,triangle,q,tile,depths,color,material);
+            }
+        };
+        depth(oracle);
+        for(int split:{20,66,100,180}) {
+            Buffer actual;Initialize(actual,polygon_checks);
+            RasterSurface top={actual.data()+guard,0,split,empty},bottom={actual.data()+guard,split,GAME_HEIGHT,empty};
+            top.deferred=bottom.deferred=tile;top.deferred_polygons=bottom.deferred_polygons=true;
+            Draw(top,p);Draw(bottom,p);
+            RasterSurface complete={actual.data()+guard,0,GAME_HEIGHT,empty};depth(complete);
+            if(std::memcmp(actual.data()+guard,expected.data()+guard,words*2)) Fail(polygon_checks,split,"deferred polygon/depth fan differs");
+            CheckGuards(actual,polygon_checks,split);
+        }
+        ++polygon_checks;
+    }
+    std::printf("cases=%zu splits=12 comparisons=%u primitive_calls=%u pixels/damage/ownership/guards=ok deferred=%u convex_polygon_fans=%u\n",
+                cases.size(),comparisons,primitive_calls,deferred_checks,polygon_checks*4);
 }

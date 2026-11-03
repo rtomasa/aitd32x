@@ -15,6 +15,8 @@ STAGES = ['update', 'restore_submit', 'transform', 'sort', 'primitives_inclusive
           'fill', 'mask', 'ui', 'palette', 'flip', 'draw_inclusive', 'queue_wait', 'worker_end_wait']
 NAMES = ['live_start', 'frozen_start_quiet', 'frozen_start_two_voices',
          'frozen_near_quiet', 'frozen_near_two_voices', 'frozen_floor3_room1_camera3']
+CONTACT_NAMES = [character+' '+scene for character in ('Edward','Emily')
+                 for scene in ('corridor door 96','bathroom door 160','moved chest 800')]
 
 
 def decode(path):
@@ -93,11 +95,14 @@ def result(values):
         for name in STAGES:
             if name not in ('flip', 'draw_inclusive'):
                 times[name] = 0.0
-    return dict(case=which, name=NAMES[which], variant=values[30], pixel_hash=values[8] if values[30] else None,
+    row = dict(case=which, name=(CONTACT_NAMES if values[30]==64 else NAMES)[which], variant=values[30], pixel_hash=values[8] if values[30] else None,
                 hz=hz, draws=draws, vblanks=vb, timer_available=bool(frc),
                 frc_ticks=frc, updates=updates, fault=fault, fps=draws*hz/vb,
                 stage_ms_per_draw=times, scene_phase_ms_per_draw=phases,
                 raw=values)
+    if values[30]==64:
+        row['planned_draws']=row['updates'];row['updates']=0
+    return row
 
 
 def verify(core, project, region):
@@ -127,7 +132,7 @@ def verify(core, project, region):
                 ratio = row['frc_ticks']/(row['vblanks']/hz)/expected_hz
                 if 'frt' in core.name and not 0.97 < ratio < 1.03:
                     raise AssertionError(('FRC/VBlank calibration failed', ratio))
-                if row['case'] == 0 and abs(row['updates']-75) > 3:
+                if row['case'] == 0 and row['variant'] != 64 and abs(row['updates']-75) > 3:
                     raise AssertionError(('live simulation clock', row['updates']))
                 row['timer_calibration_ratio'] = ratio
                 rows[row['case']] = row

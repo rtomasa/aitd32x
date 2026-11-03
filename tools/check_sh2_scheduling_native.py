@@ -105,7 +105,9 @@ def main():
         for name, floor, room, camera, pose in (
                 ('attic glass and cupboard', 0, 0, 0, (3231, 0, -1548, 0)),
                 ('contact middle item', 0, 0, 3, (-4000, 0, 1200, 0)),
-                ('bedroom door', 1, 4, 5, (0, 0, 0, 0))):
+                ('bedroom door', 1, 4, 5, (0, 0, 0, 0)),
+                ('planned moving door', 1, 1, 3, (-710, 0, -1040, 0)),
+                ('planned moving chest', 0, 0, 3, (-4000, 0, 1200, 0))):
             lib.host_init(bank, len(data))
             lib.host_begin_world(character, floor, room, camera)
             lib.host_place(1, floor, room, *pose)
@@ -123,6 +125,14 @@ def main():
                 lib.host_bounds(1, 2)
                 lib.host_bounds(13, 3)
                 lib.host_bounds(0, 3)
+            if name.startswith('planned '):
+                prop=29 if name.endswith('door') else 0
+                if prop==0:
+                    lib.host_place(0, 0, 0, -3900, 0, 300, 800)
+                else:
+                    lib.host_set_object(prop, 12, 96)
+                lib.host_set_object(prop, 2, lib.host_object(prop, 2) | 16)
+                lib.host_bounds(prop, 3)
             lib.host_clear_message()
             C.memset(lib.host_sram(), 0, 131072)
             assert lib.host_save()
@@ -130,7 +140,10 @@ def main():
             assert lib.host_load()
             lib.host_clear_message()
             lib.host_buffer(0)
+            planned_before=lib.renderer_pair_stats(1)
             lib.host_draw_cached()
+            if name.startswith('planned '):
+                assert lib.renderer_pair_stats(1)>planned_before, ('pair path not reached', name, character)
             expected = C.string_at(lib.host_pixels(), 320 * 224)[12 * 320:212 * 320]
             meta = dict(name=name, character=character, layout=offsets)
             command = [sys.executable, __file__, str(args.core.resolve()), '--mars',

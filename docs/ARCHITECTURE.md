@@ -353,6 +353,21 @@ types and ambiguous or moving contacts keep the complete ordinary draw. BEGIN
 copies the exclusion rectangle into existing command fields before releasing
 the queue entry; it adds no queue storage.
 
+With exactly one dynamic character source and one nearby dynamic prop, a bounded
+pair plan transforms/projects both models once and prepares the full depth
+program before writing pixels. It retains ordinary stable face order, camera
+masks and the existing depth rasterizer. Ordinary triangles and proven convex
+polygon faces omit the overlap fill; nonconvex faces retain ordinary coverage.
+Near-plane/clamped-depth, capacity and ambiguous membership cases retain the
+existing renderer. Intervening cached scenery must have coverage disjoint from
+both models; its repair clip gains the second model's footprint only at that
+model's original painter rank. Later foreground models draw once normally.
+Two temporary 384-entry face-index arrays occupy 1,536 master-stack bytes;
+vertices, depth commands and tiles reuse existing scratch. PRIMITIVE header
+bit 23 carries polygon omission per face; BEGIN still carries the rectangle.
+Material bits 24–29 and queue capacity are unchanged. See
+[contact-pair validation](validation/contact-pair-performance.md).
+
 Architectural mask rows are sorted by Y by the importer. Ordinary and depth
 paths seek the first relevant row and stop after the last. Contact preparation
 evaluates mask activation once per actor, using a temporary 400-byte master
@@ -424,13 +439,13 @@ separate from the engine license and are excluded from source archives/Git.
 ## Memory and diagnostics
 
 The complete-game RELEASE ROM is 14,155,776 bytes (13.5 MiB). Fixed bank data
-uses 3,964,720 bytes and the extension 9,932,868 bytes. The 84,580-byte BIOS
-module ends at physical byte 4,180,372, leaving 13,932 bytes below the 4 MiB
+uses 3,964,720 bytes and the extension 9,932,868 bytes. The 84,804-byte BIOS
+module ends at physical byte 4,180,596, leaving 13,708 bytes below the 4 MiB
 direct-window limit. BSS uses 160,704 bytes; module/BSS/linker overhead total
-245,288 bytes, ending at `0x0603BE28`. The static margin below the reserved
-stacks is 472 bytes. Camera setup, video initialization, scenery readback,
+245,512 bytes, ending at `0x0603BF08`. The static margin below the reserved
+stacks is 248 bytes. Camera setup, video initialization, scenery readback,
 prepared-prop lookup/coverage construction, fallback depth wrappers and
-worker control/copy helpers, face sorting, line helpers, rectangle fills, panels and effects
+worker control/copy helpers, contact-pair planning/drawing, face sorting, line helpers, rectangle fills, panels and effects
 dispatch and the FPS overlay execute from protected ROM; hot raster loops remain in SDRAM. `build/bank-layout.json` is the authoritative
 generated layout report for this build; later changes require fresh figures.
 

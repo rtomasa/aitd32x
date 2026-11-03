@@ -33,6 +33,9 @@ public:
     void DrawCachedCoverage(const Actor &actor,const CachedSpan *spans,unsigned count,Rect bounds,Rect clip);
     // True leaves this actor's camera-space vertices/projection in scratch.
     bool DrawActor(const Actor &a,const Rect *deferred=nullptr);
+    // Bounded dynamic pair; guard encloses intervening cached scenery.
+    // Failure writes no pixels; scratch dies on either result.
+    A32X_COLD bool TryDrawContactPair(const Actor &,const Actor &,Rect *bounds,Rect guard);
     // Original item presentation; shares geometry scratch without a world actor.
     A32X_COLD void DrawPreview(int character,int body,int beta,Rect viewport={8,108,151,191},
                                int distance=24000,int projection_x=400,int projection_y=390,
@@ -62,6 +65,9 @@ private:
     };
     void Polygon(Point *pts,unsigned count,uint8_t color);
     A32X_COLD unsigned SortFaces(const uint8_t *model,Rect *bounds=nullptr,const Rect *deferred=nullptr);
+    A32X_COLD unsigned SortFaceOrder(unsigned count);
+    A32X_COLD unsigned PreparePairActor(const Actor &,unsigned,uint16_t *,Rect &);
+    A32X_COLD void DrawPairActor(const Actor &,unsigned,const uint16_t *,unsigned,Rect,Rect);
     void Triangle(Point *pts,uint8_t color);
     void PolygonGeneral(Point *pts,unsigned count,uint8_t color);
     bool Mask(const Actor &a,Rect bounds);
@@ -71,6 +77,7 @@ private:
     void ContactTiles(const ContactContext &,struct RasterSurface &,uint16_t *depths);
     void ContactVertices(const Actor &,unsigned,bool,bool &);
     bool ContactModel(const Actor &,unsigned,Rect,DepthPrimitive *,unsigned &,unsigned);
+    A32X_COLD void DrawContactCommands(const Actor *const *,unsigned,Rect,DepthPrimitive *,unsigned,const uint16_t *);
     A32X_COLD void ContactFallback(const Actor *const *,unsigned,Rect,const unsigned *,const bool *);
     A32X_COLD const uint8_t *CompiledProgram(const Actor &a) const;
     void DrawCompiledActor(const Actor &a,const uint8_t *program,bool *masked=nullptr);

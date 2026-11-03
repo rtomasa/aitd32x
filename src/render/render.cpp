@@ -409,7 +409,9 @@ unsigned Renderer::SortFaces(const uint8_t *m,Rect *bounds,const Rect *deferred)
         while(j>base && ordering.faces[j-1].depth<depth) { ordering.faces[j]=ordering.faces[j-1];--j; }
         ordering.faces[j]=face;
     }
-    np=count;
+    return SortFaceOrder(count);
+}
+unsigned Renderer::SortFaceOrder(unsigned np) {
     Face *source=ordering.faces,*dest=ordering.sort_scratch;
     for(unsigned width=4;width<np;width*=2) {
         for(unsigned base=0;base<np;base+=width*2) {
@@ -850,19 +852,7 @@ bool Renderer::ResolveOverlap(const Actor *const *actors,unsigned count,Rect are
 #if !defined(__sh__)
         ++contact_stats[0];contact_stats[3]=Max(contact_stats[3],total);
 #endif
-        RasterSurface surface={target,0,GAME_HEIGHT,damage[buffer_index]};
-        // All commands now own their projection/depth data. Preserve combined
-        // vertices for every fallback above, then reuse them for tile culling.
-        for(unsigned f=0;f<total;++f) contact_bounds[f]=RasterDepthBounds(commands[f]);
-        ContactMask masks[MAX_ACTIVE];
-        for(unsigned i=0;i<count;++i) PrepareContactMask(*actors[i],masks[i]);
-        ContactContext context={this,actors,commands,contact_bounds,ends,masks,count,area,false};
-        bool parallel=area.y2-area.y1>=15 && total>=12;
-        FinishRestore();
-        if(parallel) RendererWorker_Contact(surface,ContactWorker,&context,RendererWorker_ContactSplit(area.y1,area.y2+1));
-        ContactTiles(context,surface,contact_depth);
-        if(parallel) RendererWorker_Finish(surface);
-        damage[buffer_index]=surface.damage;
+        DrawContactCommands(actors,count,area,commands,total,ends);
     }
     return true;
 fallback:
@@ -873,6 +863,21 @@ fallback:
 #endif
     ContactFallback(actors,count,area,offsets,near);
     return true;
+}
+
+A32X_COLD void Renderer::DrawContactCommands(const Actor *const *actors,unsigned count,Rect area,DepthPrimitive *commands,unsigned total,const uint16_t *ends) {
+    RasterSurface surface={target,0,GAME_HEIGHT,damage[buffer_index]};
+    // Compact vertices stay live until every fallback decision has passed.
+    for(unsigned f=0;f<total;++f) contact_bounds[f]=RasterDepthBounds(commands[f]);
+    ContactMask masks[MAX_ACTIVE];
+    for(unsigned i=0;i<count;++i) PrepareContactMask(*actors[i],masks[i]);
+    ContactContext context={this,actors,commands,contact_bounds,ends,masks,count,area,false};
+    bool parallel=area.y2-area.y1>=15 && total>=12;
+    FinishRestore();
+    if(parallel) RendererWorker_Contact(surface,ContactWorker,&context,RendererWorker_ContactSplit(area.y1,area.y2+1));
+    ContactTiles(context,surface,contact_depth);
+    if(parallel) RendererWorker_Finish(surface);
+    damage[buffer_index]=surface.damage;
 }
 
 A32X_COLD void Renderer::ContactFallback(const Actor *const *actors,unsigned count,Rect area,const unsigned *offsets,const bool *near) {

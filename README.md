@@ -44,6 +44,7 @@ confirmation of the revised driver remains pending. See [PWM validation](docs/va
 - Original near-camera face rejection restored, fixing the giant door polygon in the pink-chair bedroom.
 - Cached scenery now preserves architectural masks and repairs the full area overwritten by foreground actors.
 - Contact-depth rendering includes intervening overlapping objects, and prepared prop drawing follows the same visibility rules as ordinary drawing.
+- Simple character/moving-prop contacts prepare geometry once and omit redundant overlap fill before depth correction. Matched MiSTer poses reduce drawing time by 6.7–18.1%; the sampled PicoDrive pushing route improves from 17 to 20 FPS. Door routes improve modestly. See [contact-pair measurements](docs/validation/contact-pair-performance.md).
 
 Focused checks cover all 144 cameras in sampled states and both reported scenes in PicoDrive NTSC/PAL, with both characters and framebuffer banks. They do not verify every animation or puzzle pose. Full playthrough, physical 32X validation and sustained hardware performance remain pending. CD narration is not implemented; music timbre and some visual effects differ from DOS.
 

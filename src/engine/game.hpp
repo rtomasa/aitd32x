@@ -37,6 +37,7 @@ struct Game {
     void Update();
     void DrawScene();
     A32X_COLD Rect DeferredContact(const int *order,int count,int rank);
+    A32X_COLD int PlanContactPair(const int *order,int count,int &last,Rect &guard);
     A32X_COLD void DrawMessages();
     A32X_COLD Rect PrepareLighting(const int *order,int count,Point &center);
     A32X_COLD void DrawLighting(Rect restored,Rect light,Point center);

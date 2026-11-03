@@ -214,6 +214,24 @@ extern "C" int host_resolve_pair(int first,int second) {
     const Actor *group[]={&game.world.Pose(a),&game.world.Pose(b)};
     return game.renderer.ResolveOverlap(group,2,{0,0,319,199});
 }
+// Isolate pair preparation/failure without any pre-existing actor pixels.
+extern "C" int host_pair_scene(int first,int second,int planned,int guarded) {
+    Renderer &r=game.renderer;
+    r.SetCamera(game.camera,game.world.floor,game.world.room);r.Restore();
+    Asset original=r.original_background;
+    if(original.flags&0x8000) r.original_background=Platform_MapImage(original);
+    const Actor &a=game.world.Pose(game.world.Slot(first)),&b=game.world.Pose(game.world.Slot(second));
+    Rect bounds[2],guard=guarded?Rect{0,0,319,199}:Rect{320,200,-1,-1};
+    bool result;
+    if(planned) result=r.TryDrawContactPair(a,b,bounds,guard);
+    else {
+        r.DrawActor(a);bounds[0]=r.last_bounds;r.DrawActor(b);bounds[1]=r.last_bounds;
+        Rect area={Max(bounds[0].x1,bounds[1].x1),Max(bounds[0].y1,bounds[1].y1),Min(bounds[0].x2,bounds[1].x2),Min(bounds[0].y2,bounds[1].y2)};
+        const Actor *actors[]={&a,&b};result=r.ResolveOverlap(actors,2,area);
+    }
+    if(original.flags&0x8000) { r.original_background=original;Platform_UnmapImage(); }
+    return result;
+}
 // Bounded private scratch for cache-capacity/invalidation diagnostics. Native
 // gameplay instead borrows unused bytes from its existing scenery span pool.
 extern "C" int host_resolve_cached_pair(int first,int second,unsigned bytes,unsigned key,int reset) {
