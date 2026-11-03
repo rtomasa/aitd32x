@@ -85,6 +85,14 @@ On flash cartridges, use the cartridge's normal SRAM-to-SD backup procedure afte
 
 Gameplay simulation runs at 25 Hz, with an independent 60 Hz animation clock. Native video is 320×224 with a 320×200 scene. Rendering uses both SH2 processors, cached scenery, partial background repairs and contact-depth rendering where applicable. Camera images remain raw and use bank switching; fixed engine resources stay outside the mapped aperture, allowing camera pages to remain selected between draws. Prepared prop rendering is available across the house, with a normal rendering fallback.
 
+Scenery rebuilds now compose directly in the existing RAM background,
+avoiding framebuffer readback. Shared line drawing uses exact incremental steps
+instead of per-pixel division. Forced rebuild samples improve by about 3 ms,
+and by 17 ms in one complex scene; warm rendering changes little and the sampled
+bathroom transition remains unchanged. See the
+[scenery performance review](docs/validation/scenery-performance.md) for the
+Amiga-port comparison, measurements and remaining architectural candidates.
+
 Ordinary model and contact-depth drawing adapt their SH2 row split from measured
 workload. Larger background repairs use both processors and can overlap vertex
 transformation and face sorting, including inventory and pickup previews.

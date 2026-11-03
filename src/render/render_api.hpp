@@ -84,7 +84,9 @@ class BackgroundComposition {
     volatile uint16_t *output;
     Rect previous_damage[2];
 public:
-    A32X_COLD explicit BackgroundComposition(Renderer &r);
+    // Shared geometry writes through the uncached alias on both SH2s. The
+    // completion fence and master purge make later cached image reads safe.
+    A32X_COLD explicit BackgroundComposition(Renderer &r,bool shared=false);
     A32X_COLD ~BackgroundComposition();
     BackgroundComposition(const BackgroundComposition &)=delete;
     BackgroundComposition &operator=(const BackgroundComposition &)=delete;

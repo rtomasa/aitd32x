@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "../platform/pixel_words.hpp"
 #include "raster.hpp"
+#include "line.hpp"
 #include "divide.hpp"
 #include "../engine/actor.hpp"
 static uint16_t Pair(uint8_t left,uint8_t right) {
@@ -170,16 +171,19 @@ void RasterPolygonGeneral(RasterSurface &surface,const Point *p,unsigned n,uint8
         for(int i=0;i+1<count;i+=2) RasterSpan(surface,y,intersections[i],intersections[i+1],color);
     }
 }
+static A32X_COLD __attribute__((noinline)) void RasterLine(RasterSurface &surface,const Point *screen,uint8_t color) {
+    int dx=screen[1].x-screen[0].x,dy=screen[1].y-screen[0].y,steps=Max(dx<0?-dx:dx,dy<0?-dy:dy);
+    RasterLineStep x(screen[0].x,dx,steps),y(screen[0].y,dy,steps);
+    for(int i=0;i<=steps;++i) {
+        RasterSpan(surface,y.value,x.value,x.value,color);
+        x.Advance();y.Advance();
+    }
+}
 void RasterPrimitive(RasterSurface &surface,unsigned type,const Point *screen,unsigned count,uint8_t color,int size,uint8_t material) {
     surface.material=material;
     if(type==1) RasterPolygon(surface,screen,count,color);
-    else if(type==0 && count==2) {
-        int dx=screen[1].x-screen[0].x,dy=screen[1].y-screen[0].y,steps=Max(dx<0?-dx:dx,dy<0?-dy:dy);
-        for(int i=0;i<=steps;++i) {
-            int x=screen[0].x+(steps?dx*i/steps:0);
-            RasterSpan(surface,screen[0].y+(steps?dy*i/steps:0),x,x,color);
-        }
-    } else if(type==2) RasterSpan(surface,screen[0].y,screen[0].x,screen[0].x,color);
+    else if(type==0 && count==2) RasterLine(surface,screen,color);
+    else if(type==2) RasterSpan(surface,screen[0].y,screen[0].x,screen[0].x,color);
     else for(int y=-size;y<=size;++y) {
         int half=size-(y<0?-y:y)/2;
         RasterSpan(surface,screen[0].y+y,screen[0].x-half,screen[0].x+half,color);
@@ -250,17 +254,20 @@ void RasterDepthPrimitive(RasterSurface &surface,const DepthPrimitive &p,Rect ti
     if(bounds.x1>tile.x2 || bounds.x2<tile.x1 || bounds.y1>tile.y2 || bounds.y2<tile.y1) return;
     RasterDepthVisible(surface,p,tile,depth,mask);
 }
+static A32X_COLD __attribute__((noinline)) void DepthLine(RasterSurface &surface,const DepthPrimitive &p,Rect tile,uint16_t *depth,const uint8_t *mask) {
+    int dx=p.x[1]-p.x[0],dy=p.y[1]-p.y[0],steps=p.dy;
+    RasterLineStep x(p.x[0],dx,steps),y(p.y[0],dy,steps),q(p.q,p.dx,steps);
+    for(int t=0;t<=steps;++t) {
+        RasterDepthPoint(surface,{x.value,y.value},q.value,0,tile,depth,p.color,p.material,mask);
+        x.Advance();y.Advance();q.Advance();
+    }
+}
 void RasterDepthVisible(RasterSurface &surface,const DepthPrimitive &p,Rect tile,uint16_t *depth,const uint8_t *mask) {
     if(p.kind==1) {
         Point points[]={{p.x[0],p.y[0]},{p.x[1],p.y[1]},{p.x[2],p.y[2]}};
         DepthTriangle(surface,points,p.q,p.dx,p.dy,tile,depth,p.color,p.material,mask);
-    } else if(p.kind==0) {
-        int dx=p.x[1]-p.x[0],dy=p.y[1]-p.y[0],steps=p.dy;
-        for(int t=0;t<=steps;++t) {
-            Point point={p.x[0]+(steps?dx*t/steps:0),p.y[0]+(steps?dy*t/steps:0)};
-            RasterDepthPoint(surface,point,p.q+(steps?p.dx*t/steps:0),0,tile,depth,p.color,p.material,mask);
-        }
-    } else RasterDepthPoint(surface,{p.x[0],p.y[0]},p.q,p.dx,tile,depth,p.color,p.material,mask);
+    } else if(p.kind==0) DepthLine(surface,p,tile,depth,mask);
+    else RasterDepthPoint(surface,{p.x[0],p.y[0]},p.q,p.dx,tile,depth,p.color,p.material,mask);
 }
 
 void RasterDepthPoint(RasterSurface &surface,Point p,int q,int size,Rect tile,uint16_t *depth,uint8_t color,uint8_t material,const uint8_t *mask) {

@@ -282,7 +282,11 @@ its selection pass. Interpenetrating geometry still needs local per-pixel depth.
 
 One 64,000-byte RAM image holds scenery with static props baked in. All 144
 camera backgrounds retain raw storage and aligned word copies, with banked
-mapping shared across floors. View changes reset the bake and slot history;
+mapping shared across floors. Full bakes and partial static-order repairs draw
+directly into that image, avoiding a framebuffer readback. Both SH2s use its
+cache-through alias until drawing completes; the master then disables/purges/
+restores its cache before cached image reads resume. UI-only composition keeps
+its cached path. View changes reset the bake and slot history;
 same-camera room links retain it. Binding/copy happens once per rebuild. CRAM
 reload follows actual palette changes. Movable props and deforming animations
 remain dynamic. Missing-animation props and bodies with no deformable child
@@ -297,7 +301,7 @@ clipping, into an uncached 8000-byte bitmap shared by the row-owning SH2s. This
 reuses contact/face-sort scratch after face indices move to a local array.
 Bitmap runs form a bounded 3072-span cache without a second draw or framebuffer
 scan. Each cached span is `(u16 pixel start, u16 length)`; exhausted pools fall
-back to regular model drawing. Baking copies only changed static rectangles.
+back to regular model drawing. Static-order repairs compose only affected props.
 Prepared props instead merge adjacent stored color spans into coverage runs;
 black pixels and glass holes remain represented by those spans. An allowed-bit
 rectangle in existing scratch records architectural erasures, which are
@@ -420,13 +424,13 @@ separate from the engine license and are excluded from source archives/Git.
 ## Memory and diagnostics
 
 The complete-game RELEASE ROM is 14,155,776 bytes (13.5 MiB). Fixed bank data
-uses 3,964,720 bytes and the extension 9,932,868 bytes. The 84,852-byte BIOS
-module ends at physical byte 4,180,644, leaving 13,660 bytes below the 4 MiB
+uses 3,964,720 bytes and the extension 9,932,868 bytes. The 84,580-byte BIOS
+module ends at physical byte 4,180,372, leaving 13,932 bytes below the 4 MiB
 direct-window limit. BSS uses 160,704 bytes; module/BSS/linker overhead total
-245,560 bytes, ending at `0x0603BF38`. The static margin below the reserved
-stacks is 200 bytes. Camera setup, video initialization, scenery readback,
+245,288 bytes, ending at `0x0603BE28`. The static margin below the reserved
+stacks is 472 bytes. Camera setup, video initialization, scenery readback,
 prepared-prop lookup/coverage construction, fallback depth wrappers and
-worker control/copy helpers, face sorting, rectangle fills, panels and effects
+worker control/copy helpers, face sorting, line helpers, rectangle fills, panels and effects
 dispatch and the FPS overlay execute from protected ROM; hot raster loops remain in SDRAM. `build/bank-layout.json` is the authoritative
 generated layout report for this build; later changes require fresh figures.
 

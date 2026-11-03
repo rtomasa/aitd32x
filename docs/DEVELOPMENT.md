@@ -37,6 +37,15 @@ The importer vendors its decompressor and music-capture driver; a separate FITD 
 
 ## Relevant verification
 
+For direct RAM scenery composition and exact incremental lines, see the
+[scenery performance review](validation/scenery-performance.md). Preserve the
+uncached SH2 composition alias, worker completion and master cache purge before
+cached image reads. Run `make -j2 host all build/check_lines build/check_bands`,
+both check executables, the preserved-renderer camera comparison and NTSC/PAL
+`check_sh2_scheduling_native.py`. `check_partial_cache.py` covers partial-order
+repairs. The scenery diagnostic's `--rebuild-scenery` option measures forced
+construction separately from ordinary warm-cache drawing.
+
 For contact/scenery optimizations, see the before/after fixtures in
 [action performance measurements](validation/action-performance.md).
 `check_raster_parity.py --ordinary` checks every prepared prop's pixels and
@@ -47,7 +56,7 @@ framebuffer banks; use NTSC/PAL for shared-worker changes. Preserve the
 last-projection hint's lifetime and overwrite compact vertices with bounds
 only after all contact fallback decisions have passed. Run
 `check_bank_layout.py` after code-placement changes: the current RELEASE
-static stack margin is only 200 bytes.
+static stack margin is only 472 bytes.
 
 The shared [render preparation paths](validation/render-preparation.md) also
 borrow unused scenery-span storage for stationary contact programs. Preserve

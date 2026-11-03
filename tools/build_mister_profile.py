@@ -176,9 +176,14 @@ def main():
     parser.add_argument('--source', type=Path, default=ROOT,
                         help='Source tree to benchmark, including src/, Makefile and assets/')
     parser.add_argument('--variant', choices=VARIANTS, help='Release renderer with only per-frame timing')
+    parser.add_argument('--rebuild-scenery', action='store_true',
+                        help='Force a complete scenery bake on each draw; requires --variant')
     args = parser.parse_args()
+    if args.rebuild_scenery and not args.variant:
+        parser.error('--rebuild-scenery requires --variant')
     source_root = args.source.resolve()
-    output = ROOT / ('build/mister-experiment/'+args.variant if args.variant else 'build/mister-profile')
+    suffix = '-scenery' if args.rebuild_scenery else ''
+    output = ROOT / ('build/mister-experiment/'+args.variant+suffix if args.variant else 'build/mister-profile')
     if output.is_symlink():
         raise RuntimeError('diagnostic directory must not be a symlink')
     output.mkdir(parents=True, exist_ok=True)
@@ -201,6 +206,13 @@ def main():
     header.write_text(header.read_text().replace('void Profile_Init();', 'void Profile_Init();\nvoid Profile_Reset();'))
     if args.variant:
         low_overhead(output, args.variant)
+    if args.rebuild_scenery:
+        master = output / 'src/sh2/master.cpp'
+        source = master.read_text()
+        marker = 'game.renderer.buffer_index=displayed^1;'
+        if source.count(marker) != 1:
+            raise RuntimeError('could not locate scenery diagnostic draw')
+        master.write_text(source.replace(marker, marker+'game.static_signature=0;'))
     log_path = output / 'build.log'
     with log_path.open('w') as log:
         subprocess.run(['make', '-j2', 'BUILD='+('RELEASE' if args.variant else 'PROFILE'), 'MARSDEV='+str(args.mars.resolve())],
@@ -209,7 +221,7 @@ def main():
     subprocess.run(['python3', str(ROOT / 'tools/check_bank_layout.py'), '--rom',
                     str(output / 'build/AITD32X.32x'), '--elf', str(output / 'build/AITD32X.elf'),
                     '--output', str(report)], check=True, stdout=subprocess.DEVNULL)
-    rom = ROOT / ('build/AITD32X-experiment-'+args.variant+'.32x' if args.variant else 'build/AITD32X-mister-profile-v1.32x')
+    rom = ROOT / ('build/AITD32X-experiment-'+args.variant+suffix+'.32x' if args.variant else 'build/AITD32X-mister-profile-v1.32x')
     shutil.copy2(output / 'build/AITD32X.32x', rom)
     print(json.dumps(dict(rom=str(rom), sha256=hashlib.sha256(rom.read_bytes()).hexdigest(),
                           build_log=str(log_path), layout=str(report)), indent=2))

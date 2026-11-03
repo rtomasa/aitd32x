@@ -15,17 +15,31 @@ import sys
 from pathlib import Path
 
 import emulator_check as ec
-from check_full_game_native import Native, load_fixture
+from check_full_game_native import Native
 from check_window_door_native import native_layout
 
 ROOT = ec.ROOT
 
 
+def load_fixture(check, packed):
+    # Host save bytes are packed; PicoDrive retains the unused even lane.
+    assert len(packed) == 32768 and check.e.save_capacity == 65536
+    sram = bytearray(65536)
+    sram[1::2] = packed
+    C.memmove(check.e.lib.retro_get_memory_data(0), bytes(sram), len(sram))
+    check.advance(check.hz)
+    check.press(64)
+    check.phase(5)
+    check.press(16)
+    check.phase(10, 60)
+    assert check.state()['paused']
+
+
 def child(args):
     meta = json.loads(sys.stdin.buffer.readline())
-    sram = sys.stdin.buffer.read(131072)
+    sram = sys.stdin.buffer.read(32768)
     expected = sys.stdin.buffer.read()
-    assert len(expected) == 64000 and len(sram) == 131072
+    assert len(expected) == 64000 and len(sram) == 32768
     check = Native(args.core, args.region, meta.pop('layout'))
     try:
         load_fixture(check, sram)
@@ -112,7 +126,7 @@ def main():
             lib.host_clear_message()
             C.memset(lib.host_sram(), 0, 131072)
             assert lib.host_save()
-            sram = C.string_at(lib.host_sram(), 131072)
+            sram = C.string_at(lib.host_sram(), 32768)
             assert lib.host_load()
             lib.host_clear_message()
             lib.host_buffer(0)

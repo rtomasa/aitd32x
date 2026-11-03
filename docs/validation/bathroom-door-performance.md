@@ -1,5 +1,9 @@
 # Bathroom door investigation — 2026-10-20
 
+The later [scenery/Amiga-port review](scenery-performance.md) retains direct RAM
+scenery construction and exact incremental lines. Cold construction improves,
+but the sampled bathroom crossing interval and sustained door cost remain.
+
 Baseline: `v0.1.0-alpha.4`, commit
 `3bcd342852bf281e8ec2a0ab36a15cde70703220`. **The player-front experiment
 has been rolled back.** Production source again uses alpha.4's accurate door

@@ -3,6 +3,7 @@
 #include "render_api.hpp"
 #include "../engine/world.hpp"
 #include "divide.hpp"
+#include "line.hpp"
 #include "project.hpp"
 #include "raster.hpp"
 #include "worker.hpp"
@@ -148,13 +149,33 @@ void Renderer::Restore() {
     damage[buffer_index]={320,200,-1,-1};
 }
 A32X_COLD void Renderer::FinishRestore() { RendererWorker_WaitRestore(); }
-A32X_COLD BackgroundComposition::BackgroundComposition(Renderer &r):renderer(r),output(r.target) {
+A32X_COLD BackgroundComposition::BackgroundComposition(Renderer &r,bool shared):renderer(r),output(r.target) {
     renderer.FinishRestore();
     previous_damage[0]=r.damage[0];previous_damage[1]=r.damage[1];
     renderer.target=(volatile uint16_t *)renderer.background;
+#if defined(__sh__)
+    if(shared) renderer.target=(volatile uint16_t *)((uintptr_t)renderer.target|0x20000000u);
+#else
+    (void)shared;
+#endif
     renderer.damage[renderer.buffer_index]={320,200,-1,-1};
 }
 A32X_COLD BackgroundComposition::~BackgroundComposition() {
+    renderer.FinishRestore();
+#if defined(__sh__)
+    if((uintptr_t)renderer.target&0x20000000u) {
+        // Shared composition bypassed the master's cached background lines.
+        // SH7604 write-through stores are already in SDRAM; discard stale
+        // lines only after every worker has finished, preserving cache policy.
+        volatile uint8_t *const ccr=(volatile uint8_t *)0xFFFFFE92;
+        uint8_t mode=*ccr;
+        *ccr=mode&~1u;
+        (void)*ccr;
+        *ccr=(mode&~1u)|0x10;
+        *ccr=mode;
+        asm volatile("":::"memory");
+    }
+#endif
     Rect area=renderer.damage[renderer.buffer_index];
     renderer.target=output;
     for(unsigned bank=0;bank<2;++bank) {
@@ -883,7 +904,11 @@ A32X_COLD void Renderer::ContactFallback(const Actor *const *actors,unsigned cou
                     if(p[0]==0 && n==2) {
                         const CompactVertex &b=combined[offsets[i]+BE16Aligned(p+8)];if(b.z<=100) continue;
                         int dx=b.sx-v.sx,dy=b.sy-v.sy,steps=Max(dx<0?-dx:dx,dy<0?-dy:dy),end=near[i]?RenderDivide(1<<20,b.z):b.x;
-                        for(int t=0;t<=steps;++t) { Point point={v.sx+(steps?dx*t/steps:0),v.sy+(steps?dy*t/steps:0)};RasterDepthPoint(surface,point,inv+(steps?(end-inv)*t/steps:0),0,tile,depths,p[2],p[3],mask); }
+                        RasterLineStep x(v.sx,dx,steps),y(v.sy,dy,steps),q(inv,end-inv,steps);
+                        for(int t=0;t<=steps;++t) {
+                            RasterDepthPoint(surface,{x.value,y.value},q.value,0,tile,depths,p[2],p[3],mask);
+                            x.Advance();y.Advance();q.Advance();
+                        }
                     } else RasterDepthPoint(surface,{v.sx,v.sy},inv,Clamp(size,0,120),tile,depths,p[2],p[3],mask);
                     continue;
                 }

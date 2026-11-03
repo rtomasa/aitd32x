@@ -56,7 +56,7 @@ build/AITD32X.32x: build/AITD32X.elf tools/finalize_rom.py
 	"$(SHOBCOPY)" -O binary $< build/unpadded.bin
 	python3 tools/finalize_rom.py build/unpadded.bin $@
 host: build/libaitd32x.so
-build/libaitd32x.so: $(CORE) tools/host.cpp assets/resource_ids.h src/platform/pixel_words.hpp src/render/project.hpp src/engine/save_codec.hpp
+build/libaitd32x.so: $(CORE) tools/host.cpp assets/resource_ids.h src/platform/pixel_words.hpp src/render/project.hpp src/render/line.hpp src/engine/save_codec.hpp
 	@mkdir -p build
 	c++ -std=c++17 -O2 -fPIC -shared -Wall -Wextra $(CORE) tools/host.cpp -o $@
 check: build/check_clock build/check_render build/check_animation
@@ -76,9 +76,12 @@ build/check_render: tools/check_render.cpp $(CORE) assets/resource_ids.h
 build/check_raster: src/render/project.cpp tools/check_raster.cpp src/render/render.cpp src/render/raster.cpp src/render/worker.cpp src/render/font.cpp src/engine/math.cpp src/engine/trig.cpp src/render/render_api.hpp
 	@mkdir -p build
 	c++ -std=c++17 -O2 -Wall -Wextra -I. tools/check_raster.cpp src/render/project.cpp src/render/render.cpp src/render/raster.cpp src/render/worker.cpp src/render/font.cpp src/engine/math.cpp src/engine/trig.cpp -o $@
-build/check_bands: tools/check_bands.cpp src/render/raster.cpp src/render/raster.hpp src/platform/pixel_words.hpp
+build/check_bands: tools/check_bands.cpp src/render/raster.cpp src/render/raster.hpp src/render/line.hpp src/platform/pixel_words.hpp
 	@mkdir -p build
 	c++ -std=c++17 -O2 -Wall -Wextra -I. tools/check_bands.cpp src/render/raster.cpp -o $@
+build/check_lines: tools/check_lines.cpp src/render/line.hpp src/render/divide.hpp
+	@mkdir -p build
+	c++ -std=c++17 -O2 -Wall -Wextra -I. $< -o $@
 clean:
 	rm -rf build
 -include $(SHOBJ:.o=.d)

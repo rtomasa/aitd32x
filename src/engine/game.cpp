@@ -51,8 +51,7 @@ A32X_COLD void Game::RebuildStaticOrder(const int *order,int count) {
             include({Max(a.x1,b.x1),Max(a.y1,b.y1),Min(a.x2,b.x2),Min(a.y2,b.y2)});
         }
     }
-    renderer.Restore();
-    if(area.x1>area.x2 || area.y1>area.y2) return;
+    if(area.x1>area.x2 || area.y1>area.y2) { renderer.Restore();return; }
     // Whole-actor replay avoids changing raster rounding at a clip boundary.
     // Expand to a fixed point so no replay or mask can write outside the bake.
     uint64_t redraw=0;
@@ -64,9 +63,12 @@ A32X_COLD void Game::RebuildStaticOrder(const int *order,int count) {
             redraw|=uint64_t(1)<<s;include(static_bounds[s]);expanded=true;
         }
     } while(expanded);
-    renderer.RestoreOriginal(area);
-    for(int i=0;i<count;++i) if(redraw&(uint64_t(1)<<order[i])) renderer.DrawActor(world.Pose(order[i]));
-    renderer.BakeRegion(area);
+    {
+        BackgroundComposition composition(renderer,true);
+        renderer.RestoreOriginal(area);
+        for(int i=0;i<count;++i) if(redraw&(uint64_t(1)<<order[i])) renderer.DrawActor(world.Pose(order[i]));
+    }
+    renderer.Restore();
 }
 A32X_COLD void Game::Init(bool boot) {
     Audio_Reset();ResetCache();
@@ -251,14 +253,18 @@ void Game::DrawScene() {
     if(reordered) {
         RebuildStaticOrder(order,count);static_signature=signature;
     } else if(signature!=static_signature) {
-        renderer.Restore();
-        unsigned used=0;
-        for(int i=0;i<count;++i) if(!Dynamic(order[i])) {
-            int slot=order[i];static_span_start[slot]=used;
-            unsigned n=renderer.DrawCachedActor(world.Pose(slot),static_spans+used,3072-used);
-            static_bounds[slot]=renderer.last_bounds;static_span_count[slot]=n;if(n!=65535) used+=n;
+        // Build scenery in the existing RAM image, then upload it once. The
+        // framebuffer need not be an intermediate image read back into RAM.
+        {
+            BackgroundComposition composition(renderer,true);
+            unsigned used=0;
+            for(int i=0;i<count;++i) if(!Dynamic(order[i])) {
+                int slot=order[i];static_span_start[slot]=used;
+                unsigned n=renderer.DrawCachedActor(world.Pose(slot),static_spans+used,3072-used);
+                static_bounds[slot]=renderer.last_bounds;static_span_count[slot]=n;if(n!=65535) used+=n;
+            }
         }
-        renderer.BakeBackground();static_signature=signature;
+        renderer.Restore();static_signature=signature;
     } else renderer.Restore();
     static_slots=next_static_slots;
     unsigned span_used=0,contact_sources=0;
